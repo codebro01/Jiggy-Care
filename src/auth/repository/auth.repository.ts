@@ -6,7 +6,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { usersTable } from '@src/db';
+import { userTable } from '@src/db';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
@@ -37,8 +37,8 @@ export class AuthRepository {
     if (!email || !password)
       throw new BadRequestException('Please provide email and password');
     const [user] = await this.DbProvider.select()
-      .from(usersTable)
-      .where(eq(usersTable.email, email));
+      .from(userTable)
+      .where(eq(userTable.email, email));
     if (!user)
       throw new UnauthorizedException(
         'Bad credentials, Please check email and password',
@@ -62,9 +62,9 @@ export class AuthRepository {
 
     const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
-    const updateUserToken = await this.DbProvider.update(usersTable)
+    const updateUserToken = await this.DbProvider.update(userTable)
       .set({ refreshToken: hashedRefreshToken })
-      .where(eq(usersTable.id, user.id));
+      .where(eq(userTable.id, user.id));
 
     if (!updateUserToken) throw new InternalServerErrorException();
     return { user, accessToken, refreshToken };
@@ -75,9 +75,9 @@ export class AuthRepository {
     if (!user)
       throw new NotFoundException('No user payload, no user is logged in');
     console.log(user);
-    await this.DbProvider.update(usersTable)
+    await this.DbProvider.update(userTable)
       .set({ refreshToken: null })
-      .where(eq(usersTable.id, user.id));
+      .where(eq(userTable.id, user.id));
     res.clearCookie('access_token');
     res.clearCookie('refresh_token');
   }

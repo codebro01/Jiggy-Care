@@ -1,7 +1,7 @@
 import { IsString, IsBoolean, IsDateString, IsOptional } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
-export class UpdateUserDto {
+export class UpdatePatientDto {
   @ApiPropertyOptional({
     example: 'john_doe',
     description: "User's display name or username",
@@ -98,19 +98,4 @@ export class UpdateUserDto {
   @IsOptional()
   bloodType?: string;
 
-  @ApiPropertyOptional({
-    example: 'google',
-    description: 'Authentication provider (e.g., google, facebook, local)',
-  })
-  @IsString()
-  @IsOptional()
-  authProvider?: string;
-
-  @ApiPropertyOptional({
-    example: true,
-    description: 'Whether the user has completed this profile update stage',
-  })
-  @IsBoolean()
-  @IsOptional()
-  isStageComplete?: boolean;
 }

@@ -2,18 +2,25 @@
 import {
   IsEmail,
   IsNotEmpty,
-  IsOptional,
   IsString,
-  MinLength, 
-  Matches, 
+  MinLength,
+  Matches,
+  IsEnum,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
+export enum roleType {
+  CONSULTANT = 'consultant',
+  PATIENT = 'patient',
+}
+
 
 export class CreateUserDto {
-  @IsOptional()
-  @IsString()
-  username: string;
+
+  @ApiProperty({ example: 'john@example.com', description: 'only the roles with value consultant and patient is allowed' })
+  @IsEnum(roleType, {message: 'only the value consultant or patient is accepted'})
+  @IsNotEmpty()
+  role: roleType;
 
   @ApiProperty({ example: 'john@example.com' })
   @IsEmail()
@@ -33,5 +40,5 @@ export class CreateUserDto {
     message:
       'Password must contain at least 1 uppercase, 1 lowercase, 1 number and 1 special character',
   })
-  password: string; 
+  password: string;
 }

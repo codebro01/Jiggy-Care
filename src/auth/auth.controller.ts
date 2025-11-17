@@ -3,7 +3,7 @@ import {
   Post,
   Body,
   Res,
-  Req, 
+  Req,
   HttpStatus,
   Get,
   Query,
@@ -20,6 +20,7 @@ import { UserService } from '@src/users/users.service';
 import omit from 'lodash.omit'
 import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
+import { roleType } from '@src/users/dto/create-user.dto';
 
 
 
@@ -35,7 +36,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private jwtService: JwtService,
     private readonly userService: UserService,
-  ) {}
+  ) { }
 
   // ! local signin (password and email)
   @Post('signin')
@@ -69,18 +70,7 @@ export class AuthController {
 
   @Get('google')
   googleLogin(@Res() res: Response) {
-    const scope = ['openid', 'email', 'profile'].join(' ');
-    // console.log(this.redirectUri, process.env.SERVER_URI);
-    const params = qs.stringify({
-      client_id: this.clientId,
-      redirect_uri: this.redirectUri,
-      response_type: 'code', // this is key for server-side OAuth
-      scope,
-      access_type: 'offline', // so we get a refresh token
-      prompt: 'consent', // ensures refresh token is returned every login
-    });
-
-    const googleUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+   const googleUrl = this.authService.googleAuth();
     res.redirect(googleUrl);
   }
 
@@ -113,14 +103,15 @@ export class AuthController {
     const { email, given_name, family_name, picture, email_verified } = decoded;
     const payload = {
       email,
-      fullName:  `${given_name} ${family_name}` ,
+      fullName: `${given_name} ${family_name}`,
       dp: picture,
       emailVerified: email_verified,
       password: googleUserPwd,
       authProvider: 'google',
+      role: roleType.PATIENT
     };
     const { user, refreshToken, accessToken } =
-      await this.userService.createUser(payload);
+      await this.userService.createUser(payload, 'google');
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,

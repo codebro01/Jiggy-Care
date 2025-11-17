@@ -14,7 +14,7 @@ import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { Roles } from '@src/auth/decorators/roles.decorators';
 import type { Response } from 'express';
 import {
-  UpdateUserDto,
+  UpdatePatientDto,
   CreateUserDto,
 } from '@src/users/dto/index.dto';
 
@@ -22,14 +22,14 @@ import omit from 'lodash.omit';
 
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   // ! create users
   @Post('signup')
   // @UseGuards(JwtAuthGuard)
   async createUser(@Body() body: CreateUserDto, @Res() res: Response) {
     const { user, accessToken, refreshToken } =
-      await this.userService.createUser(body);
+      await this.userService.createUser(body, 'local');
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
@@ -62,7 +62,7 @@ export class UserController {
   // ! update user basic information
   @UseGuards(JwtAuthGuard)
   @Post('/update-user-basic-info')
-  updateUsers(@Req() req, @Body() body: UpdateUserDto) {
+  updateUsers(@Req() req, @Body() body: UpdatePatientDto) {
     return this.userService.updateUser(req.user, body);
   }
 
