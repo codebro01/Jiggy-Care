@@ -70,49 +70,19 @@ export class AuthController {
   // ! call google api for sign in or signup with google
 
   @Get('google')
-  googleLogin(@Res() res: Response) {
-    const googleUrl = this.authService.googleAuth();
+  googleLogin(@Res() res: Response, @Query('role') role: string) {
+
+    const state = Buffer.from(JSON.stringify({ role })).toString('base64');
+   console.log(state)
+    const googleUrl = this.authService.googleAuth(state);
     res.redirect(googleUrl);
   }
 
   // ! google callback  for signin or signup (this callback returns the user identity from google)
 
   @Get('google/callback')
-  async googleCallback(@Query('code') code: string, @Res() res: Response) {
-    const { data } = await axios.post(
-      'https://oauth2.googleapis.com/token',
-      qs.stringify({
-        code,
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        redirect_uri:
-          process.env.NODE_ENV === 'production'
-            ? `${process.env.SERVER_URI}/api/v1/auth/google/callback`
-            : 'http://localhost:3000/api/v1/auth/google/callback',
-        grant_type: 'authorization_code',
-      }),
-      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
-    );
-
-    const { id_token } = data;
-
-    const decoded: any = jwtDecode(id_token); // <-- note the .default
-
-    //! generate a ramdon crypto password for google users
-    const googleUserPwd = this.authService.generateRandomPassword();
-
-    const { email, given_name, family_name, picture, email_verified } = decoded;
-    const payload = {
-      email,
-      fullName: `${given_name} ${family_name}`,
-      dp: picture,
-      emailVerified: email_verified,
-      password: googleUserPwd,
-      authProvider: 'google',
-      role: roleType.PATIENT
-    };
-    const { user, refreshToken, accessToken } =
-      await this.userService.createUser(payload, 'google');
+  async googleCallback(@Query('code') code: string, @Query('state') state: string, @Res() res: Response) {
+     const {accessToken, refreshToken, user} = await this.authService.googleAuthCallback(code, state)
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
@@ -131,7 +101,7 @@ export class AuthController {
 
     res
       .status(HttpStatus.ACCEPTED)
-      .json({ user: safeUser, accessToken, refreshToken });
+      .json({ user: safeUser, accessToken });
   }
   @UseGuards(JwtAuthGuard)
   @Get('logout')

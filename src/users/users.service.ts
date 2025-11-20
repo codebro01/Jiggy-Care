@@ -117,7 +117,7 @@ export class UserService {
           )
           break;
 
-          default: throw new BadRequestException('Role can either consultant or patient')
+          default: throw new BadRequestException('Role can either be consultant or patient')
 
       
 

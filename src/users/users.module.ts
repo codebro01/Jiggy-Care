@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { UserController } from './users.controller';
 import { UserService } from './users.service';
 import { UserRepository } from '@src/users/repository/user.repository';
@@ -15,7 +15,7 @@ import { HelpersModule } from '@src/helpers/helpers.module';
 
     DbModule,
     SupabaseModule,
-    AuthModule,
+    forwardRef(() => AuthModule),
     HelpersModule,
     JwtModule.register({
       global: true,

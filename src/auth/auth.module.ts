@@ -7,7 +7,8 @@ import { DbModule } from '@src/db/db.module';
 import { SupabaseModule } from '@src/neon/neon.module';
 import { UserModule } from '@src/users/users.module';
 import { HelpersModule } from '@src/helpers/helpers.module';
-
+import { PatientModule } from '@src/patient/patient.module';
+import { ConsultantModule } from '@src/consultant/consultant.module';
 @Module({
   imports: [
     JwtModule.register({
@@ -17,6 +18,8 @@ import { HelpersModule } from '@src/helpers/helpers.module';
     DbModule,
     HelpersModule,
     SupabaseModule,
+     PatientModule,
+     ConsultantModule,
     forwardRef(() => UserModule),
   ],
   controllers: [AuthController],

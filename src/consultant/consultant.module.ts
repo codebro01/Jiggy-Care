@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ConsultantController } from '@src/consultant/consultant.controller';
 import { ConsultantService } from '@src/consultant/consultant.service';
 import { ConsultantRepository } from '@src/consultant/repository/consultant.repository';
@@ -7,7 +7,7 @@ import { UserModule } from '@src/users/users.module';
 import { DbModule } from '@src/db/db.module';
 
 @Module({
-  imports: [DbModule, HelpersModule, UserModule],
+  imports: [DbModule, HelpersModule, forwardRef(() => UserModule)],
   controllers: [ConsultantController],
   providers: [ConsultantService, ConsultantRepository],
   exports: [ConsultantRepository, ConsultantService]
