@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import qs from 'qs'
 import { jwtConstants } from '@src/auth/jwtContants';
 import { JwtService } from '@nestjs/jwt';
-import { roleType } from '@src/users/dto/create-user.dto';
+import { roleType } from '@src/users/dto/createUser.dto';
 import axios from 'axios'
 import { jwtDecode } from 'jwt-decode';
 import type { Response } from 'express';
@@ -48,7 +48,7 @@ export class AuthService {
     const googleUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
     return googleUrl
   }
-  async googleAuthCallback(code: string, ) {
+  async googleAuthCallback(code: string,) {
     const { data } = await axios.post(
       'https://oauth2.googleapis.com/token',
       qs.stringify({

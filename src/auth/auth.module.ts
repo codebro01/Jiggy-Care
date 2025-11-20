@@ -6,6 +6,7 @@ import { AuthRepository } from './repository/auth.repository';
 import { DbModule } from '@src/db/db.module';
 import { SupabaseModule } from '@src/neon/neon.module';
 import { UserModule } from '@src/users/users.module';
+import { HelpersModule } from '@src/helpers/helpers.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { UserModule } from '@src/users/users.module';
       signOptions: { expiresIn: '1d' }, // token expiry
     }),
     DbModule,
+    HelpersModule,
     SupabaseModule,
     forwardRef(() => UserModule),
   ],

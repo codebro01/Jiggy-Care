@@ -13,6 +13,8 @@ import { MulterModule } from './multer/multer.module';
 import { UploadController } from './upload/upload.controller';
 import { UploadModule } from './upload/upload.module';
 import { ConsultantModule } from './consultant/consultant.module';
+import { HelpersModule } from './helpers/helpers.module';
+import { PatientModule } from './patient/patient.module';
 
 @Module({
   imports: [
@@ -27,6 +29,8 @@ import { ConsultantModule } from './consultant/consultant.module';
     MulterModule,
     UploadModule,
     ConsultantModule,
+    HelpersModule,
+    PatientModule,
   ],
   controllers: [AppController, UploadController],
   providers: [AppService, NeonProvider, MulterService],

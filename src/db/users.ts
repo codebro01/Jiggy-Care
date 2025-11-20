@@ -5,9 +5,9 @@ import {
   timestamp,
   boolean,
   text,
-  integer, 
+  integer,
 } from 'drizzle-orm/pg-core';
-import {  InferSelectModel } from 'drizzle-orm';
+import { InferSelectModel } from 'drizzle-orm';
 
 
 export const userTable = pgTable('users', {
@@ -31,6 +31,8 @@ export const userTable = pgTable('users', {
 });
 
 export const patientTable = pgTable('patients', {
+  userId: uuid().notNull().references(() => userTable.id, { onDelete: 'cascade' }),
+  id: uuid().defaultRandom().primaryKey().notNull(),
   emergencyContact: varchar('emergencyContact', { length: 255 }),
   weight: varchar('weight', { length: 50 }),
   height: varchar('height', { length: 50 }),
@@ -40,15 +42,15 @@ export const patientTable = pgTable('patients', {
 export const consultantTable = pgTable('consultants', {
   id: uuid().defaultRandom().primaryKey().notNull(),
 
-  userId: uuid().notNull().references(() => userTable.id),
+  userId: uuid().notNull().references(() => userTable.id, { onDelete: 'cascade' }),
   availability: boolean('availability').default(false),
   speciality: varchar('speciality', { length: 50 }),
-  yrsOfExperience: varchar('years_of_experience', { length: 50 }),
+  yrsOfExperience: integer('years_of_experience'),
   about: text('about'),
-  languages: text('languages').array(), 
-  education: text('education').array(), 
-  certification: text('certification').array(), 
-  workingHours: varchar('working_hours').array(), 
+  languages: text('languages').array(),
+  education: text('education').array(),
+  certification: text('certification').array(),
+  workingHours: varchar('working_hours').array(),
   pricePerSession: integer('price_per_session'),
 });
 

@@ -20,7 +20,7 @@ import { UserService } from '@src/users/users.service';
 import omit from 'lodash.omit'
 import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
-import { roleType } from '@src/users/dto/create-user.dto';
+import { roleType } from '@src/users/dto/createUser.dto';
 import type { Request } from '@src/types';
 
 
@@ -71,7 +71,7 @@ export class AuthController {
 
   @Get('google')
   googleLogin(@Res() res: Response) {
-   const googleUrl = this.authService.googleAuth();
+    const googleUrl = this.authService.googleAuth();
     res.redirect(googleUrl);
   }
 

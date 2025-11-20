@@ -7,6 +7,7 @@ import {
   Res,
   HttpStatus,
   Req,
+  Patch
 } from '@nestjs/common';
 import { UserService } from '@src/users/users.service';
 import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
@@ -62,7 +63,7 @@ export class UserController {
 
   // ! update user basic information
   @UseGuards(JwtAuthGuard)
-  @Post('/update-user-basic-info')
+  @Patch('/update-user-basic-info')
   updateUsers(@Req() req: Request, @Body() body: UpdatePatientDto) {
     const {id: userId} = req.user;
     return this.userService.updateUser(userId, body);

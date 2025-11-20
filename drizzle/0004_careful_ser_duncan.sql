@@ -1,0 +1,1 @@
+ALTER TABLE "consultants" ALTER COLUMN "years_of_experience" SET DATA TYPE integer;

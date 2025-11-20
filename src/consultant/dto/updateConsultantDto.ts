@@ -31,13 +31,11 @@ export class UpdateConsultantDto {
 
     @ApiPropertyOptional({
         description: 'Years of experience',
-        example: '5-10 years',
-        maxLength: 50,
+        example: 15,
     })
     @IsOptional()
-    @IsString()
-    @MaxLength(50)
-    yrsOfExperience?: string;
+    @IsInt()
+    yrsOfExperience: number;
 
     @ApiPropertyOptional({
         description: 'About the consultant',
