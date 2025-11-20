@@ -10,15 +10,21 @@ export class ConsultantService {
 
    async updateConsultant(data: UpdateConsultantDto, userId: string) {
 
-      const isExist = await this.consultantRepository.findConsultant(userId);
+      const isExist = await this.consultantRepository.findConsultantById(userId);
       if (!isExist) throw new NotFoundException(`User with the id: ${userId} could not be found`)
       const consultant = await this.helperRepository.executeInTransaction(async (trx) => {
          const consultant = await this.consultantRepository.updateConsultant(data, userId, trx)
-        const user =  await this.userRepository.updateUser(data, userId, trx) 
+         const user = await this.userRepository.updateUser(data, userId, trx)
 
-         return {...consultant, ...user}
+         return { ...consultant, ...user }
       })
 
       return consultant
+   }
+
+   async findConsultantByNameOrSpeciality(searchTerm: string) {
+      const consultant  = await this.consultantRepository.findConsultantByNameOrSpeciality(searchTerm);
+
+      return consultant;
    }
 }

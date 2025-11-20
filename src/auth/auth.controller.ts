@@ -13,14 +13,10 @@ import { AuthService } from '@src/auth/auth.service';
 import { LoginUserDto } from '@src/auth/dto/login-user.dto';
 import type { Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
-import qs from 'qs';
-import axios from 'axios';
-import { jwtDecode } from 'jwt-decode';
 import { UserService } from '@src/users/users.service';
 import omit from 'lodash.omit'
 import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
-import { roleType } from '@src/users/dto/createUser.dto';
 import type { Request } from '@src/types';
 
 
