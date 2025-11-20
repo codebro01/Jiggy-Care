@@ -6,11 +6,12 @@ import {
   Inject,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { jwtConstants } from '@src/auth/jwtContants';
 import { userTable } from '@src/db';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, sql } from 'drizzle-orm';
+import { Request } from '@src/types';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {

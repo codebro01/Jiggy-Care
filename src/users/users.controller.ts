@@ -19,6 +19,7 @@ import {
 } from '@src/users/dto/index.dto';
 
 import omit from 'lodash.omit';
+import type { Request } from '@src/types';
 
 @Controller('users')
 export class UserController {
@@ -62,8 +63,9 @@ export class UserController {
   // ! update user basic information
   @UseGuards(JwtAuthGuard)
   @Post('/update-user-basic-info')
-  updateUsers(@Req() req, @Body() body: UpdatePatientDto) {
-    return this.userService.updateUser(req.user, body);
+  updateUsers(@Req() req: Request, @Body() body: UpdatePatientDto) {
+    const {id: userId} = req.user;
+    return this.userService.updateUser(userId, body);
   }
 
 }

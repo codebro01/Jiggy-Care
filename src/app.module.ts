@@ -12,6 +12,7 @@ import { MulterService } from './multer/multer.service';
 import { MulterModule } from './multer/multer.module';
 import { UploadController } from './upload/upload.controller';
 import { UploadModule } from './upload/upload.module';
+import { ConsultantModule } from './consultant/consultant.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { UploadModule } from './upload/upload.module';
     CloudinaryModule,
     MulterModule,
     UploadModule,
+    ConsultantModule,
   ],
   controllers: [AppController, UploadController],
   providers: [AppService, NeonProvider, MulterService],

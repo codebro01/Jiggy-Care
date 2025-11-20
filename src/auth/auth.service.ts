@@ -8,6 +8,8 @@ import { JwtService } from '@nestjs/jwt';
 import { roleType } from '@src/users/dto/create-user.dto';
 import axios from 'axios'
 import { jwtDecode } from 'jwt-decode';
+import type { Response } from 'express';
+import type { Request } from '@src/types';
 
 
 @Injectable()
@@ -46,7 +48,7 @@ export class AuthService {
     const googleUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
     return googleUrl
   }
-  async googleAuthCallback(code, ) {
+  async googleAuthCallback(code: string, ) {
     const { data } = await axios.post(
       'https://oauth2.googleapis.com/token',
       qs.stringify({
@@ -94,7 +96,7 @@ export class AuthService {
     return { user, refreshToken, accessToken }
   }
 
-  async logoutUser(res, req) {
+  async logoutUser(res: Response, req: Request) {
     return await this.authRepository.logoutUser(res, req);
   }
 

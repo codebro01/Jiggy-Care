@@ -38,6 +38,9 @@ export const patientTable = pgTable('patients', {
 });
 
 export const consultantTable = pgTable('consultants', {
+  id: uuid().defaultRandom().primaryKey().notNull(),
+
+  userId: uuid().notNull().references(() => userTable.id),
   availability: boolean('availability').default(false),
   speciality: varchar('speciality', { length: 50 }),
   yrsOfExperience: varchar('years_of_experience', { length: 50 }),

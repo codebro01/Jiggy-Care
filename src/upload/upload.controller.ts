@@ -8,9 +8,17 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
-import multer, { StorageEngine } from 'multer';
+import multer from 'multer';
 import { CloudinaryService } from '@src/cloudinary/cloudinary.service';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 
+@ApiTags('upload')
 @Controller('upload')
 export class UploadController {
   constructor(private readonly cloudinaryService: CloudinaryService) {}
@@ -18,11 +26,47 @@ export class UploadController {
   @Post('image')
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: multer.memoryStorage() as StorageEngine,
+      storage: multer.memoryStorage(),
     }),
   )
-  async uploadImage(@UploadedFile() file: multer.File) {
-    console.log(file);
+  @ApiOperation({
+    summary: 'Upload a single image',
+    description:
+      'Uploads a single image file to Cloudinary. Accepts JPEG and PNG formats up to 10MB.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Image file (JPEG or PNG, max 10MB)',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Image successfully uploaded',
+    schema: {
+      type: 'object',
+      properties: {
+        uploaded: {
+          type: 'object',
+          description: 'Cloudinary upload result',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Bad request - No file selected, invalid format, or file too large',
+  })
+  async uploadImage(@UploadedFile() file: Express.Multer.File) {
+    // console.log(file);
     if (!file) throw new BadRequestException('Please select an image file');
 
     const maxSize = 1024 * 1024 * 10; // 10MB
@@ -43,16 +87,59 @@ export class UploadController {
   @Post('images')
   @UseInterceptors(
     FilesInterceptor('files', 5, {
-      storage: multer.memoryStorage() as StorageEngine,
+      storage: multer.memoryStorage(),
     }),
   )
-  async uploadImages(@UploadedFiles() files: multer.File[]) {
+  @ApiOperation({
+    summary: 'Upload multiple images',
+    description:
+      'Uploads multiple image files (up to 5) to Cloudinary. Each file must be JPEG or PNG format, max 10MB per file.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        files: {
+          type: 'array',
+          items: {
+            type: 'string',
+            format: 'binary',
+          },
+          description:
+            'Multiple image files (JPEG or PNG, max 5 files, 10MB each)',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Images successfully uploaded',
+    schema: {
+      type: 'object',
+      properties: {
+        uploaded: {
+          type: 'array',
+          items: {
+            type: 'object',
+          },
+          description: 'Array of Cloudinary upload results',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Bad request - No files uploaded, invalid format, or file too large',
+  })
+  async uploadImages(@UploadedFiles() files: Express.Multer.File[]) {
     if (!files || files.length === 0) {
       throw new BadRequestException('Please upload at least one image');
     }
 
-    const results = await this.cloudinaryService.uploadImage(
-      files.map((f) => f.buffer),
+    const results = await this.cloudinaryService.uploadMultipleImages(
+      files,
       'my-folder',
     );
 

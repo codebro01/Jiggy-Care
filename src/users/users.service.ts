@@ -122,18 +122,18 @@ export class UserService {
     return users;
   }
 
-  async updateUser(user, data: UpdatePatientDto) {
-    console.log('user', user);
+  async updateUser(userId:string, data: UpdatePatientDto) {
+    console.log('user', userId);
     if (!data) throw new BadRequestException('Data not provided for update!');
     const [isUserExist] = await this.DbProvider.select({ id: userTable.id })
       .from(userTable)
-      .where(eq(userTable.id, user.id));
+      .where(eq(userTable.id, userId));
 
     if (!isUserExist) throw new NotFoundException('No user found');
     console.log(isUserExist);
     const updatedUser = await this.DbProvider.update(userTable)
       .set(data)
-      .where(eq(userTable.id, user.id))
+      .where(eq(userTable.id, userId))
       .returning();
     if (!updatedUser)
       throw new InternalServerErrorException(
