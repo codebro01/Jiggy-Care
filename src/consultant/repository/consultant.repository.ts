@@ -48,6 +48,7 @@ export class ConsultantRepository {
                 userName: userTable.fullName,
                 userEmail: userTable.email,
                 userProfilePicture: userTable.dp,
+                dateCreated: userTable.createdAt
             })
             .from(consultantTable)
             .leftJoin(userTable, eq(consultantTable.userId, userTable.id))

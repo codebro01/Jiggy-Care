@@ -10,7 +10,7 @@ import { Response } from 'express';
 import { jwtConstants } from '@src/auth/jwtContants';
 import { userTable } from '@src/db';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { Request } from '@src/types';
 
 @Injectable()
@@ -36,6 +36,8 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('No token provided');
     }
 
+
+
     try {
       const token = await this.jwtService.verifyAsync(access_token, {
         secret: jwtConstants.accessTokenSecret,
@@ -56,8 +58,11 @@ export class JwtAuthGuard implements CanActivate {
           'Access token expired and no refresh token provided',
         );
       }
+
+      console.log('malfunctioned here',refresh_token, access_token)
+
       const token = await this.jwtService.verifyAsync(refresh_token, {
-        secret: jwtConstants.accessTokenSecret,
+        secret: jwtConstants.refreshTokenSecret,
       });
 
       console.log(refresh_token, access_token);
@@ -80,6 +85,7 @@ export class JwtAuthGuard implements CanActivate {
           secret: jwtConstants.refreshTokenSecret,
         },
       );
+
 
       response.cookie('access_token', newAccessToken, {
         httpOnly: true,
@@ -105,12 +111,8 @@ export class JwtAuthGuard implements CanActivate {
         response.clearCookie('refresh_token');
         throw new UnauthorizedException('Token issue failed!!!');
       }
-      console.log(newTokenUser);
-      const tokenUser = newTokenUser || token;
       // After verifying JWT in NestJS
-      await this.DbProvider.execute(
-        sql`SET app.current_user_role = ${tokenUser.role}`,
-      );
+   
 
       // const payload = this.jwtService.verify(token); // verify with secret
       request['user'] = newTokenUser; // attach user to request

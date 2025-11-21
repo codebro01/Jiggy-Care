@@ -15,6 +15,7 @@ import { UploadModule } from './upload/upload.module';
 import { ConsultantModule } from './consultant/consultant.module';
 import { HelpersModule } from './helpers/helpers.module';
 import { PatientModule } from './patient/patient.module';
+import { BookingModule } from './booking/booking.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { PatientModule } from './patient/patient.module';
     ConsultantModule,
     HelpersModule,
     PatientModule,
+    BookingModule,
   ],
   controllers: [AppController, UploadController],
   providers: [AppService, NeonProvider, MulterService],
