@@ -1,4 +1,4 @@
-import { pgTable, uuid, timestamp, text, index, boolean } from "drizzle-orm/pg-core";
+import { pgTable, uuid, timestamp, text, index, boolean, integer } from "drizzle-orm/pg-core";
 import { userTable } from "./users";
 
 ;
@@ -9,8 +9,11 @@ export const bookingTable = pgTable('bookings', {
     consultantId: uuid('consultantId').notNull().references(() => userTable.id, { onDelete: 'cascade' }),
     patientId: uuid('patientId').notNull().references(() => userTable.id, { onDelete: 'cascade' }),
     date: timestamp('date').notNull(),
-    symptoms: text('symptoms'),
+    duration: integer('duration').default(1), 
+    symptoms: text('symptoms').array(),
     paymentStatus: boolean('payment_status').default(false),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
     index('consultantId_idx').on(table.consultantId),
     index('patientId_idx').on(table.patientId),
