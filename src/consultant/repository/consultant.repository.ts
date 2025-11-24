@@ -23,11 +23,15 @@ export class ConsultantRepository {
 
         return consultant;
     }
+
+    
     async findConsultantById(userId: string) {
         const [consultant] = await this.DbProvider.select().from(consultantTable).where(eq(consultantTable.userId, userId));
 
         return consultant;
     }
+
+   
 
 
     async findConsultantByNameOrSpeciality(searchTerm: string) {

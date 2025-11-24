@@ -8,7 +8,18 @@ import {
     IsEmail,
     MaxLength,
     Min,
+    IsObject,
 } from 'class-validator';
+
+export type  WorkingHoursType = {
+    monday?: string,
+    tuesday?: string,
+    wednesday?: string,
+    thursday?: string,
+    friday?: string,
+    saturday?: string,
+    sunday?: string,
+}
 
 export class UpdateConsultantDto {
     @ApiPropertyOptional({
@@ -81,9 +92,8 @@ export class UpdateConsultantDto {
         type: [String],
     })
     @IsOptional()
-    @IsArray()
-    @IsString({ each: true })
-    workingHours?: string[];
+    @IsObject()
+    workingHours?: WorkingHoursType;
 
     @ApiPropertyOptional({
         description: 'Price per consultation session',

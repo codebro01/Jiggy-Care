@@ -43,6 +43,27 @@
       "when": 1763695602688,
       "tag": "0005_wonderful_william_stryker",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1763800140467,
+      "tag": "0006_living_talos",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1763948831735,
+      "tag": "0007_windy_mysterio",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1763972542388,
+      "tag": "0008_bitter_slayback",
+      "breakpoints": true
     }
   ]
 }

@@ -32,7 +32,7 @@ export class UserRepository {
 
   async updateUser(data: UpdateUserDto , userId: string, trx?: any) {
     const Trx = trx || this.DbProvider;
-    const [user] = await Trx.update(userTable).set({ data }).where(eq(userTable.id, userId)).returning();
+    const [user] = await Trx.update(userTable).set({ ...data }).where(eq(userTable.id, userId)).returning();
     return user;
   }
 }

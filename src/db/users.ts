@@ -8,6 +8,7 @@ import {
   integer,
 } from 'drizzle-orm/pg-core';
 import { InferSelectModel } from 'drizzle-orm';
+import { jsonb } from 'drizzle-orm/pg-core';
 
 
 export const userTable = pgTable('users', {
@@ -50,7 +51,15 @@ export const consultantTable = pgTable('consultants', {
   languages: text('languages').array(),
   education: text('education').array(),
   certification: text('certification').array(),
-  workingHours: varchar('working_hours').array(),
+  workingHours: jsonb('working_hours').$type<{
+    monday?: string;
+    tuesday?: string;
+    wednesday?: string;
+    thursday?: string;
+    friday?: string;
+    saturday?: string;
+    sunday?: string;
+  }>(),
   pricePerSession: integer('price_per_session'),
 });
 

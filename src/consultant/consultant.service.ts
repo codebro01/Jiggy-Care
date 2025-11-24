@@ -12,9 +12,13 @@ export class ConsultantService {
 
       const isExist = await this.consultantRepository.findConsultantById(userId);
       if (!isExist) throw new NotFoundException(`User with the id: ${userId} could not be found`)
+         console.log('is exist', isExist)
       const consultant = await this.helperRepository.executeInTransaction(async (trx) => {
          const consultant = await this.consultantRepository.updateConsultant(data, userId, trx)
+
+         console.log('consultant', consultant)
          const user = await this.userRepository.updateUser(data, userId, trx)
+         console.log('user', user)
 
          return { ...consultant, ...user }
       })

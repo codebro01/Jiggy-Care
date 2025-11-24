@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNumber, IsNotEmpty, IsDateString, IsArray } from "class-validator";
+import {IsString, IsNumber, IsNotEmpty, IsDateString, IsArray, IsOptional } from "class-validator";
 
 export class CreateBookingDto {
     @ApiProperty({
@@ -15,9 +15,9 @@ export class CreateBookingDto {
         example: 2, 
         description: "The duration is in hours and the default is 1 if none is passed"
     })
-    @IsNotEmpty()
+    @IsOptional()
     @IsNumber()
-    duration: number
+    duration?: number
 
 
     @ApiProperty({
@@ -27,6 +27,14 @@ export class CreateBookingDto {
     @IsNotEmpty()
     @IsArray()
     symptoms: string[]
+
+    @ApiProperty({
+        example: "2515a51b-d272-415a-b20c-90cafa9e53c4", 
+        description: "This is the id of the consultant that the patient is booking"
+    })
+    @IsNotEmpty()
+    @IsString()
+    consultantId: string
 
 
 }

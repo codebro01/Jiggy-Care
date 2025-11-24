@@ -60,7 +60,7 @@ export class AuthController {
 
     res
       .status(HttpStatus.ACCEPTED)
-      .json({ user: safeUser, accessToken, refreshToken });
+      .json({ user: safeUser, accessToken });
   }
 
   // ! call google api for sign in or signup with google
