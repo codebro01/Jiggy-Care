@@ -11,6 +11,7 @@ import {
   Query,
   UseGuards,
   Res,
+  Header
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,7 +21,7 @@ import {
   ApiBody,
   ApiParam,
   ApiHeader,
-  ApiExcludeEndpoint,
+  // ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { PaymentService } from '@src/payment/payment.service';
 import type { RawBodyRequest } from '@nestjs/common';
@@ -32,6 +33,7 @@ import { PaymentRepository } from '@src/payment/repository/payment.repository';
 import type { Request } from '@src/types';
 import type { Response } from 'express';
 import { NotificationService } from '@src/notification/notification.service';
+import { BookingRepository } from '@src/booking/repository/booking.repository';
 import {
   CategoryType,
   StatusType,
@@ -46,10 +48,11 @@ export class PaymentController {
     private readonly paymentService: PaymentService,
     private readonly paymentRepository: PaymentRepository,
     private readonly notificationService: NotificationService,
+    private readonly bookingRepository: BookingRepository,
   ) { }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('businessOwner')
+  @Roles('patient')
   @Post('initialize')
   @ApiOperation({
     summary: 'Initialize a payment transaction',
@@ -136,7 +139,7 @@ export class PaymentController {
       amount: body.amount,
       metadata: {
         ...body.metadata,
-        userId,
+        patientId: userId,
         amount: body.amount,
         amountInNaira: body.amount / 100,
       },
@@ -149,7 +152,7 @@ export class PaymentController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('businessOwner')
+  @Roles('patient')
   @Get('verify/:reference')
   @ApiOperation({
     summary: 'Verify a payment transaction',
@@ -354,6 +357,9 @@ export class PaymentController {
               patientId,
               trx,
             );
+            
+            await this.bookingRepository.updateBookingPaymentStatus({paymentStatus: true, bookingId}, patientId, trx);
+
 
           });
 
@@ -478,7 +484,7 @@ export class PaymentController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('businessOwner')
+  @Roles('patient')
   @Get('list-all-transactions')
   @ApiOperation({
     summary: 'List all transactions from Paystack',
@@ -527,7 +533,7 @@ export class PaymentController {
 
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('businessOwner')
+  @Roles('patient')
   @Get('list-transactions')
   @ApiOperation({
     summary: 'Get user transactions from database',
@@ -589,88 +595,11 @@ export class PaymentController {
     });
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('businessOwner')
-  @Get('dashboard-data')
-  @ApiOperation({
-    summary: 'Get payment dashboard analytics',
-    description:
-      'Retrieves comprehensive payment analytics and statistics for the dashboard. Includes total deposits, withdrawals, balance, transaction counts, and trends.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Dashboard data retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'object',
-          properties: {
-            currentBalance: {
-              type: 'number',
-              example: 150000,
-              description: 'Current wallet balance',
-            },
-            totalDeposits: {
-              type: 'number',
-              example: 500000,
-              description: 'Total amount deposited',
-            },
-            totalWithdrawals: {
-              type: 'number',
-              example: 350000,
-              description: 'Total amount withdrawn/spent',
-            },
-            transactionCount: {
-              type: 'number',
-              example: 45,
-              description: 'Total number of transactions',
-            },
-            successfulTransactions: {
-              type: 'number',
-              example: 42,
-            },
-            failedTransactions: {
-              type: 'number',
-              example: 3,
-            },
-            recentTransactions: {
-              type: 'array',
-              description: 'Last 10 transactions',
-              items: {
-                type: 'object',
-              },
-            },
-            monthlyTrend: {
-              type: 'array',
-              description: 'Monthly transaction trends',
-              items: {
-                type: 'object',
-                properties: {
-                  month: { type: 'string', example: '2024-11' },
-                  deposits: { type: 'number', example: 100000 },
-                  withdrawals: { type: 'number', example: 75000 },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing JWT token',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - User is not a business owner',
-  })
-
 
   @Get('callback-test')
-  @ApiExcludeEndpoint()
+  // @ApiExcludeEndpoint()
+  @Header('Content-Type', 'text/html')
+
   async handleCallback(@Query() query: any) {
     const verified = await this.paymentService.verifyPayment(query.reference);
 

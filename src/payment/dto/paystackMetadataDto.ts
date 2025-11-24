@@ -12,11 +12,20 @@ export enum PaymentMethodType {
 }
 
 export class PaystackMetedataDto {
+
   @ApiProperty({
-    example: 'Advertisement of Cocoa Export',
-    description: 'Insert campaign name or title here',
+    description: 'bf4cd48d-441e-4e3c-b504-76ee5045b6e6',
+    example: 'An example of the id of the booking',
   })
   @IsString()
-  @IsNotEmpty()
-  campaignName: string;
+  @IsNotEmpty({ message: 'Booking Id is required' })
+  bookingId: string;
+
+  @ApiProperty({
+    description: 'bf4cd48d-441e-4e3c-b504-76ee5045b6e6',
+    example: 'An example of the id of the consultant',
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'consultant Id is required' })
+  consultantId: string;
 }

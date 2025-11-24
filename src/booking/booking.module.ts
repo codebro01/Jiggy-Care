@@ -8,6 +8,7 @@ import { DbModule } from '@src/db/db.module';
 @Module({
   imports: [DbModule, ConsultantModule],
   controllers: [BookingController],
-  providers: [BookingService, BookingRepository]
+  providers: [BookingService, BookingRepository], 
+  exports: [BookingService, BookingRepository]
 })
 export class BookingModule {}

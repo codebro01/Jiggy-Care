@@ -22,6 +22,7 @@ export class InitializePaymentDto {
   @IsNotEmpty({ message: 'Email is required' })
   email: string;
 
+
   @ApiProperty({
     description:
       'Amount in kobo (smallest currency unit). For NGN, 10000 = ₦100',

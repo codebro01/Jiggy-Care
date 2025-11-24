@@ -91,4 +91,12 @@ export class BookingRepository {
         return booking;
     }
 
+    async updateBookingPaymentStatus(data: {paymentStatus: boolean, bookingId: string}, patientId: string, trx?:any) {
+          const Trx = trx || this.DbProvider;
+
+          const booking = await Trx.update(bookingTable).set({paymentStatus: data.paymentStatus}).where(and(eq(bookingTable.id, data.bookingId), eq(bookingTable.patientId, patientId)));
+
+          return booking;
+    }
+
 }
