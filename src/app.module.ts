@@ -18,6 +18,7 @@ import { PatientModule } from './patient/patient.module';
 import { BookingModule } from './booking/booking.module';
 import { PaymentModule } from './payment/payment.module';
 import { NotificationModule } from './notification/notification.module';
+import { RatingModule } from './rating/rating.module';
 
 @Module({
   imports: [
@@ -36,7 +37,7 @@ import { NotificationModule } from './notification/notification.module';
     PatientModule,
     BookingModule,
     PaymentModule, 
-    NotificationModule
+    NotificationModule, RatingModule
   ],
   controllers: [AppController, UploadController],
   providers: [AppService, NeonProvider, MulterService],
