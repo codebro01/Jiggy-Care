@@ -2,7 +2,7 @@ import { pgTable, uuid, timestamp, text, index, boolean, integer, pgEnum } from 
 import { userTable } from "./users";
 import { InferSelectModel } from "drizzle-orm";
 
-const bookingStatusType = pgEnum('booking_status_type', ['completed', 'upcoming'])
+export const bookingStatusType = pgEnum('booking_status_type', ['completed', 'upcoming'])
 
 
 export const bookingTable = pgTable('bookings', {
@@ -12,7 +12,7 @@ export const bookingTable = pgTable('bookings', {
     date: timestamp('date', { withTimezone: true, mode: 'date' }).notNull(),
     duration: integer('duration').default(1),
     symptoms: text('symptoms').array(),
-    status: bookingStatusType('booking_status').default('upcoming').notNull(),
+    status: bookingStatusType('status').default('upcoming').notNull(),
     paymentStatus: boolean('payment_status').default(false),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
