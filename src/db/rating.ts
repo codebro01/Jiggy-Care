@@ -1,5 +1,5 @@
 import { pgTable, text, doublePrecision, timestamp, uuid } from "drizzle-orm/pg-core";
-import { consultantTable, patientTable, userTable } from "@src/db";
+import { userTable } from "@src/db";
 import { InferSelectModel } from "drizzle-orm";
 
 

@@ -11,7 +11,7 @@ export class RatingRepository {
 
  
     async createRating(data: CreateRatingDto, patientId: string, consultantId: string) {
-        const rating = await this.DbProvider.insert(ratingTable).values({ ...data, patientId, consultantId });
+        const [rating] = await this.DbProvider.insert(ratingTable).values({ ...data, patientId, consultantId }).returning();
 
         return rating;
 
