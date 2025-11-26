@@ -1,1 +1,0 @@
-ALTER TABLE "consultants" ALTER COLUMN "working_hours" SET DATA TYPE jsonb;

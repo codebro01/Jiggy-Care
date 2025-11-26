@@ -63,7 +63,7 @@ export const consultantTable = pgTable('consultants', {
   pricePerSession: integer('price_per_session'),
 });
 
-// ! add ratings, medications, table in antoher file,
+// ! add ratings, prescripto, table in antoher file,
 
 export type UserType = InferSelectModel<typeof userTable>;
 

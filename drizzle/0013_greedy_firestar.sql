@@ -1,1 +1,0 @@
-ALTER TABLE "bookings" RENAME COLUMN "status" TO "booking_status";

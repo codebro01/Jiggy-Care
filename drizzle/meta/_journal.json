@@ -5,106 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1761702523722,
-      "tag": "0000_third_puck",
+      "when": 1764130669482,
+      "tag": "0000_overconfident_zodiak",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1763382482399,
-      "tag": "0001_outstanding_master_chief",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1763620611932,
-      "tag": "0002_long_corsair",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1763637488563,
-      "tag": "0003_deep_toro",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1763638459594,
-      "tag": "0004_careful_ser_duncan",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1763695602688,
-      "tag": "0005_wonderful_william_stryker",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1763800140467,
-      "tag": "0006_living_talos",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1763948831735,
-      "tag": "0007_windy_mysterio",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1763972542388,
-      "tag": "0008_bitter_slayback",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1763982183191,
-      "tag": "0009_fast_daredevil",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1763982300478,
-      "tag": "0010_amused_khan",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
-      "when": 1764032053029,
-      "tag": "0011_cold_silver_samurai",
-      "breakpoints": true
-    },
-    {
-      "idx": 12,
-      "version": "7",
-      "when": 1764032497955,
-      "tag": "0012_funny_stone_men",
-      "breakpoints": true
-    },
-    {
-      "idx": 13,
-      "version": "7",
-      "when": 1764032642293,
-      "tag": "0013_greedy_firestar",
-      "breakpoints": true
-    },
-    {
-      "idx": 14,
-      "version": "7",
-      "when": 1764033841986,
-      "tag": "0014_nice_microbe",
+      "when": 1764131204039,
+      "tag": "0001_natural_bloodscream",
       "breakpoints": true
     }
   ]
