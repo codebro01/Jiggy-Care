@@ -8,9 +8,10 @@ import { PaymentRepository } from '@src/payment/repository/payment.repository';
 import { BookingModule } from '@src/booking/booking.module';
 import { NotificationModule } from '@src/notification/notification.module';
 import { OrderModule } from '@src/order/order.module';
+import { MedicationModule } from '@src/medication/medication.module';
 
 @Module({
-  imports: [HttpModule,BookingModule, UserModule, NotificationModule, OrderModule],
+  imports: [HttpModule,BookingModule, UserModule, NotificationModule, OrderModule, MedicationModule],
   controllers: [PaymentController],
   providers: [PaymentService, DbProvider, PaymentRepository],
   exports: [PaymentService, PaymentRepository]

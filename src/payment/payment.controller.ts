@@ -50,7 +50,7 @@ export class PaymentController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
-  @Post('initialize/booking-payment')
+  @Post('initialize/booking')
   @ApiOperation({
     summary: 'Initialize a payment transaction',
     description:
@@ -159,7 +159,7 @@ export class PaymentController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
-  @Post('initialize/booking-payment')
+  @Post('initialize/medication')
   @ApiOperation({
     summary: 'Initialize a payment transaction',
     description:
@@ -234,18 +234,17 @@ export class PaymentController {
   })
   async initializeMedicationOrder(
     @Body()
-    body: {
-      amount: number;
-      metadata: CreateOrderDto;
-    },
+    body: CreateOrderDto, 
     @Req() req: Request,
     @Res() res: Response,
   ) {
+
+    console.log('got in here')
     const { email, id: userId } = req.user;
      const  result = await this.paymentService.initializeMedicationOrder({
         email: email,
         metadata: {
-          ...body.metadata,
+          ...body,
           patientId: userId,
         },
       });

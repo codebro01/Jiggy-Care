@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, like, and, sql } from 'drizzle-orm';
+import { eq, like, and, sql, inArray } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { medicationTable } from '@src/db/medication';
 import { CreateMedicationDto } from './dto/create-medication.dto';
@@ -14,8 +14,7 @@ export class MedicationRepository {
   ) {}
 
   async create(data: CreateMedicationDto) {
-    const [medication] = await this.DbProvider
-      .insert(medicationTable)
+    const [medication] = await this.DbProvider.insert(medicationTable)
       .values({
         ...data,
         price: data.price,
@@ -43,19 +42,18 @@ export class MedicationRepository {
     const page = query.page || 1;
     const limit = query.limit || 10;
 
-
     const offset = (page - 1) * limit;
 
-    const items = await this.DbProvider
-      .select()
+    const items = await this.DbProvider.select()
       .from(medicationTable)
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .limit(limit)
       .offset(offset)
       .orderBy(medicationTable.createdAt);
 
-    const [{ count }] = await this.DbProvider
-      .select({ count: sql<number>`count(*)::int` })
+    const [{ count }] = await this.DbProvider.select({
+      count: sql<number>`count(*)::int`,
+    })
       .from(medicationTable)
       .where(conditions.length > 0 ? and(...conditions) : undefined);
 
@@ -69,12 +67,29 @@ export class MedicationRepository {
   }
 
   async findById(id: string) {
-    const [medication] = await this.DbProvider
-      .select()
+    const [medication] = await this.DbProvider.select()
       .from(medicationTable)
       .where(eq(medicationTable.id, id))
       .limit(1);
     return medication;
+  }
+
+  async findByIds(ids: string[]) {
+    if (!ids || ids.length === 0) {
+      return [];
+    }
+
+    const medications = await this.DbProvider
+      .select()
+      .from(medicationTable)
+      .where(
+        and(
+          inArray(medicationTable.id, ids),
+          // eq(medicationTable.stockStatus, 'in_stock'),
+        ),
+      );
+
+      return medications;
   }
 
   async update(id: string, data: UpdateMedicationDto) {
@@ -88,8 +103,7 @@ export class MedicationRepository {
       updateData.rating = data.rating.toString();
     }
 
-    const [medication] = await this.DbProvider
-      .update(medicationTable)
+    const [medication] = await this.DbProvider.update(medicationTable)
       .set(updateData)
       .where(eq(medicationTable.id, id))
       .returning();
@@ -97,8 +111,7 @@ export class MedicationRepository {
   }
 
   async delete(id: string) {
-    const [medication] = await this.DbProvider
-      .delete(medicationTable)
+    const [medication] = await this.DbProvider.delete(medicationTable)
       .where(eq(medicationTable.id, id))
       .returning();
     return medication;

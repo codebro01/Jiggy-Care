@@ -27,6 +27,7 @@ import {
 import { CreateOrderDto } from '@src/order/dto/create-order.dto';
 import { PaymentForType } from './dto/paystackMetadataDto';
 import { OrdersRepository } from '@src/order/repository/order.repository';
+import { MedicationRepository } from '@src/medication/medication.repository';
 
 interface VerifyPaymentResponse {
   status: boolean;
@@ -56,6 +57,7 @@ export class PaymentService {
     private readonly notificationService: NotificationService,
     private readonly bookingRepository: BookingRepository,
     private readonly orderRepository: OrdersRepository,
+    private readonly medicationRepository: MedicationRepository,
   ) {
     const key = this.configService.get<string>('PAYSTACK_SECRET_KEY');
     if (!key) {
@@ -108,28 +110,68 @@ export class PaymentService {
     email: string;
     metadata: CreateOrderDto & { patientId: string };
   }) {
-    if (!data.metadata)
+    if (!data)
       throw new BadRequestException(
         'Required payload for payment not provided',
       );
-    try {
-      const totalAmount = data.metadata.items.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0,
+
+    const medicationsAvailable = await this.medicationRepository.findByIds(
+      data.metadata.medicationPayload.map(
+        (medication) => medication.medicationId,
+      ),
+    );
+
+    if (medicationsAvailable.length < 1)
+      throw new BadRequestException(
+        `Could not get informations of medications id provided`,
       );
+    try {
+      const orderItems = data.metadata.medicationPayload.map(
+        (item) => {
+          const medication = medicationsAvailable.find(
+            (m) => m.id === item.medicationId,
+          );
+
+          if (!medication)
+            throw new BadRequestException(
+              'Unable to find matching medications',
+            );
+
+          const unitPrice = medication.price;
+          const subtotal = unitPrice * item.quantity;
+
+          return {
+            medicationId: medication.id,
+            medicationName: medication.name,
+            gram: medication.gram,
+            quantity: item.quantity,
+            unitPrice,
+            subtotal,
+          };
+        },
+      );
+
+            const subtotal = orderItems.reduce(
+              (sum, item) => sum + item.subtotal,
+              0,
+            );
+
+            const deliveryFee = this.calculateDeliveryFee(data.metadata.deliveryAddress);
+            const tax = subtotal * 0.075; // 7.5% VAT
+            const totalAmount = subtotal + deliveryFee + tax;
+console.log('totalAmount', totalAmount);
       const response = await firstValueFrom(
         this.httpService.post(
           `${this.baseUrl}/transaction/initialize`,
           {
             email: data.email,
-            amount: totalAmount,
+            amount: parseInt(totalAmount),
             reference: generateSecureRef(),
-            callback_url: data.metadata.callback_url,
             metadata: {
               ...data.metadata,
               orderId: generateSecureOrderId(),
               paymentFor: PaymentForType.MEDICATIONS,
-
+             item: orderItems,
               dateInitiated: new Date().toISOString(),
             },
           },
@@ -144,6 +186,16 @@ export class PaymentService {
         error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  // ! Calculate delivery fees
+
+  private calculateDeliveryFee(address: string): number {
+
+    console.log(address);
+    // Your delivery fee calculation logic
+    // Could be based on location, distance, etc.
+    return 1500;
   }
 
   //! verify payments
@@ -246,8 +298,11 @@ export class PaymentService {
         dateInitiated,
         items,
         deliveryAddress,
-        invoiceId
+        invoiceId,
+        medicationPayload
       } = event.data.metadata || {};
+
+      console.log(channel, 'event', event);
 
       if (paymentFor === 'bookings')
         switch (event.event) {
@@ -415,6 +470,7 @@ export class PaymentService {
             await this.paymentRepository.executeInTransaction(async (trx) => {
               await this.orderRepository.savePayment(
                 {
+                  medicationPayload,
                   deliveryAddress,
                   orderId,
                   items,
@@ -446,6 +502,7 @@ export class PaymentService {
             await this.paymentRepository.executeInTransaction(async (trx) => {
               await this.orderRepository.savePayment(
                 {
+                  medicationPayload,
                   deliveryAddress,
                   orderId,
                   items,
@@ -477,6 +534,7 @@ export class PaymentService {
             await this.paymentRepository.executeInTransaction(async (trx) => {
               await this.orderRepository.savePayment(
                 {
+                  medicationPayload,
                   deliveryAddress,
                   orderId,
                   items,

@@ -50,7 +50,7 @@ export class OrdersService {
       deliveryAddress: originalOrder.deliveryAddress,
     };
 
-    return await this.ordersRepository.savePayment({...originalOrder, ...data}, patientId);
+    return await this.ordersRepository.savePayment({...originalOrder, medicationPayload: [],  ...data}, patientId);
   }
 
   async delete(id: string): Promise<void> {

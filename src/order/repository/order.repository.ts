@@ -9,12 +9,21 @@ import { CreateOrderDto } from '@src/order/dto/create-order.dto';
 import { OrderSelectType } from '@src/db/order';
 import { orderTable } from '@src/db/order';
 
+
+export type OrderItemType = {
+  medicationId: string, 
+  medicationName: string, 
+    gram: number, 
+    quantity: number, 
+    price: number, 
+}
 export interface CreateOrderType extends CreateOrderDto {
   reference: string;
   orderId: string;
   paymentStatus: string;
   paymentMethod: string;
   transactionType: string;
+  items: OrderItemType[]
 }
 
 @Injectable()
@@ -25,7 +34,7 @@ export class OrdersRepository {
   ) {}
 
   async savePayment(
-    data: CreateOrderDto & CreateOrderType,
+    data: CreateOrderType,
     patientId: string,
     trx?: any,
   ): Promise<OrderSelectType> {
@@ -38,19 +47,19 @@ export class OrdersRepository {
     );
 
     // Generate order number
-
-    // Generate tracking ID
-    const reference = `LM${Math.floor(Math.random() * 1000000000)}`;
-
     const [order] = await Trx.insert(orderTable)
       .values({
         orderId: data.orderId,
         userId: patientId,
         items: data.items,
         totalAmount,
-        reference,
         deliveryAddress: data.deliveryAddress,
         status: 'pending',
+        paymentMethod: data.paymentMethod, 
+        transactionType: 'purchase', 
+        paymentStatus: 'paid', 
+        reference: data.reference, 
+
       })
       .returning();
 
