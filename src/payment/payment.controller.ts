@@ -11,7 +11,8 @@ import {
   Query,
   UseGuards,
   Res,
-  Header
+  Header,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -25,7 +26,7 @@ import {
 } from '@nestjs/swagger';
 import { PaymentService } from '@src/payment/payment.service';
 import type { RawBodyRequest } from '@nestjs/common';
-import { PaystackMetedataDto } from './dto/paystackMetadataDto';
+import {  PaystackMetedataDto } from './dto/paystackMetadataDto';
 import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { Roles } from '@src/auth/decorators/roles.decorators';
@@ -34,11 +35,7 @@ import type { Request } from '@src/types';
 import type { Response } from 'express';
 import { NotificationService } from '@src/notification/notification.service';
 import { BookingRepository } from '@src/booking/repository/booking.repository';
-import {
-  CategoryType,
-  StatusType,
-  VariantType,
-} from '@src/notification/dto/createNotificationDto';
+import { CreateOrderDto } from '@src/order/dto/create-order.dto';
 
 @ApiTags('Payments')
 @ApiBearerAuth()
@@ -49,11 +46,11 @@ export class PaymentController {
     private readonly paymentRepository: PaymentRepository,
     private readonly notificationService: NotificationService,
     private readonly bookingRepository: BookingRepository,
-  ) { }
+  ) {}
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
-  @Post('initialize')
+  @Post('initialize/booking-payment')
   @ApiOperation({
     summary: 'Initialize a payment transaction',
     description:
@@ -126,24 +123,134 @@ export class PaymentController {
     status: 403,
     description: 'Forbidden - User is not a business owner',
   })
-  async initializePayment(
+  async initializeBookingPayment(
     @Body()
-    body: { amount: number; metadata: PaystackMetedataDto },
+    body: {
+      amount: number;
+      metadata: PaystackMetedataDto;
+    },
     @Req() req: Request,
     @Res() res: Response,
   ) {
     const { email, id: userId } = req.user;
-
-    const result = await this.paymentService.initializePayment({
-      email: email,
-      amount: body.amount,
-      metadata: {
-        ...body.metadata,
-        patientId: userId,
+     const  result = await this.paymentService.initializeBookingPayment({
+        email: email,
         amount: body.amount,
-        amountInNaira: body.amount / 100,
-      },
+        metadata: {
+          ...body.metadata,
+          patientId: userId,
+          amount: body.amount,
+          amountInNaira: body.amount / 100,
+        },
+      });
+    
+  
+
+    res.status(HttpStatus.OK).json({
+      success: true,
+      data: result.data,
     });
+  }
+
+
+
+
+
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('patient')
+  @Post('initialize/booking-payment')
+  @ApiOperation({
+    summary: 'Initialize a payment transaction',
+    description:
+      'Initializes a payment transaction with Paystack. Returns a payment authorization URL and reference that can be used to complete the payment. Only accessible by business owners.',
+  })
+  @ApiBody({
+    description: 'Payment initialization data',
+    schema: {
+      type: 'object',
+      required: ['amount', 'metadata'],
+      properties: {
+        amount: {
+          type: 'number',
+          description: 'Amount in kobo (NGN minor unit, multiply naira by 100)',
+          example: 50000,
+          minimum: 100,
+        },
+        metadata: {
+          type: 'object',
+          description: 'Additional payment metadata',
+          properties: {
+            campaignName: {
+              type: 'string',
+              example: 'Christmas Campaign 2024',
+            },
+            invoiceId: {
+              type: 'string',
+              example: 'INV-2024-001',
+            },
+            dateInitiated: {
+              type: 'string',
+              format: 'date-time',
+              example: '2024-11-16T10:30:00Z',
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment initialized successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            authorization_url: {
+              type: 'string',
+              example: 'https://checkout.paystack.com/abc123xyz',
+            },
+            access_code: { type: 'string', example: 'abc123xyz' },
+            reference: { type: 'string', example: 'ref_1234567890' },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid payment data',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - User is not a business owner',
+  })
+  async initializeMedicationOrder(
+    @Body()
+    body: {
+      amount: number;
+      metadata: CreateOrderDto;
+    },
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const { email, id: userId } = req.user;
+     const  result = await this.paymentService.initializeMedicationOrder({
+        email: email,
+        metadata: {
+          ...body.metadata,
+          patientId: userId,
+        },
+      });
+    
+  
 
     res.status(HttpStatus.OK).json({
       success: true,
@@ -213,7 +320,6 @@ export class PaymentController {
   })
   async verifyPayment(@Param('reference') reference: string) {
     const result = await this.paymentService.verifyPayment(reference);
-
     return {
       success: result.status,
       message: result.message,
@@ -324,163 +430,14 @@ export class PaymentController {
 
     const event = req.body;
 
-    try {
-      const { reference } = event.data;
-      const { channel } = event.data.authorization || {};
-      const { bookingId, consultantId, patientId, amountInNaira, invoiceId, dateInitiated } =
-        event.data.metadata || {};
+    const response = await this.paymentService.processWebhookEvent(event);
 
-      switch (event.event) {
-        case 'charge.success': {
-          const existingPayment =
-            await this.paymentRepository.findByReference(reference);
+    if (!response)
+      throw new InternalServerErrorException(
+        'An unexpected error has occured while trying to process payments please try again',
+      );
 
-          if (existingPayment && existingPayment.paymentStatus === 'success') {
-            return res
-              .status(HttpStatus.OK)
-              .json({ status: 'already processed' });
-          }
-
-          await this.paymentRepository.executeInTransaction(async (trx) => {
-            await this.paymentRepository.savePayment(
-              {
-                bookingId,
-                consultantId,
-                amount: amountInNaira,
-                invoiceId,
-                dateInitiated,
-                paymentStatus: 'success',
-                paymentMethod: channel,
-                reference,
-                transactionType: 'deposit',
-              },
-              patientId,
-              trx,
-            );
-            
-            await this.bookingRepository.updateBookingPaymentStatus({paymentStatus: true, bookingId}, patientId, trx);
-
-
-          });
-
-          await this.notificationService.createNotification(
-            {
-              title: `Your deposit of ${amountInNaira} is successfull`,
-              message: `You have successfully deposited ${amountInNaira} through ${channel} `,
-              variant: VariantType.SUCCESS,
-              category: CategoryType.PAYMENT,
-              priority: '',
-              status: StatusType.UNREAD,
-            },
-            patientId,
-          );
-
-          break;
-        }
-        case 'charge.failed': {
-          await this.paymentRepository.executeInTransaction(async (trx) => {
-            await this.paymentRepository.savePayment(
-              {
-                bookingId,
-                consultantId,
-                amount: amountInNaira,
-                invoiceId,
-                dateInitiated,
-                paymentStatus: 'failed',
-                paymentMethod: channel,
-                reference,
-                transactionType: 'deposit',
-              },
-              patientId,
-              trx,
-            );
-          });
-
-          await this.notificationService.createNotification(
-            {
-              title: `Your deposit of ${amountInNaira}  failed`,
-              message: `Your deposited of ${amountInNaira} through ${channel} may have failed due to some reasons, please try again `,
-              variant: VariantType.DANGER,
-              category: CategoryType.PAYMENT,
-              priority: '',
-              status: StatusType.UNREAD,
-            },
-            patientId,
-          );
-          break;
-        }
-
-        case 'charge.pending': {
-          await this.paymentRepository.executeInTransaction(async (trx) => {
-            await this.paymentRepository.savePayment(
-              {
-                bookingId,
-                consultantId,
-                amount: amountInNaira,
-                invoiceId,
-                dateInitiated,
-                paymentStatus: 'pending',
-                paymentMethod: channel,
-                reference,
-                transactionType: 'deposit',
-              },
-              patientId,
-              trx,
-            );
-          });
-
-          await this.notificationService.createNotification(
-            {
-              title: `Your deposit of ${amountInNaira} is pending`,
-              message: `Your deposited of ${amountInNaira} through ${channel} is still pending, please kindly wait while the payment for the payment to be comfirmed `,
-              variant: VariantType.INFO,
-              category: CategoryType.PAYMENT,
-              priority: '',
-              status: StatusType.UNREAD,
-            },
-            patientId,
-          );
-          break;
-        }
-
-        case 'refund.processed': {
-          await this.paymentRepository.executeInTransaction(async (trx) => {
-            await this.paymentRepository.updatePaymentStatus(
-              { reference, status: 'refunded' },
-              patientId,
-              trx,
-            );
-          });
-
-          await this.notificationService.createNotification(
-            {
-              title: `Refund of ${amountInNaira} is proccessing`,
-              message: `Your refund of ${amountInNaira} is processing, please wait while it completes `,
-              variant: VariantType.INFO,
-              category: CategoryType.PAYMENT,
-              priority: '',
-              status: StatusType.UNREAD,
-            },
-            patientId,
-          );
-
-          break;
-        }
-
-        case 'transfer.success':
-        case 'transfer.failed':
-        case 'transfer.reversed': {
-          break;
-        }
-
-        default:
-      }
-
-      return res.status(HttpStatus.OK).json({ status: 'success' });
-    } catch (error) {
-      console.error('Webhook processing error:', error);
-      return res.status(HttpStatus.OK).json({ status: 'error logged' });
-    }
+    res.status(HttpStatus.OK).json({ message: response });
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -529,8 +486,6 @@ export class PaymentController {
     const result = await this.paymentService.listAllTransactions();
     return result;
   }
-
-
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
@@ -595,11 +550,9 @@ export class PaymentController {
     });
   }
 
-
   @Get('callback-test')
   // @ApiExcludeEndpoint()
   @Header('Content-Type', 'text/html')
-
   async handleCallback(@Query() query: any) {
     const verified = await this.paymentService.verifyPayment(query.reference);
 

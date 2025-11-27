@@ -19,13 +19,17 @@ export const generateSecureInvoiceId = () => {
   const randomHex = crypto.randomUUID().substring(0, 8);
   return `INV-${randomHex}`;
 };
+export const generateSecureOrderId = () => {
+  const randomHex = crypto.randomUUID().substring(0, 8);
+  return `ORD-${randomHex}`;
+};
 export const generateSecureRef = () => {
   const randomAlphanumeric = crypto
     .randomUUID()
     .replace(/-/g, '')
     .substring(0, 8)
     .toUpperCase();
-  return `BNT-${Date.now()}-${randomAlphanumeric}`;
+  return `JGC-${Date.now()}-${randomAlphanumeric}`;
 };
 
 @Injectable()
@@ -135,4 +139,6 @@ export class PaymentRepository {
       throw new HttpException(error.message, error.status);
     }
   }
+
+  
 }

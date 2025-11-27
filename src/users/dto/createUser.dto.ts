@@ -12,6 +12,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export enum roleType {
   CONSULTANT = 'consultant',
   PATIENT = 'patient',
+  ADMIN = 'admin'
 }
 
 

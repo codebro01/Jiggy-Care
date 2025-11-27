@@ -10,13 +10,23 @@ import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import {
   generateSecureInvoiceId,
+  generateSecureOrderId,
   generateSecureRef,
   PaymentRepository,
 } from '@src/payment/repository/payment.repository';
 import { UserRepository } from '@src/users/repository/user.repository';
 import crypto from 'crypto';
-import { InitializePaymentDto } from '@src/payment/dto/initializePaymentDto';
-
+import { initializeBookingPaymentDto } from '@src/payment/dto/initializePaymentDto';
+import { NotificationService } from '@src/notification/notification.service';
+import { BookingRepository } from '@src/booking/repository/booking.repository';
+import {
+  VariantType,
+  CategoryType,
+  StatusType,
+} from '@src/notification/dto/createNotificationDto';
+import { CreateOrderDto } from '@src/order/dto/create-order.dto';
+import { PaymentForType } from './dto/paystackMetadataDto';
+import { OrdersRepository } from '@src/order/repository/order.repository';
 
 interface VerifyPaymentResponse {
   status: boolean;
@@ -43,6 +53,9 @@ export class PaymentService {
     private httpService: HttpService,
     private userRepository: UserRepository,
     private paymentRepository: PaymentRepository,
+    private readonly notificationService: NotificationService,
+    private readonly bookingRepository: BookingRepository,
+    private readonly orderRepository: OrdersRepository,
   ) {
     const key = this.configService.get<string>('PAYSTACK_SECRET_KEY');
     if (!key) {
@@ -58,7 +71,11 @@ export class PaymentService {
     };
   }
 
-  async initializePayment(data: InitializePaymentDto) {
+  async initializeBookingPayment(data: initializeBookingPaymentDto) {
+    if (!data.metadata)
+      throw new BadRequestException(
+        'Required payload for payment not provided',
+      );
     try {
       const response = await firstValueFrom(
         this.httpService.post(
@@ -72,12 +89,53 @@ export class PaymentService {
               ...data.metadata,
               invoiceId: generateSecureInvoiceId(),
               dateInitiated: new Date().toISOString(),
+              paymentFor: PaymentForType.BOOKINGS,
             },
           },
           { headers: this.getHeaders() },
         ),
       );
+      return response.data;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(
+        error.response?.data?.message || 'Failed to initialize payment',
+        error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+  async initializeMedicationOrder(data: {
+    email: string;
+    metadata: CreateOrderDto & { patientId: string };
+  }) {
+    if (!data.metadata)
+      throw new BadRequestException(
+        'Required payload for payment not provided',
+      );
+    try {
+      const totalAmount = data.metadata.items.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0,
+      );
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${this.baseUrl}/transaction/initialize`,
+          {
+            email: data.email,
+            amount: totalAmount,
+            reference: generateSecureRef(),
+            callback_url: data.metadata.callback_url,
+            metadata: {
+              ...data.metadata,
+              orderId: generateSecureOrderId(),
+              paymentFor: PaymentForType.MEDICATIONS,
 
+              dateInitiated: new Date().toISOString(),
+            },
+          },
+          { headers: this.getHeaders() },
+        ),
+      );
       return response.data;
     } catch (error) {
       console.log(error);
@@ -161,7 +219,6 @@ export class PaymentService {
     }
   }
 
-
   async listTransactions(userId: string) {
     try {
       const result = await this.paymentRepository.listTransactions(userId);
@@ -169,8 +226,323 @@ export class PaymentService {
       return result;
     } catch (error) {
       console.error('error', error.message);
-      throw new InternalServerErrorException('An error occured while listing transactions, please try again!!!')
+      throw new InternalServerErrorException(
+        'An error occured while listing transactions, please try again!!!',
+      );
     }
   }
 
+  async processWebhookEvent(event: any) {
+    try {
+      const { reference } = event.data;
+      const { channel } = event.data.authorization || {};
+      const {
+        paymentFor,
+        bookingId,
+        consultantId,
+        patientId,
+        amountInNaira,
+        orderId,
+        dateInitiated,
+        items,
+        deliveryAddress,
+        invoiceId
+      } = event.data.metadata || {};
+
+      if (paymentFor === 'bookings')
+        switch (event.event) {
+          case 'charge.success': {
+            const existingPayment =
+              await this.paymentRepository.findByReference(reference);
+
+            if (
+              existingPayment &&
+              existingPayment.paymentStatus === 'success'
+            ) {
+              throw new BadRequestException(
+                `Payment with reference ${reference} already proccessed`,
+              );
+            }
+
+            await this.paymentRepository.executeInTransaction(async (trx) => {
+              await this.paymentRepository.savePayment(
+                {
+                  bookingId,
+                  consultantId,
+                  amount: amountInNaira,
+                  invoiceId,
+                  dateInitiated,
+                  paymentStatus: 'success',
+                  paymentMethod: channel,
+                  reference,
+                  transactionType: 'deposit',
+                },
+                patientId,
+                trx,
+              );
+
+              await this.bookingRepository.updateBookingPaymentStatus(
+                { paymentStatus: true, bookingId },
+                patientId,
+                trx,
+              );
+            });
+
+            await this.notificationService.createNotification(
+              {
+                title: `Your deposit of ${amountInNaira} is successfull`,
+                message: `You have successfully deposited ${amountInNaira} through ${channel} `,
+                variant: VariantType.SUCCESS,
+                category: CategoryType.PAYMENT,
+                priority: '',
+                status: StatusType.UNREAD,
+              },
+              patientId,
+            );
+
+            break;
+          }
+          case 'charge.failed': {
+            await this.paymentRepository.executeInTransaction(async (trx) => {
+              await this.paymentRepository.savePayment(
+                {
+                  bookingId,
+                  consultantId,
+                  amount: amountInNaira,
+                  invoiceId,
+                  dateInitiated,
+                  paymentStatus: 'failed',
+                  paymentMethod: channel,
+                  reference,
+                  transactionType: 'deposit',
+                },
+                patientId,
+                trx,
+              );
+            });
+
+            await this.notificationService.createNotification(
+              {
+                title: `Your deposit of ${amountInNaira}  failed`,
+                message: `Your deposited of ${amountInNaira} through ${channel} may have failed due to some reasons, please try again `,
+                variant: VariantType.DANGER,
+                category: CategoryType.PAYMENT,
+                priority: '',
+                status: StatusType.UNREAD,
+              },
+              patientId,
+            );
+            break;
+          }
+
+          case 'charge.pending': {
+            await this.paymentRepository.executeInTransaction(async (trx) => {
+              await this.paymentRepository.savePayment(
+                {
+                  bookingId,
+                  consultantId,
+                  amount: amountInNaira,
+                  invoiceId,
+                  dateInitiated,
+                  paymentStatus: 'pending',
+                  paymentMethod: channel,
+                  reference,
+                  transactionType: 'deposit',
+                },
+                patientId,
+                trx,
+              );
+            });
+
+            await this.notificationService.createNotification(
+              {
+                title: `Your deposit of ${amountInNaira} is pending`,
+                message: `Your deposited of ${amountInNaira} through ${channel} is still pending, please kindly wait while the payment for the payment to be comfirmed `,
+                variant: VariantType.INFO,
+                category: CategoryType.PAYMENT,
+                priority: '',
+                status: StatusType.UNREAD,
+              },
+              patientId,
+            );
+            break;
+          }
+
+          case 'refund.processed': {
+            await this.paymentRepository.executeInTransaction(async (trx) => {
+              await this.paymentRepository.updatePaymentStatus(
+                { reference, status: 'refunded' },
+                patientId,
+                trx,
+              );
+            });
+
+            await this.notificationService.createNotification(
+              {
+                title: `Refund of ${amountInNaira} is proccessing`,
+                message: `Your refund of ${amountInNaira} is processing, please wait while it completes `,
+                variant: VariantType.INFO,
+                category: CategoryType.PAYMENT,
+                priority: '',
+                status: StatusType.UNREAD,
+              },
+              patientId,
+            );
+
+            break;
+          }
+
+          case 'transfer.success':
+          case 'transfer.failed':
+          case 'transfer.reversed': {
+            break;
+          }
+
+          default:
+        }
+      else if (paymentFor === 'medications')
+        switch (event.event) {
+          case 'charge.success': {
+            const existingPayment =
+              await this.orderRepository.findByReference(reference);
+
+            if (existingPayment && existingPayment.paymentStatus === 'paid') {
+              throw new BadRequestException(
+                `Payment with reference ${reference} already proccessed`,
+              );
+            }
+
+            await this.paymentRepository.executeInTransaction(async (trx) => {
+              await this.orderRepository.savePayment(
+                {
+                  deliveryAddress,
+                  orderId,
+                  items,
+                  paymentStatus: 'success',
+                  paymentMethod: channel,
+                  reference,
+                  transactionType: 'deposit',
+                },
+                patientId,
+                trx,
+              );
+            });
+
+            await this.notificationService.createNotification(
+              {
+                title: `Your deposit of ${amountInNaira} is successfull`,
+                message: `You have successfully deposited ${amountInNaira} through ${channel} `,
+                variant: VariantType.SUCCESS,
+                category: CategoryType.PAYMENT,
+                priority: '',
+                status: StatusType.UNREAD,
+              },
+              patientId,
+            );
+
+            break;
+          }
+          case 'charge.failed': {
+            await this.paymentRepository.executeInTransaction(async (trx) => {
+              await this.orderRepository.savePayment(
+                {
+                  deliveryAddress,
+                  orderId,
+                  items,
+                  paymentStatus: 'failed',
+                  paymentMethod: channel,
+                  reference,
+                  transactionType: 'deposit',
+                },
+                patientId,
+                trx,
+              );
+            });
+
+            await this.notificationService.createNotification(
+              {
+                title: `Your deposit of ${amountInNaira}  failed`,
+                message: `Your deposited of ${amountInNaira} through ${channel} may have failed due to some reasons, please try again `,
+                variant: VariantType.DANGER,
+                category: CategoryType.PAYMENT,
+                priority: '',
+                status: StatusType.UNREAD,
+              },
+              patientId,
+            );
+            break;
+          }
+
+          case 'charge.pending': {
+            await this.paymentRepository.executeInTransaction(async (trx) => {
+              await this.orderRepository.savePayment(
+                {
+                  deliveryAddress,
+                  orderId,
+                  items,
+                  paymentStatus: 'pending',
+                  paymentMethod: channel,
+                  reference,
+                  transactionType: 'deposit',
+                },
+                patientId,
+                trx,
+              );
+            });
+
+            await this.notificationService.createNotification(
+              {
+                title: `Your deposit of ${amountInNaira} is pending`,
+                message: `Your deposited of ${amountInNaira} through ${channel} is still pending, please kindly wait while the payment for the payment to be comfirmed `,
+                variant: VariantType.INFO,
+                category: CategoryType.PAYMENT,
+                priority: '',
+                status: StatusType.UNREAD,
+              },
+              patientId,
+            );
+            break;
+          }
+
+          case 'refund.processed': {
+            await this.paymentRepository.executeInTransaction(async (trx) => {
+              await this.paymentRepository.updatePaymentStatus(
+                { reference, status: 'refunded' },
+                patientId,
+                trx,
+              );
+            });
+
+            await this.notificationService.createNotification(
+              {
+                title: `Refund of ${amountInNaira} is proccessing`,
+                message: `Your refund of ${amountInNaira} is processing, please wait while it completes `,
+                variant: VariantType.INFO,
+                category: CategoryType.PAYMENT,
+                priority: '',
+                status: StatusType.UNREAD,
+              },
+              patientId,
+            );
+
+            break;
+          }
+
+          case 'transfer.success':
+          case 'transfer.failed':
+          case 'transfer.reversed': {
+            break;
+          }
+
+          default:
+        }
+
+      return { message: 'success' };
+    } catch (error) {
+      console.error('Webhook processing error:', error);
+      throw new InternalServerErrorException(
+        'an error occured while trying to make payments, pleasee try again. ',
+      );
+    }
+  }
 }

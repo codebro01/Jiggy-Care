@@ -117,6 +117,21 @@ export class UserService {
           )
           break;
 
+
+          case roleType.ADMIN: (
+
+            user = await this.helperRepository.executeInTransaction(async (trx) => {
+     
+             const admin = await this.userRepository.createUser({ ...data, password: hashedPwd }, authProvider, trx)
+              
+              if (!admin) throw new InternalServerErrorException('An error occured while inserting user')
+     
+             return admin;
+     
+           })
+          )
+          break;
+
           default: throw new BadRequestException('Role can either be consultant or patient')
 
       

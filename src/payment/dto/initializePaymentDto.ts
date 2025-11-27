@@ -10,9 +10,15 @@ import {
   Min,
   MaxLength,
   IsNotEmpty,
+  // IsEnum,
 } from 'class-validator';
 
-export class InitializePaymentDto {
+export enum PaymentForType {
+  BOOKINGS = 'bookings',
+  MEDICATIONS = 'medications',
+}
+
+export class initializeBookingPaymentDto {
   @ApiProperty({
     description: 'Customer email address',
     example: 'customer@example.com',
@@ -22,6 +28,13 @@ export class InitializePaymentDto {
   @IsNotEmpty({ message: 'Email is required' })
   email: string;
 
+  // @ApiProperty({
+  //   description: 'Payment for is used to inform the app how to handle the payment, either to process it for bookings or for payments',
+  //   example: 'medications',
+  // })
+  // @IsEnum(PaymentForType, {message: "Payment can either be for medications or for bookings"})
+  // @IsNotEmpty()
+  // paymentFor: PaymentForType;
 
   @ApiProperty({
     description:
@@ -61,7 +74,7 @@ export class InitializePaymentDto {
       userId: '123',
       planName: 'Premium Monthly',
       orderId: 'ORD-001',
-    }
+    },
   })
   @IsOptional()
   @IsObject({ message: 'Metadata must be an object' })
