@@ -6,7 +6,6 @@ import {
   Patch,
   Param,
   Delete,
-  Query,
   HttpCode,
   HttpStatus,
   UseGuards,
@@ -17,7 +16,6 @@ import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
 import { Roles } from '@src/auth/decorators/roles.decorators';
 import { OrdersService } from '@src/order/order.service';
-import { CreateOrderDto } from '@src/order/dto/create-order.dto';
 import { UpdateOrderDto } from '@src/order/dto/update-order.dto';
 import { OrderSelectType } from '@src/db/order';
 import type { Request } from '@src/types';
@@ -25,18 +23,23 @@ import type { Response } from 'express';
 
 @Controller('orders')
 export class OrdersController {
-  constructor(
-    private readonly ordersService: OrdersService,
-  ) {}
+  constructor(private readonly ordersService: OrdersService) {}
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Get()
+  async findAll(@Res() res: Response) {
+    const orders = await this.ordersService.findAll();
+    res.status(HttpStatus.OK).json({ message: 'success', data: orders });
+  }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
-  @Get()
-  async findAll(@Query('userId') userId?: string): Promise<OrderSelectType[]> {
-    if (userId) {
-      return await this.ordersService.findByUserId(userId);
-    }
-    return await this.ordersService.findAll();
+  @Get('find-by-userId')
+  async findByUserId(@Res() res: Response, @Req() req: Request) {
+    const { id: userId } = req.user;
+    const orders = await this.ordersService.findByUserId(userId);
+    res.status(HttpStatus.OK).json({ message: 'success', data: orders });
   }
 
   @Get(':id')

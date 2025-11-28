@@ -8,7 +8,7 @@ export const statusType = pgEnum('notification_status_type', [
 export const variantType = pgEnum('variant_type', ['info', 'success', 'warning', 'danger']);
 
 
-export const categoryType = pgEnum('category_type', ['payment', 'campaign']);
+export const categoryType = pgEnum('category_type', ['booking', 'order', 'health_tips']);
 
 export const notificationTable = pgTable('notifications', {
   id: uuid().defaultRandom().primaryKey().notNull(),

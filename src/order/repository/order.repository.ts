@@ -23,7 +23,8 @@ export interface CreateOrderType extends CreateOrderDto {
   paymentStatus: string;
   paymentMethod: string;
   transactionType: string;
-  items: OrderItemType[]
+  items: OrderItemType[];
+  amount: number, 
 }
 
 @Injectable()
@@ -41,10 +42,7 @@ export class OrdersRepository {
     // Calculate total amount
 
     const Trx = trx || this.DbProvider;
-    const totalAmount = data.items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0,
-    );
+   
 
     // Generate order number
     const [order] = await Trx.insert(orderTable)
@@ -52,7 +50,7 @@ export class OrdersRepository {
         orderId: data.orderId,
         userId: patientId,
         items: data.items,
-        totalAmount,
+        totalAmount: data.amount,
         deliveryAddress: data.deliveryAddress,
         status: 'pending',
         paymentMethod: data.paymentMethod, 

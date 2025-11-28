@@ -121,11 +121,11 @@ export class NotificationRepository {
     if (filters.unread) {
       conditions.push(eq(notificationTable.status, 'unread'));
     }
-    if (filters.campaign) {
-      conditions.push(eq(notificationTable.category, 'campaign'));
+    if (filters.booking) {
+      conditions.push(eq(notificationTable.category, 'booking'));
     }
-    if (filters.payment) {
-      conditions.push(eq(notificationTable.category, 'payment'));
+    if (filters.booking) {
+      conditions.push(eq(notificationTable.category, 'booking'));
     }
 
     return await this.DbProvider.select()

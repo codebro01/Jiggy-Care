@@ -14,9 +14,9 @@ export enum VariantType {
 }
 
 export enum CategoryType {
-  'CAMPAIGN' = 'campaign',
-  'PAYMENT' = 'payment',
-
+  'ORDER' = 'order',
+  'BOOKING' = 'booking',
+  'HEALTH_TIPS' = 'health_tips',
 }
 
 

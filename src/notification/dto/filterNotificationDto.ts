@@ -11,18 +11,18 @@ export class FilterNotificationsDto {
   unread?: boolean;
 
   @ApiPropertyOptional({
-    example: 'https://banatrics.app/?campaign=true',
+    example: 'https://jigi-care.app/?booking=true',
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
-  campaign?: boolean;
+  booking?: boolean;
 
   @ApiPropertyOptional({
-    example: 'https://banatrics.app/?payment=true',
+    example: 'https://jigi-care.app/?order=true',
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
-  payment?: boolean;
+  order?: boolean;
 
 }
 

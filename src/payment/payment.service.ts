@@ -165,13 +165,14 @@ console.log('totalAmount', totalAmount);
           `${this.baseUrl}/transaction/initialize`,
           {
             email: data.email,
-            amount: parseInt(totalAmount),
+            amount: Math.round(totalAmount),
             reference: generateSecureRef(),
             metadata: {
               ...data.metadata,
+              amountInNaira: totalAmount/ 100, 
               orderId: generateSecureOrderId(),
               paymentFor: PaymentForType.MEDICATIONS,
-             item: orderItems,
+             items: orderItems,
               dateInitiated: new Date().toISOString(),
             },
           },
@@ -195,7 +196,7 @@ console.log('totalAmount', totalAmount);
     console.log(address);
     // Your delivery fee calculation logic
     // Could be based on location, distance, etc.
-    return 1500;
+    return 150000;
   }
 
   //! verify payments
@@ -299,7 +300,7 @@ console.log('totalAmount', totalAmount);
         items,
         deliveryAddress,
         invoiceId,
-        medicationPayload
+        medicationPayload, 
       } = event.data.metadata || {};
 
       console.log(channel, 'event', event);
@@ -348,7 +349,7 @@ console.log('totalAmount', totalAmount);
                 title: `Your deposit of ${amountInNaira} is successfull`,
                 message: `You have successfully deposited ${amountInNaira} through ${channel} `,
                 variant: VariantType.SUCCESS,
-                category: CategoryType.PAYMENT,
+                category: CategoryType.BOOKING,
                 priority: '',
                 status: StatusType.UNREAD,
               },
@@ -381,7 +382,7 @@ console.log('totalAmount', totalAmount);
                 title: `Your deposit of ${amountInNaira}  failed`,
                 message: `Your deposited of ${amountInNaira} through ${channel} may have failed due to some reasons, please try again `,
                 variant: VariantType.DANGER,
-                category: CategoryType.PAYMENT,
+                category: CategoryType.BOOKING,
                 priority: '',
                 status: StatusType.UNREAD,
               },
@@ -414,7 +415,7 @@ console.log('totalAmount', totalAmount);
                 title: `Your deposit of ${amountInNaira} is pending`,
                 message: `Your deposited of ${amountInNaira} through ${channel} is still pending, please kindly wait while the payment for the payment to be comfirmed `,
                 variant: VariantType.INFO,
-                category: CategoryType.PAYMENT,
+                category: CategoryType.BOOKING,
                 priority: '',
                 status: StatusType.UNREAD,
               },
@@ -437,7 +438,7 @@ console.log('totalAmount', totalAmount);
                 title: `Refund of ${amountInNaira} is proccessing`,
                 message: `Your refund of ${amountInNaira} is processing, please wait while it completes `,
                 variant: VariantType.INFO,
-                category: CategoryType.PAYMENT,
+                category: CategoryType.BOOKING,
                 priority: '',
                 status: StatusType.UNREAD,
               },
@@ -478,6 +479,7 @@ console.log('totalAmount', totalAmount);
                   paymentMethod: channel,
                   reference,
                   transactionType: 'deposit',
+                  amount: amountInNaira, 
                 },
                 patientId,
                 trx,
@@ -486,10 +488,10 @@ console.log('totalAmount', totalAmount);
 
             await this.notificationService.createNotification(
               {
-                title: `Your deposit of ${amountInNaira} is successfull`,
-                message: `You have successfully deposited ${amountInNaira} through ${channel} `,
+                title: `Your payment of ${amountInNaira} is successfull`,
+                message: `You have successfully ordered this medication. Amount: ${amountInNaira}, Channel of Payment: ${channel} `,
                 variant: VariantType.SUCCESS,
-                category: CategoryType.PAYMENT,
+                category: CategoryType.ORDER,
                 priority: '',
                 status: StatusType.UNREAD,
               },
@@ -510,6 +512,7 @@ console.log('totalAmount', totalAmount);
                   paymentMethod: channel,
                   reference,
                   transactionType: 'deposit',
+                  amount: amountInNaira, 
                 },
                 patientId,
                 trx,
@@ -518,10 +521,10 @@ console.log('totalAmount', totalAmount);
 
             await this.notificationService.createNotification(
               {
-                title: `Your deposit of ${amountInNaira}  failed`,
-                message: `Your deposited of ${amountInNaira} through ${channel} may have failed due to some reasons, please try again `,
+                title: `Your payment of ${amountInNaira}  failed`,
+                message: `Your payment of ${amountInNaira} through ${channel} may have failed due to some reasons, please try again `,
                 variant: VariantType.DANGER,
-                category: CategoryType.PAYMENT,
+                category: CategoryType.ORDER,
                 priority: '',
                 status: StatusType.UNREAD,
               },
@@ -542,6 +545,7 @@ console.log('totalAmount', totalAmount);
                   paymentMethod: channel,
                   reference,
                   transactionType: 'deposit',
+                  amount: amountInNaira, 
                 },
                 patientId,
                 trx,
@@ -550,10 +554,10 @@ console.log('totalAmount', totalAmount);
 
             await this.notificationService.createNotification(
               {
-                title: `Your deposit of ${amountInNaira} is pending`,
-                message: `Your deposited of ${amountInNaira} through ${channel} is still pending, please kindly wait while the payment for the payment to be comfirmed `,
+                title: `Your payment of ${amountInNaira} is pending`,
+                message: `Your payment of ${amountInNaira} through ${channel} is still pending, please kindly wait while the payment for the payment to be comfirmed `,
                 variant: VariantType.INFO,
-                category: CategoryType.PAYMENT,
+                category: CategoryType.ORDER,
                 priority: '',
                 status: StatusType.UNREAD,
               },
@@ -576,7 +580,7 @@ console.log('totalAmount', totalAmount);
                 title: `Refund of ${amountInNaira} is proccessing`,
                 message: `Your refund of ${amountInNaira} is processing, please wait while it completes `,
                 variant: VariantType.INFO,
-                category: CategoryType.PAYMENT,
+                category: CategoryType.ORDER,
                 priority: '',
                 status: StatusType.UNREAD,
               },

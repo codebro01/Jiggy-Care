@@ -41,8 +41,8 @@ export class CreateMedicationDto {
   description: string;
 
   @ApiProperty({
-    description: 'Price of the medication in local currency',
-    example: 5200,
+    description: 'Price of the medication in local currency and should be in kobo, the example below represents 5,200 naira',
+    example: 520000,
   })
   @IsNumber()
   @Min(0)
