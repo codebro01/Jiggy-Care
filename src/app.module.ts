@@ -22,6 +22,9 @@ import { RatingModule } from './rating/rating.module';
 import { PrescriptionModule } from './prescription/prescription.module';
 import { MedicationModule } from './medication/medication.module';
 import { OrderModule } from './order/order.module';
+import { LabModule } from './lab/lab.module';
+import { TestModule } from './test/test.module';
+import { TestBookingModule } from './test-booking/test-booking.module';
 
 @Module({
   imports: [
@@ -45,6 +48,9 @@ import { OrderModule } from './order/order.module';
     PrescriptionModule,
     MedicationModule,
     OrderModule,
+    LabModule,
+    TestModule,
+    TestBookingModule,
   ],
   controllers: [AppController, UploadController],
   providers: [AppService, NeonProvider, MulterService],
