@@ -12,12 +12,12 @@ export class TestRepository {
         @Inject('DB') private DbProvider: NodePgDatabase<typeof import('@src/db')>,
       ) { }
   async create(CreateTestDto: CreateTestDto, userId: string) {
-    const [lab] = await this.DbProvider.insert(testTable).values({...CreateTestDto, createdBy: userId}).returning()
-    return lab;
+    const [test] = await this.DbProvider.insert(testTable).values({...CreateTestDto, createdBy: userId}).returning()
+    return test;
   }
 
   async findAll() {
-    const lab = await this.DbProvider.select({
+    const test = await this.DbProvider.select({
         id: testTable.id, 
         title: testTable.title, 
         description: testTable.description, 
@@ -26,11 +26,11 @@ export class TestRepository {
         preparation: testTable.preparation, 
     }).from(testTable);
 
-    return lab;
+    return test;
   }
 
-  async findOne(labId: string) {
-       const lab = await this.DbProvider.select({
+  async findOne(testId: string) {
+       const [test] = await this.DbProvider.select({
          id: testTable.id,
          title: testTable.title,
          description: testTable.description,
@@ -39,13 +39,13 @@ export class TestRepository {
          preparation: testTable.preparation,
        })
          .from(testTable)
-         .where(eq(testTable.id, labId));
+         .where(eq(testTable.id, testId)).limit(1);
 
-       return lab;
+       return test;
   }
 
   async update(UpdateTestDto: UpdateTestDto, testId: string) {
-    const [lab] = await this.DbProvider.update(testTable).set(UpdateTestDto).where(eq(testTable.id, testId)).returning();
-    return lab;
+    const [test] = await this.DbProvider.update(testTable).set(UpdateTestDto).where(eq(testTable.id, testId)).returning();
+    return test;
   }
 }

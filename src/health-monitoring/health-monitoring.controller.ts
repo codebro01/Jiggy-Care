@@ -1,0 +1,34 @@
+import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { HealthMonitoringService } from './health-monitoring.service';
+import { CreateHealthMonitoringDto } from './dto/create-health-monitoring.dto';
+import { UpdateHealthMonitoringDto } from './dto/update-health-monitoring.dto';
+
+@Controller('health-monitoring')
+export class HealthMonitoringController {
+  constructor(private readonly healthMonitoringService: HealthMonitoringService) {}
+
+  @Post()
+  create(@Body() createHealthMonitoringDto: CreateHealthMonitoringDto) {
+    return this.healthMonitoringService.create(createHealthMonitoringDto);
+  }
+
+  @Get()
+  findAll() {
+    return this.healthMonitoringService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.healthMonitoringService.findOne(+id);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateHealthMonitoringDto: UpdateHealthMonitoringDto) {
+    return this.healthMonitoringService.update(+id, updateHealthMonitoringDto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.healthMonitoringService.remove(+id);
+  }
+}

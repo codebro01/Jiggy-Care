@@ -1,6 +1,5 @@
-import { pgTable, uuid, varchar, timestamp, text, pgEnum, integer } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, text, integer, doublePrecision } from "drizzle-orm/pg-core";
 
-export const testcollectionType = pgEnum('test_collection_type', ['home_collection', 'visit_lab_centre'])
 
 export const testTable = pgTable('tests', {
   id: uuid('id').defaultRandom().primaryKey().notNull(),
@@ -11,7 +10,7 @@ export const testTable = pgTable('tests', {
   preparation: text('preparation').notNull(),
   // collection: testcollectionType('collection').notNull(),
   durationInHrs: integer('duration_in_hrs').notNull(),
-  amount: integer('amount').notNull(),
+  amount: doublePrecision('amount').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });

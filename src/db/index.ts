@@ -6,3 +6,4 @@ export * from '@src/db/prescription';
 export * from "@src/db/medication";
 export * from "@src/db/lab";
 export * from "@src/db/test";
+export * from "@src/db/test-bookings"

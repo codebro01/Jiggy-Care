@@ -28,6 +28,10 @@ import { CreateOrderDto } from '@src/order/dto/create-order.dto';
 import { PaymentForType } from './dto/paystackMetadataDto';
 import { OrdersRepository } from '@src/order/repository/order.repository';
 import { MedicationRepository } from '@src/medication/medication.repository';
+import { LabRepository } from '@src/lab/repository/lab.repository';
+import { TestBookingRepository } from '@src/test-booking/repository/test-booking.repository';
+import { TestRepository } from '@src/test/repository/test.repository';
+import { InitializeTestBookingPayment } from '@src/payment/dto/initializeTestBookingPayment.dto';
 
 interface VerifyPaymentResponse {
   status: boolean;
@@ -58,6 +62,9 @@ export class PaymentService {
     private readonly bookingRepository: BookingRepository,
     private readonly orderRepository: OrdersRepository,
     private readonly medicationRepository: MedicationRepository,
+    private readonly labRepository: LabRepository,
+    private readonly testBookingRepository: TestBookingRepository,
+    private readonly testRepository: TestRepository,
   ) {
     const key = this.configService.get<string>('PAYSTACK_SECRET_KEY');
     if (!key) {
@@ -126,40 +133,35 @@ export class PaymentService {
         `Could not get informations of medications id provided`,
       );
     try {
-      const orderItems = data.metadata.medicationPayload.map(
-        (item) => {
-          const medication = medicationsAvailable.find(
-            (m) => m.id === item.medicationId,
-          );
+      const orderItems = data.metadata.medicationPayload.map((item) => {
+        const medication = medicationsAvailable.find(
+          (m) => m.id === item.medicationId,
+        );
 
-          if (!medication)
-            throw new BadRequestException(
-              'Unable to find matching medications',
-            );
+        if (!medication)
+          throw new BadRequestException('Unable to find matching medications');
 
-          const unitPrice = medication.price;
-          const subtotal = unitPrice * item.quantity;
+        const unitPrice = medication.price;
+        const subtotal = unitPrice * item.quantity;
 
-          return {
-            medicationId: medication.id,
-            medicationName: medication.name,
-            gram: medication.gram,
-            quantity: item.quantity,
-            unitPrice,
-            subtotal,
-          };
-        },
+        return {
+          medicationId: medication.id,
+          medicationName: medication.name,
+          gram: medication.gram,
+          quantity: item.quantity,
+          unitPrice,
+          subtotal,
+        };
+      });
+
+      const subtotal = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
+
+      const deliveryFee = this.calculateDeliveryFee(
+        data.metadata.deliveryAddress,
       );
-
-            const subtotal = orderItems.reduce(
-              (sum, item) => sum + item.subtotal,
-              0,
-            );
-
-            const deliveryFee = this.calculateDeliveryFee(data.metadata.deliveryAddress);
-            const tax = subtotal * 0.075; // 7.5% VAT
-            const totalAmount = subtotal + deliveryFee + tax;
-console.log('totalAmount', totalAmount);
+      const tax = subtotal * 0.075; // 7.5% VAT
+      const totalAmount = subtotal + deliveryFee + tax;
+      console.log('totalAmount', totalAmount);
       const response = await firstValueFrom(
         this.httpService.post(
           `${this.baseUrl}/transaction/initialize`,
@@ -169,10 +171,60 @@ console.log('totalAmount', totalAmount);
             reference: generateSecureRef(),
             metadata: {
               ...data.metadata,
-              amountInNaira: totalAmount/ 100, 
+              amountInNaira: totalAmount / 100,
               orderId: generateSecureOrderId(),
               paymentFor: PaymentForType.MEDICATIONS,
-             items: orderItems,
+              items: orderItems,
+              dateInitiated: new Date().toISOString(),
+            },
+          },
+          { headers: this.getHeaders() },
+        ),
+      );
+      return response.data;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(
+        error.response?.data?.message || 'Failed to initialize payment',
+        error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+  async initializeTestBookingPayment(data: {
+    email: string;
+    metadata: InitializeTestBookingPayment & { patientId: string };
+  }) {
+    if (!data)
+      throw new BadRequestException(
+        'Required payload for payment not provided',
+      );
+
+    try {
+      const test = await this.testRepository.findOne(data.metadata.testId);
+
+      if (!test)
+        throw new BadRequestException(`Invalid  test type provided!!!`);
+
+      if (data.metadata.labId) {
+        const checkIsValidLab = await this.labRepository.findOne(
+          data.metadata.labId,
+        );
+        if (!checkIsValidLab)
+          throw new BadRequestException(`Invalid  lab provided!!!`);
+      }
+
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${this.baseUrl}/transaction/initialize`,
+          {
+            email: data.email,
+            amount: test.amount * 100,
+            reference: generateSecureRef(),
+            metadata: {
+              ...data.metadata,
+              orderId: generateSecureOrderId(),
+              paymentFor: PaymentForType.TEST_BOOKINGS,
+              amountInNaira: test.amount, 
               dateInitiated: new Date().toISOString(),
             },
           },
@@ -192,7 +244,6 @@ console.log('totalAmount', totalAmount);
   // ! Calculate delivery fees
 
   private calculateDeliveryFee(address: string): number {
-
     console.log(address);
     // Your delivery fee calculation logic
     // Could be based on location, distance, etc.
@@ -300,7 +351,11 @@ console.log('totalAmount', totalAmount);
         items,
         deliveryAddress,
         invoiceId,
-        medicationPayload, 
+        medicationPayload,
+        labId,
+        testId,
+        date,
+        collection,
       } = event.data.metadata || {};
 
       console.log(channel, 'event', event);
@@ -479,7 +534,7 @@ console.log('totalAmount', totalAmount);
                   paymentMethod: channel,
                   reference,
                   transactionType: 'deposit',
-                  amount: amountInNaira, 
+                  amount: amountInNaira,
                 },
                 patientId,
                 trx,
@@ -512,7 +567,7 @@ console.log('totalAmount', totalAmount);
                   paymentMethod: channel,
                   reference,
                   transactionType: 'deposit',
-                  amount: amountInNaira, 
+                  amount: amountInNaira,
                 },
                 patientId,
                 trx,
@@ -545,7 +600,7 @@ console.log('totalAmount', totalAmount);
                   paymentMethod: channel,
                   reference,
                   transactionType: 'deposit',
-                  amount: amountInNaira, 
+                  amount: amountInNaira,
                 },
                 patientId,
                 trx,
@@ -570,6 +625,133 @@ console.log('totalAmount', totalAmount);
             await this.paymentRepository.executeInTransaction(async (trx) => {
               await this.paymentRepository.updatePaymentStatus(
                 { reference, status: 'refunded' },
+                patientId,
+                trx,
+              );
+            });
+
+            await this.notificationService.createNotification(
+              {
+                title: `Refund of ${amountInNaira} is proccessing`,
+                message: `Your refund of ${amountInNaira} is processing, please wait while it completes `,
+                variant: VariantType.INFO,
+                category: CategoryType.ORDER,
+                priority: '',
+                status: StatusType.UNREAD,
+              },
+              patientId,
+            );
+
+            break;
+          }
+
+          case 'transfer.success':
+          case 'transfer.failed':
+          case 'transfer.reversed': {
+            break;
+          }
+
+          default:
+        }
+      else if (paymentFor === 'test_bookings')
+        switch (event.event) {
+          case 'charge.success': {
+            await this.paymentRepository.executeInTransaction(async (trx) => {
+              await this.testBookingRepository.savePayment(
+                {
+                  paymentMethod: channel,
+                  reference,
+                  labId: labId ? labId : null,
+                  testId,
+                  paymentStatus: 'paid',
+                  date,
+                  collection,
+                },
+                patientId,
+                trx,
+              );
+            });
+
+            await this.notificationService.createNotification(
+              {
+                title: `Your payment of ${amountInNaira} is successfull`,
+                message: `Your test booking is successful ${amountInNaira}, Channel of Payment: ${channel} `,
+                variant: VariantType.SUCCESS,
+                category: CategoryType.ORDER,
+                priority: '',
+                status: StatusType.UNREAD,
+              },
+              patientId,
+            );
+
+            break;
+          }
+          case 'charge.failed': {
+            await this.paymentRepository.executeInTransaction(async (trx) => {
+              await this.testBookingRepository.savePayment(
+                {
+                  paymentMethod: channel,
+                  reference,
+                  labId: labId ? labId : null,
+                  testId,
+                  paymentStatus: 'paid',
+                  date,
+                  collection,
+                },
+                patientId,
+                trx,
+              );
+            });
+
+            await this.notificationService.createNotification(
+              {
+                title: `Your payment of ${amountInNaira}  failed`,
+                message: `Your payment of ${amountInNaira} through ${channel} may have failed due to some reasons, please try again `,
+                variant: VariantType.DANGER,
+                category: CategoryType.ORDER,
+                priority: '',
+                status: StatusType.UNREAD,
+              },
+              patientId,
+            );
+            break;
+          }
+
+          case 'charge.pending': {
+            await this.paymentRepository.executeInTransaction(async (trx) => {
+              await this.testBookingRepository.savePayment(
+                {
+                  paymentMethod: channel,
+                  reference,
+                  labId: labId ? labId : null,
+                  testId,
+                  paymentStatus: 'paid',
+                  date,
+                  collection,
+                },
+                patientId,
+                trx,
+              );
+            });
+
+            await this.notificationService.createNotification(
+              {
+                title: `Your payment of ${amountInNaira} is pending`,
+                message: `Your payment of ${amountInNaira} through ${channel} is still pending, please kindly wait while the payment for the payment to be comfirmed `,
+                variant: VariantType.INFO,
+                category: CategoryType.ORDER,
+                priority: '',
+                status: StatusType.UNREAD,
+              },
+              patientId,
+            );
+            break;
+          }
+
+          case 'refund.processed': {
+            await this.paymentRepository.executeInTransaction(async (trx) => {
+              await this.testBookingRepository.updatePaymentStatus(
+                { reference, paymentStatus: 'refunded' },
                 patientId,
                 trx,
               );

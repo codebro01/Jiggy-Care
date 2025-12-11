@@ -36,6 +36,7 @@ import type { Response } from 'express';
 import { NotificationService } from '@src/notification/notification.service';
 import { BookingRepository } from '@src/booking/repository/booking.repository';
 import { CreateOrderDto } from '@src/order/dto/create-order.dto';
+import { InitializeTestBookingPayment } from '@src/payment/dto/initializeTestBookingPayment.dto';
 
 @ApiTags('Payments')
 @ApiBearerAuth()
@@ -133,29 +134,22 @@ export class PaymentController {
     @Res() res: Response,
   ) {
     const { email, id: userId } = req.user;
-     const  result = await this.paymentService.initializeBookingPayment({
-        email: email,
+    const result = await this.paymentService.initializeBookingPayment({
+      email: email,
+      amount: body.amount,
+      metadata: {
+        ...body.metadata,
+        patientId: userId,
         amount: body.amount,
-        metadata: {
-          ...body.metadata,
-          patientId: userId,
-          amount: body.amount,
-          amountInNaira: body.amount / 100,
-        },
-      });
-    
-  
+        amountInNaira: body.amount / 100,
+      },
+    });
 
     res.status(HttpStatus.OK).json({
       success: true,
       data: result.data,
     });
   }
-
-
-
-
-
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
@@ -164,40 +158,6 @@ export class PaymentController {
     summary: 'Initialize a payment transaction',
     description:
       'Initializes a payment transaction with Paystack. Returns a payment authorization URL and reference that can be used to complete the payment. Only accessible by business owners.',
-  })
-  @ApiBody({
-    description: 'Payment initialization data',
-    schema: {
-      type: 'object',
-      required: ['amount', 'metadata'],
-      properties: {
-        amount: {
-          type: 'number',
-          description: 'Amount in kobo (NGN minor unit, multiply naira by 100)',
-          example: 50000,
-          minimum: 100,
-        },
-        metadata: {
-          type: 'object',
-          description: 'Additional payment metadata',
-          properties: {
-            campaignName: {
-              type: 'string',
-              example: 'Christmas Campaign 2024',
-            },
-            invoiceId: {
-              type: 'string',
-              example: 'INV-2024-001',
-            },
-            dateInitiated: {
-              type: 'string',
-              format: 'date-time',
-              example: '2024-11-16T10:30:00Z',
-            },
-          },
-        },
-      },
-    },
   })
   @ApiResponse({
     status: 200,
@@ -234,22 +194,19 @@ export class PaymentController {
   })
   async initializeMedicationOrder(
     @Body()
-    body: CreateOrderDto, 
+    body: CreateOrderDto,
     @Req() req: Request,
     @Res() res: Response,
   ) {
-
-    console.log('got in here')
+    console.log('got in here');
     const { email, id: userId } = req.user;
-     const  result = await this.paymentService.initializeMedicationOrder({
-        email: email,
-        metadata: {
-          ...body,
-          patientId: userId,
-        },
-      });
-    
-  
+    const result = await this.paymentService.initializeMedicationOrder({
+      email: email,
+      metadata: {
+        ...body,
+        patientId: userId,
+      },
+    });
 
     res.status(HttpStatus.OK).json({
       success: true,
@@ -259,6 +216,69 @@ export class PaymentController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
+  @Post('initialize/medication')
+  @ApiOperation({
+    summary: 'Initialize a payment transaction',
+    description:
+      'Initializes a payment transaction with Paystack. Returns a payment authorization URL and reference that can be used to complete the payment. Only accessible by business owners.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment initialized successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            authorization_url: {
+              type: 'string',
+              example: 'https://checkout.paystack.com/abc123xyz',
+            },
+            access_code: { type: 'string', example: 'abc123xyz' },
+            reference: { type: 'string', example: 'ref_1234567890' },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid payment data',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - User is not a business owner',
+  })
+  async initializeTestBookingPayment(
+    @Body()
+    body: InitializeTestBookingPayment,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    console.log('got in here');
+    const { email, id: userId } = req.user;
+    const result = await this.paymentService.initializeTestBookingPayment({
+      email: email,
+      metadata: {
+        ...body,
+        patientId: userId,
+      },
+    });
+
+    res.status(HttpStatus.OK).json({
+      success: true,
+      data: result.data,
+    });
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('patient', 'admin')
   @Get('verify/:reference')
   @ApiOperation({
     summary: 'Verify a payment transaction',

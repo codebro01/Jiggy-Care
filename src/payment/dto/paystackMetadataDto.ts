@@ -13,6 +13,7 @@ export enum PaymentMethodType {
 export enum PaymentForType {
   BOOKINGS = 'bookings',
   MEDICATIONS = 'medications',
+  TEST_BOOKINGS = 'test_bookings',
 }
 
 export class PaystackMetedataDto {

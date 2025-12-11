@@ -25,6 +25,7 @@ import { OrderModule } from './order/order.module';
 import { LabModule } from './lab/lab.module';
 import { TestModule } from './test/test.module';
 import { TestBookingModule } from './test-booking/test-booking.module';
+import { HealthMonitoringModule } from './health-monitoring/health-monitoring.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { TestBookingModule } from './test-booking/test-booking.module';
     LabModule,
     TestModule,
     TestBookingModule,
+    HealthMonitoringModule,
   ],
   controllers: [AppController, UploadController],
   providers: [AppService, NeonProvider, MulterService],

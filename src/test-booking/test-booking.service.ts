@@ -1,26 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { CreateTestBookingDto } from './dto/create-test-booking.dto';
 import { UpdateTestBookingDto } from './dto/update-test-booking.dto';
-
+import { TestBookingRepository } from '@src/test-booking/repository/test-booking.repository';
 @Injectable()
 export class TestBookingService {
-  create(createTestBookingDto: CreateTestBookingDto) {
-    return 'This action adds a new testBooking';
+  constructor(
+    private readonly testBookingRepository: TestBookingRepository
+  ){}
+  async create(data: CreateTestBookingDto, patientId: string) {
+    return await this.testBookingRepository.savePayment(data, patientId);
   }
 
-  findAll() {
-    return `This action returns all testBooking`;
+  async findAll(patientId: string) {
+    return await this.testBookingRepository.findAll(patientId);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} testBooking`;
+  async findOne(testBookingId: string, patientId: string) {
+    return await this.testBookingRepository.findOne(testBookingId, patientId);
   }
 
-  update(id: number, updateTestBookingDto: UpdateTestBookingDto) {
-    return `This action updates a #${id} testBooking`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} testBooking`;
+  async update(data: UpdateTestBookingDto, testBookingId: string, patientId: string) {
+    return await this.testBookingRepository.update(data, testBookingId, patientId)
   }
 }
