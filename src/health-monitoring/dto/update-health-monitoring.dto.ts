@@ -1,4 +1,3 @@
 import { PartialType } from '@nestjs/swagger';
-import { CreateHealthMonitoringDto } from './create-health-monitoring.dto';
-
-export class UpdateHealthMonitoringDto extends PartialType(CreateHealthMonitoringDto) {}
+import { CreateHealthReadingDto } from '@src/health-monitoring/dto/create-health-monitoring.dto';
+export class UpdateHealthReadingDto extends PartialType(CreateHealthReadingDto) {}
