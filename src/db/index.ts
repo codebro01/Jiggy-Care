@@ -7,3 +7,6 @@ export * from "@src/db/medication";
 export * from "@src/db/lab";
 export * from "@src/db/test";
 export * from "@src/db/test-bookings"
+export * from "@src/db/chat"
+export * from "@src/db/rating"
+export * from "@src/db/test-result"

@@ -1,2 +1,0 @@
-ALTER TABLE "prescriptions" ALTER COLUMN "dosage" SET DATA TYPE varchar(100);--> statement-breakpoint
-ALTER TABLE "prescriptions" ALTER COLUMN "frequency" SET DATA TYPE "public"."dosage_type" USING "frequency"::"public"."dosage_type";

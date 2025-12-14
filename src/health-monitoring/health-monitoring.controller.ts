@@ -60,7 +60,6 @@ export class HealthMonitoringController {
     const patientId = req.user?.id;
     return this.healthMonitoringService.getLatestReadingByPatient(patientId);
   }
-
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Get(':id')

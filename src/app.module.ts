@@ -27,6 +27,7 @@ import { TestModule } from './test/test.module';
 import { TestBookingModule } from './test-booking/test-booking.module';
 import { HealthMonitoringModule } from './health-monitoring/health-monitoring.module';
 import { TestResultModule } from './test-result/test-result.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { TestResultModule } from './test-result/test-result.module';
     TestBookingModule,
     HealthMonitoringModule,
     TestResultModule,
+    ChatModule,
   ],
   controllers: [AppController, UploadController],
   providers: [AppService, NeonProvider, MulterService],

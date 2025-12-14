@@ -43,5 +43,5 @@ export const testResultTable = pgTable('test_results', {
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 
-export type testTableInsertType = typeof testResultTable.$inferInsert;
-export type testTableSelectType = typeof testResultTable.$inferSelect;
+export type testResultTableInsertType = typeof testResultTable.$inferInsert;
+export type testResultTableSelectType = typeof testResultTable.$inferSelect;

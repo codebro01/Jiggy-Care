@@ -28,7 +28,7 @@ app.enableCors({
   app.setGlobalPrefix('api/v1');
   app.useGlobalFilters(new DrizzleExceptionFilter());
   app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
   );
 
   const config = new DocumentBuilder()

@@ -32,8 +32,12 @@ export const userTable = pgTable('users', {
 });
 
 export const patientTable = pgTable('patients', {
-  userId: uuid().notNull().references(() => userTable.id, { onDelete: 'cascade' }),
-  id: uuid().defaultRandom().primaryKey().notNull(),
+  userId: uuid()
+    .primaryKey()
+    .notNull()
+    .references(() => userTable.id, { onDelete: 'cascade' })
+    .unique(),
+  id: uuid().defaultRandom().notNull(),
   emergencyContact: varchar('emergencyContact', { length: 255 }),
   weight: varchar('weight', { length: 50 }),
   height: varchar('height', { length: 50 }),
@@ -41,9 +45,13 @@ export const patientTable = pgTable('patients', {
 });
 
 export const consultantTable = pgTable('consultants', {
-  id: uuid().defaultRandom().primaryKey().notNull(),
+  id: uuid().defaultRandom().notNull(),
 
-  userId: uuid().notNull().references(() => userTable.id, { onDelete: 'cascade' }),
+  userId: uuid()
+    .primaryKey()
+    .notNull()
+    .references(() => userTable.id, { onDelete: 'cascade' })
+    .unique(),
   availability: boolean('availability').default(false),
   speciality: varchar('speciality', { length: 50 }),
   yrsOfExperience: integer('years_of_experience'),

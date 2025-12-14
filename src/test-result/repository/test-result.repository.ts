@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { testResultTable, testTableInsertType } from '@src/db/test-result';
+import { testResultTableInsertType, testResultTable } from '@src/db';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, and, desc } from 'drizzle-orm';
 import { consultantTable, patientTable } from '@src/db/users';
@@ -12,7 +12,7 @@ export class TestResultRepository {
     private readonly DbProvider: NodePgDatabase<typeof import('@src/db')>,
   ) {}
 
-  async createTestResult(data: testTableInsertType) {
+  async createTestResult(data: testResultTableInsertType) {
     const [testResult] = await this.DbProvider.insert(testResultTable)
       .values(data)
       .returning();
@@ -57,7 +57,7 @@ export class TestResultRepository {
   }
 
   async updateTestResult(
-    data: Partial<testTableInsertType>,
+    data: Partial<testResultTableInsertType>,
     id: string,
     consultantId: string,
   ) {
