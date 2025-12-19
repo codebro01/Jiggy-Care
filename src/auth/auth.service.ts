@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException,InternalServerErrorException } from '@nestjs/common';
 import { AuthRepository } from '@src/auth/repository/auth.repository';
 import { UserRepository } from '@src/users/repository/user.repository';
 import crypto from 'crypto';
@@ -6,13 +6,13 @@ import qs from 'qs'
 import { jwtConstants } from '@src/auth/jwtContants';
 import { JwtService } from '@nestjs/jwt';
 import axios from 'axios'
-import { jwtDecode } from 'jwt-decode';
-import type { Response } from 'express';
-import type { Request } from '@src/types';
 import { HelperRepository } from '@src/helpers/repository/helpers.repository';
 import { roleType } from '@src/users/dto/createUser.dto';
 import { PatientRepository } from '@src/patient/repository/patient.repository';
 import { ConsultantRepository } from '@src/consultant/repository/consultant.repository';
+import { GoogleAuthService } from '@src/google-auth/google-auth.service';
+import * as bcrypt from 'bcrypt';
+
 
 
 @Injectable()
@@ -28,6 +28,7 @@ export class AuthService {
     private readonly helperRepository: HelperRepository,
     private readonly patientRepository: PatientRepository,
     private readonly consultantRepository: ConsultantRepository,
+    private readonly googleAuthService: GoogleAuthService
   ) { }
 
 
@@ -35,13 +36,55 @@ export class AuthService {
     return crypto.randomBytes(length).toString('hex');
   }
 
-  async loginUser(data: { email: string; password: string }) {
-    return this.authRepository.loginUser(data);
-  }
+    async loginUser(data: { email: string; password: string }) {
+      const { email, password } = data;
+  
+      if (!email || !password)
+        throw new BadRequestException('Please provide email and password');
+      const user = await this.authRepository.findUserByEmail(email);
+      if (!user)
+        throw new UnauthorizedException(
+          'Bad credentials, Please check email and password',
+        );
+      const passwordIsCorrect = await bcrypt.compare(password, user.password);
+      if (!passwordIsCorrect)
+        throw new UnauthorizedException(
+          'Bad credentials, Please check email and password',
+        );
+  
+      const payload = { id: user.id, email: user.email, role: user.role };
+  
+      const accessToken = await this.jwtService.signAsync(payload, {
+        secret: jwtConstants.accessTokenSecret,
+        expiresIn: '1h',
+      });
+      const refreshToken = await this.jwtService.signAsync(payload, {
+        secret: jwtConstants.refreshTokenSecret,
+        expiresIn: '30d',
+      });
+  
+      const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+  
+      const updateUserToken = await this.authRepository.updateUserRefreshToken(hashedRefreshToken, user.id)
+  
+      if (!updateUserToken) throw new InternalServerErrorException();
+      return { user, accessToken, refreshToken };
+    }
+  
+    async logoutUser(userId: string) {
+      await this.authRepository.updateUserRefreshToken(null, userId);
+      
+    }
+
+
+
+
+  // * Google auth 
 
   googleAuth(state: any) {
     const scope = ['openid', 'email', 'profile'].join(' ');
     // console.log(this.redirectUri, process.env.SERVER_URI);
+    console.log(this.redirectUri)
     const params = qs.stringify({
       client_id: this.clientId,
       redirect_uri: this.redirectUri,
@@ -78,18 +121,21 @@ export class AuthService {
     const { role } = decodedState;
     // console.log('decodedState', decodedState, data)
 
-    const decoded: any = jwtDecode(id_token); // <-- note the .default
+const googlePayload = await this.googleAuthService.verifyIdToken(id_token);
+
+if(!googlePayload.email) throw new BadRequestException('Invalid Email')
 
     //! generate a ramdon crypto password for google users
     const googleUserPwd = this.generateRandomPassword();
-
-    const { email, given_name, family_name, picture, email_verified } = decoded;
+  const  hashedGoogleUserPwd = await bcrypt.hash(googleUserPwd, 10);
+    const { email, given_name, family_name, picture, email_verified } =
+      googlePayload;
     const payload = {
       email,
       fullName: `${given_name} ${family_name}`,
       dp: picture,
       emailVerified: email_verified,
-      password: googleUserPwd,
+      password: hashedGoogleUserPwd,
       authProvider: 'google',
       role
     };
@@ -190,10 +236,6 @@ export class AuthService {
     }
 
 
-  }
-
-  async logoutUser(res: Response, req: Request) {
-    return await this.authRepository.logoutUser(res, req);
   }
 
 

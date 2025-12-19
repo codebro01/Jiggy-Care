@@ -1,6 +1,33 @@
-import { IsString, IsDateString, IsOptional } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsDateString, IsOptional ,ValidateNested,  IsNotEmpty} from 'class-validator';
+import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
+
+export class EmergencyContactDto {
+  @ApiProperty({
+    example: 'Sister',
+    description: 'Relationship to the patient',
+  })
+  @IsString()
+  @IsNotEmpty()
+  relationship: string  | null;
+
+  @ApiProperty({
+    example: 'Jane Doe',
+    description: 'Name of emergency contact',
+  })
+  @IsString()
+  @IsNotEmpty()
+  name: string  | null;
+
+  @ApiProperty({
+    example: '+2348098765432',
+    description: 'Phone number of emergency contact',
+  })
+  @IsString()
+  @IsNotEmpty()
+  phone: string  | null;
+}
 export class UpdatePatientDto {
   @ApiPropertyOptional({
     example: 'john_doe',
@@ -8,23 +35,7 @@ export class UpdatePatientDto {
   })
   @IsString()
   @IsOptional()
-  displayName?: string;
-
-  // @ApiPropertyOptional({
-  //   example: true,
-  //   description: "Indicates whether the user's email has been verified",
-  // })
-  // @IsBoolean()
-  // @IsOptional()
-  // emailVerified?: boolean;
-
-  @ApiPropertyOptional({
-    example: 'John Doe',
-    description: 'Full name of the user',
-  })
-  @IsString()
-  @IsOptional()
-  fullName: string;
+  fullName?: string | null;
 
   @ApiPropertyOptional({
     example: '1995-08-15',
@@ -32,7 +43,7 @@ export class UpdatePatientDto {
   })
   @IsDateString()
   @IsOptional()
-  dateOfBirth?: string;
+  dateOfBirth?: string  | null;
 
   @ApiPropertyOptional({
     example: 'male',
@@ -40,15 +51,7 @@ export class UpdatePatientDto {
   })
   @IsString()
   @IsOptional()
-  gender?: string;
-
-  @ApiPropertyOptional({
-    example: 'https://res.cloudinary.com/demo/image/upload/v1691234567/avatar.jpg',
-    description: 'Profile picture (URL)',
-  })
-  @IsString()
-  @IsOptional()
-  dp?: string;
+  gender?: string  | null;
 
   @ApiPropertyOptional({
     example: '+2348012345678',
@@ -56,7 +59,7 @@ export class UpdatePatientDto {
   })
   @IsString()
   @IsOptional()
-  phone?: string;
+  phone?: string  | null;
 
   @ApiPropertyOptional({
     example: '123 Main Street, Lagos',
@@ -64,15 +67,16 @@ export class UpdatePatientDto {
   })
   @IsString()
   @IsOptional()
-  address?: string;
+  address?: string  | null;
 
   @ApiPropertyOptional({
-    example: 'Jane Doe - +2348098765432',
+    type: EmergencyContactDto,
     description: 'Emergency contact information',
   })
-  @IsString()
   @IsOptional()
-  emergencyContact?: string;
+  @ValidateNested()
+  @Type(() => EmergencyContactDto)
+  emergencyContact?: EmergencyContactDto | null;
 
   @ApiPropertyOptional({
     example: '70kg',
@@ -80,7 +84,7 @@ export class UpdatePatientDto {
   })
   @IsString()
   @IsOptional()
-  weight?: string;
+  weight?: string  | null;
 
   @ApiPropertyOptional({
     example: '175cm',
@@ -88,7 +92,7 @@ export class UpdatePatientDto {
   })
   @IsString()
   @IsOptional()
-  height?: string;
+  height?: string  | null;
 
   @ApiPropertyOptional({
     example: 'O+',
@@ -96,6 +100,5 @@ export class UpdatePatientDto {
   })
   @IsString()
   @IsOptional()
-  bloodType?: string;
-
+  bloodType?: string  | null;
 }

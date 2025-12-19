@@ -9,27 +9,7 @@ import {
 } from 'class-validator';
 
 export class UpdateUserDto {
-    // @ApiPropertyOptional({
-    //     description: 'User email address',
-    //     example: 'user@example.com',
-    //     maxLength: 255,
-    // })
-    // @IsOptional()
-    // @IsEmail()
-    // @MaxLength(255)
-    // email?: string;
-
-    // @ApiPropertyOptional({
-    //     description: 'User password',
-    //     example: 'SecurePassword123!',
-    //     maxLength: 255,
-    //     minLength: 8,
-    // })
-    // @IsOptional()
-    // @IsString()
-    // @MinLength(8)
-    // @MaxLength(255)
-    // password?: string;
+  
 
     @ApiPropertyOptional({
         description: 'Full name of the user',
@@ -39,7 +19,7 @@ export class UpdateUserDto {
     @IsOptional()
     @IsString()
     @MaxLength(255)
-    fullName?: string;
+    fullName?: string  | null;
 
     @ApiPropertyOptional({
         description: 'Date of birth',
@@ -49,7 +29,7 @@ export class UpdateUserDto {
     @IsOptional()
     @IsString()
     @MaxLength(20)
-    dateOfBirth?: string;
+    dateOfBirth?: string  | null;
 
     @ApiPropertyOptional({
         description: 'Gender of the user',
@@ -59,7 +39,7 @@ export class UpdateUserDto {
     @IsOptional()
     @IsString()
     @MaxLength(20)
-    gender?: string;
+    gender?: string  | null;
 
     @ApiPropertyOptional({
         description: 'Display picture URL',
@@ -69,7 +49,7 @@ export class UpdateUserDto {
     @IsOptional()
     @IsString()
     @MaxLength(255)
-    dp?: string;
+    dp?: string  | null;
 
     @ApiPropertyOptional({
         description: 'Phone number',
@@ -79,7 +59,7 @@ export class UpdateUserDto {
     @IsOptional()
     @IsString()
     @MaxLength(50)
-    phone?: string;
+    phone?: string  | null;
 
     @ApiPropertyOptional({
         description: 'Email verification status',

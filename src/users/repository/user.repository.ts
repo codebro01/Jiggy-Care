@@ -1,15 +1,17 @@
+import { Injectable, Inject } from '@nestjs/common';
 import {
-  Injectable,
-  Inject,
-} from '@nestjs/common';
-import { userTable } from '@src/db/users';
+  consultantInsertType,
+  consultantTable,
+  patientTable,
+  userTable,
+} from '@src/db/users';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { JwtService } from '@nestjs/jwt';
 import { eq } from 'drizzle-orm';
 
-
 import { CreateUserDto } from '@src/users/dto/createUser.dto';
 import { UpdateUserDto } from '../dto/updateUser.dto';
+import { UpdatePatientDto } from '@src/users/dto/updatePatient.dto';
 
 @Injectable()
 export class UserRepository {
@@ -17,22 +19,108 @@ export class UserRepository {
     @Inject('DB')
     private DbProvider: NodePgDatabase<typeof import('@src/db')>,
     private jwtService: JwtService,
-  ) { }
+  ) {}
 
   // ! create user here
 
-
-
   async createUser(data: CreateUserDto, authProvider: string, trx?: any) {
     const Trx = trx || this.DbProvider;
-    const [user] = await Trx.insert(userTable).values({ ...data, authProvider }).returning();
+    const [user] = await Trx.insert(userTable)
+      .values({ ...data, authProvider })
+      .returning();
     return user;
   }
 
+  async findUserById(userId: string) {
+    const [user] = await this.DbProvider.select({
+      id: userTable.id,
+      email: userTable.email,
+      phone: userTable.phone,
+      role: userTable.role,
+      emailVerified: userTable.emailVerified,
+    })
+      .from(userTable)
+      .where(eq(userTable.id, userId))
+      .limit(1);
 
-  async updateUser(data: UpdateUserDto , userId: string, trx?: any) {
+    return user;
+  }
+  async findPatientById(userId: string) {
+    const [user] = await this.DbProvider.select({
+      fullName: userTable.fullName, 
+      id: userTable.id,
+      email: userTable.email,
+      dateOfBirth: userTable.dateOfBirth, 
+      phone: userTable.phone,
+      role: userTable.role,
+      emailVerified: userTable.emailVerified,
+      bloodType: patientTable.bloodType, 
+      emergencyContact: patientTable.emergencyContact, 
+      height: patientTable.height, 
+      weight: patientTable.weight, 
+      gender: userTable.gender, 
+    })
+      .from(patientTable)
+      .where(eq(patientTable.userId, userId))
+      .leftJoin(userTable, eq(userTable.id, userId))
+      .limit(1);
+
+    return user;
+  }
+  async findConsultantById(userId: string) {
+    const [user] = await this.DbProvider.select({
+      fullName: userTable.fullName, 
+      id: userTable.id,
+      email: userTable.email,
+      dateOfBirth: userTable.dateOfBirth, 
+      phone: userTable.phone,
+      role: userTable.role,
+      emailVerified: userTable.emailVerified,
+      availability: consultantTable.availability, 
+      speciality: consultantTable.speciality, 
+      yrsOfExperience: consultantTable.yrsOfExperience, 
+      about: consultantTable.about, 
+      languages: consultantTable.languages, 
+      certification: consultantTable.certification, 
+      workingHours: consultantTable.workingHours, 
+      gender: userTable.gender, 
+    })
+      .from(consultantTable)
+      .where(eq(consultantTable.userId, userId))
+      .leftJoin(userTable, eq(userTable.id, userId))
+      .limit(1);
+
+    return user;
+  }
+
+  async updateUser(data: UpdateUserDto, userId: string, trx?: any) {
     const Trx = trx || this.DbProvider;
-    const [user] = await Trx.update(userTable).set({ ...data }).where(eq(userTable.id, userId)).returning();
+    const [user] = await Trx.update(userTable)
+      .set({ ...data })
+      .where(eq(userTable.id, userId))
+      .returning();
+    return user;
+  }
+  async updateConsultantById(
+    data: Partial<
+      Omit<consultantInsertType, 'id' | 'userId' | 'pricePerSession'>
+    >,
+    userId: string,
+    trx?: any,
+  ) {
+    const Trx = trx || this.DbProvider;
+    const [user] = await Trx.update(consultantTable)
+      .set({ ...data })
+      .where(eq(consultantTable.userId, userId))
+      .returning();
+    return user;
+  }
+  async updatePatientById(data: UpdatePatientDto, userId: string, trx?: any) {
+    const Trx = trx || this.DbProvider;
+    const [user] = await Trx.update(patientTable)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(patientTable.userId, userId))
+      .returning();
     return user;
   }
 }

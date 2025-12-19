@@ -9,6 +9,7 @@ import { UserModule } from '@src/users/users.module';
 import { HelpersModule } from '@src/helpers/helpers.module';
 import { PatientModule } from '@src/patient/patient.module';
 import { ConsultantModule } from '@src/consultant/consultant.module';
+import { GoogleAuthModule } from '@src/google-auth/google-auth.module';
 @Module({
   imports: [
     JwtModule.register({
@@ -20,6 +21,7 @@ import { ConsultantModule } from '@src/consultant/consultant.module';
     SupabaseModule,
      PatientModule,
      ConsultantModule,
+     GoogleAuthModule, 
     forwardRef(() => UserModule),
   ],
   controllers: [AuthController],

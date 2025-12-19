@@ -18,6 +18,7 @@ import { UpdatePatientDto, CreateUserDto } from '@src/users/dto/index.dto';
 
 import omit from 'lodash.omit';
 import type { Request } from '@src/types';
+import { UpdateConsultantDto } from '@src/consultant/dto/updateConsultantDto';
 
 @Controller('users')
 export class UserController {
@@ -58,15 +59,46 @@ export class UserController {
     return this.userService.getAllUsers();
   }
 
-  // ! update user basic information
+  // ! update patient information
   @UseGuards(JwtAuthGuard)
-  @Patch('/update-user-basic-info')
-  async updateUsers(@Req() req: Request, @Body() body: UpdatePatientDto) {
+  @Roles('patient')
+  @Patch('/update/patient')
+  async updatePatient(@Req() req: Request, @Body() body: UpdatePatientDto) {
     const { id: userId } = req.user;
-    const user = await this.userService.updateUser(userId, body);
+    const user = await this.userService.updatePatient(body, userId);
     console.log(user);
     const safeUser = omit(user, ['password', 'refreshToken', 'authProvider', 'role']);
 
     return safeUser;
   }
+
+
+  // ! update consultant information
+  @UseGuards(JwtAuthGuard)
+  @Roles('patient')
+  @Patch('/update/consultant')
+  async updateConsultant(@Req() req: Request, @Body() body: UpdateConsultantDto) {
+    const { id: userId } = req.user;
+    const user = await this.userService.updatePatient(body, userId);
+    console.log(user);
+    const safeUser = omit(user, ['password', 'refreshToken', 'authProvider', 'role']);
+
+    return safeUser;
+  }
+
+
+  @UseGuards(JwtAuthGuard)
+  @Roles('patient')
+  @Get('/profile')
+  async getUser(@Req() req: Request) {
+    const { id: userId,  role } = req.user;
+    const user = await this.userService.getUser(userId, role);
+    console.log(user);
+    const safeUser = omit(user, ['password', 'refreshToken', 'authProvider', 'role']);
+
+    return safeUser;
+  }
+
+
+
 }

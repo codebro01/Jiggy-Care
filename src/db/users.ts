@@ -38,10 +38,16 @@ export const patientTable = pgTable('patients', {
     .references(() => userTable.id, { onDelete: 'cascade' })
     .unique(),
   id: uuid().defaultRandom().notNull(),
-  emergencyContact: varchar('emergencyContact', { length: 255 }),
+  emergencyContact: jsonb('emergency_contact').$type<{
+    relationship: string, 
+    name: string, 
+    phone: string
+  }>(),
   weight: varchar('weight', { length: 50 }),
   height: varchar('height', { length: 50 }),
   bloodType: varchar('bloodType', { length: 50 }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
 export const consultantTable = pgTable('consultants', {
@@ -69,9 +75,13 @@ export const consultantTable = pgTable('consultants', {
     sunday?: string;
   }>(),
   pricePerSession: integer('price_per_session'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
 // ! add ratings, prescripto, table in antoher file,
 
 export type UserType = InferSelectModel<typeof userTable>;
+export type consultantInsertType = typeof consultantTable.$inferInsert;
+export type patientInsertType = typeof patientTable.$inferInsert;
 

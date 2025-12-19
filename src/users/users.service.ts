@@ -23,6 +23,7 @@ import { JwtService } from '@nestjs/jwt';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { HelperRepository } from '@src/helpers/repository/helpers.repository';
 import { roleType } from '@src/users/dto/createUser.dto';
+import { UpdateConsultantDto } from '@src/consultant/dto/updateConsultantDto';
 
 @Injectable()
 export class UserService {
@@ -197,24 +198,100 @@ export class UserService {
     return users;
   }
 
-  async updateUser(userId: string, data: UpdatePatientDto) {
+  async updatePatient(data: UpdatePatientDto, userId: string) {
+    if (!data) throw new BadRequestException('Data not provided for update!');
+    const patient = await this.userRepository.findPatientById(userId);
+
+    if (!patient) throw new NotFoundException('No user found');
+
+    // console.log('updatedUser', updatedUser);
+
+    const updatedPatient = await this.helperRepository.executeInTransaction(
+      async (trx) => {
+      const user =  await this.userRepository.updateUser(
+          {
+            fullName: data.fullName || patient.fullName,
+            dateOfBirth: data.dateOfBirth || patient.dateOfBirth, 
+            gender: data.gender || patient.gender,
+            phone: data.phone || patient.phone,
+          },
+          userId,
+          trx,
+        );
+
+    const userPatient =    await this.userRepository.updatePatientById(
+          {
+            emergencyContact: data.emergencyContact || patient.emergencyContact,
+            weight: data.weight,
+            height: data.height,
+            bloodType: data.bloodType,
+          },
+          userId,
+          trx,
+        );
+
+              return { ...user, ...userPatient };
+
+      },
+    );
+    return updatedPatient;
+  }
+  async updateConsultant(userId: string, data: UpdateConsultantDto) {
     console.log('user', userId);
     if (!data) throw new BadRequestException('Data not provided for update!');
-    const [isUserExist] = await this.DbProvider.select({ id: userTable.id })
-      .from(userTable)
-      .where(eq(userTable.id, userId));
+    const consultant = await this.userRepository.findConsultantById(userId);
 
-    if (!isUserExist) throw new NotFoundException('No user found');
-    console.log(isUserExist);
-    const [updatedUser] = await this.DbProvider.update(userTable)
-      .set(data)
-      .where(eq(userTable.id, userId))
-      .returning();
-    if (!updatedUser)
-      throw new InternalServerErrorException(
-        'An error occurred while updating the user, please try again',
+    if (!consultant) throw new NotFoundException('No user found');
+
+    const updatedConsultant = await this.helperRepository.executeInTransaction(async (trx) => {
+      const user =  await this.userRepository.updateUser(
+         {
+           fullName: data.fullName || consultant.fullName,
+           dateOfBirth: data.dateOfBirth || consultant.dateOfBirth,
+           gender: data.gender || consultant.gender,
+           phone: data.phone || consultant.phone,
+         },
+         userId,
+         trx,
+       );
+  const userConsultant =     await this.userRepository.updateConsultantById(
+        {
+          availability:data.availability ||  consultant.availability,
+          speciality: data.speciality || consultant.speciality,
+          yrsOfExperience: data.yrsOfExperience || consultant.yrsOfExperience,
+          about: data.about || consultant.about,
+          languages: data.languages || consultant.languages,
+          certification: data.certification || consultant.certification,
+          workingHours: data.workingHours || consultant.workingHours,
+        },
+        userId,
+        trx,
       );
+
+      return {...user, ...userConsultant}
+
+    })
+   
     // console.log('updatedUser', updatedUser);
-    return updatedUser ;
+    return updatedConsultant;
+  }
+
+  async getUser (userId: string, role: string) {
+      if(role === 'consultant'){
+            const consultant =
+              await this.userRepository.findConsultantById(userId);
+
+
+              return consultant;
+      }
+      if(role === 'patient'){
+            const patient =
+              await this.userRepository.findPatientById(userId);
+
+
+              return patient;
+      }
+
+      else throw new BadRequestException('Invalid role provided')
   }
 }

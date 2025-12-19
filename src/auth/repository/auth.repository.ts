@@ -13,7 +13,8 @@ import { eq } from 'drizzle-orm';
 import bcrypt from 'bcrypt';
 import { jwtConstants } from '../jwtContants';
 import { JwtService } from '@nestjs/jwt';
-import { Response, Request } from 'express';
+import type{ Response } from 'express';
+import type { Request } from '@src/types';
 
 interface customRequest extends Request {
   user: {
@@ -31,6 +32,23 @@ export class AuthRepository {
     @Inject('NEON_CLIENT') private readonly supabase: SupabaseClient,
     private readonly jwtService: JwtService,
   ) {}
+
+
+  async findUserByEmail(email: string) {
+       const [user] = await this.DbProvider.select()
+         .from(userTable)
+         .where(eq(userTable.email, email));
+
+         return user;
+  }
+
+  async updateUserRefreshToken(refreshToken: string | null, userId: string){
+    const [user] = await this.DbProvider.update(userTable)
+      .set({ refreshToken })
+      .where(eq(userTable.id, userId)).returning();
+
+      return  user;
+  }
   async loginUser(data: { email: string; password: string }) {
     const { email, password } = data;
 

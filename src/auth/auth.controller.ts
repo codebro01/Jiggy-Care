@@ -24,11 +24,7 @@ import { roleType } from '@src/users/dto/createUser.dto';
 @ApiTags('auth') // Groups your endpoints
 @Controller('auth')
 export class AuthController {
-  private clientId = process.env.GOOGLE_CLIENT_ID;
-  private redirectUri =
-    process.env.NODE_ENV === 'production'
-      ? `https://jiggy-care.onrender.com/api/v1/auth/google/callback`
-      : 'http://localhost:3000/api/v1/auth/google/callback';
+ 
   constructor(
     private readonly authService: AuthService,
     private jwtService: JwtService,
@@ -105,7 +101,8 @@ export class AuthController {
 
   @Get('logout')
   async logoutUser(@Res() res: Response, @Req() req: Request) {
-    await this.authService.logoutUser(res, req);
+    const {id: userId} = req.user;
+    await this.authService.logoutUser(userId);
 
     res.status(HttpStatus.OK).json({ message: 'Logout Successful' });
   }
