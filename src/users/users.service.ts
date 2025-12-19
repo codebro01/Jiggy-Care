@@ -1,5 +1,7 @@
 import {
-  Injectable, Inject, BadRequestException,
+  Injectable,
+  Inject,
+  BadRequestException,
   InternalServerErrorException,
   ConflictException,
   NotFoundException,
@@ -11,12 +13,16 @@ import { CreateUserDto } from '@src/users/dto/createUser.dto';
 import * as bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
 import { jwtConstants } from '@src/auth/jwtContants';
-import { consultantTable, patientTable, userTable, UserType } from '@src/db/users';
+import {
+  consultantTable,
+  patientTable,
+  userTable,
+  UserType,
+} from '@src/db/users';
 import { JwtService } from '@nestjs/jwt';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { HelperRepository } from '@src/helpers/repository/helpers.repository';
 import { roleType } from '@src/users/dto/createUser.dto';
-
 
 @Injectable()
 export class UserService {
@@ -28,11 +34,9 @@ export class UserService {
     private readonly helperRepository: HelperRepository,
 
     private jwtService: JwtService,
-  ) { }
+  ) {}
 
-  async createUser(
-    data: CreateUserDto, authProvider: string
-  ): Promise<any> {
+  async createUser(data: CreateUserDto, authProvider: string): Promise<any> {
     try {
       const { email, password } = data;
       if (!email || !password)
@@ -81,62 +85,75 @@ export class UserService {
           'Email already used, please use another email!',
         );
 
-        let user: UserType;
-      
-        switch(data.role) {
-          case roleType.PATIENT: (
+      let user: UserType;
 
-            user = await this.helperRepository.executeInTransaction(async (trx) => {
+      switch (data.role) {
+        case roleType.PATIENT:
+          user = await this.helperRepository.executeInTransaction(
+            async (trx) => {
+              const user = await this.userRepository.createUser(
+                { ...data, password: hashedPwd },
+                authProvider,
+                trx,
+              );
 
-              const patient = await this.userRepository.createUser({ ...data, password: hashedPwd }, authProvider, trx)
+              if (!user)
+                throw new InternalServerErrorException(
+                  'An error occured while inserting user',
+                );
+              await trx
+                .insert(patientTable)
+                .values({ userId: user.id })
+                .returning();
 
-              if(!patient) throw new InternalServerErrorException('An error occured while inserting user')
-              await trx.insert(patientTable).values({userId: patient.id}).returning();
-
-
-              return patient;
-
-            })
-          )
-            break;
-
-          case roleType.CONSULTANT: (
-
-            user = await this.helperRepository.executeInTransaction(async (trx) => {
-     
-             const consultant = await this.userRepository.createUser({ ...data, password: hashedPwd }, authProvider, trx)
-              
-              if (!consultant) throw new InternalServerErrorException('An error occured while inserting user')
-     
-             await trx.insert(consultantTable).values({userid: consultant.id}).returning();
-     
-     
-             return consultant;
-     
-           })
-          )
+              return user;
+            },
+          );
           break;
 
+        case roleType.CONSULTANT:
+          user = await this.helperRepository.executeInTransaction(
+            async (trx) => {
+              const user = await this.userRepository.createUser(
+                { ...data, password: hashedPwd },
+                authProvider,
+                trx,
+              );
 
-          case roleType.ADMIN: (
+              if (!user)
+                throw new InternalServerErrorException(
+                  'An error occured while inserting user',
+                );
 
-            user = await this.helperRepository.executeInTransaction(async (trx) => {
-     
-             const admin = await this.userRepository.createUser({ ...data, password: hashedPwd }, authProvider, trx)
-              
-              if (!admin) throw new InternalServerErrorException('An error occured while inserting user')
-     
-             return admin;
-     
-           })
-          )
+              await trx
+                .insert(consultantTable)
+                .values({ userId: user.id })
+                .returning();
+
+              return user;
+            },
+          );
           break;
 
-          default: throw new BadRequestException('Role can either be consultant or patient')
+        // case roleType.ADMIN: (
 
-      
+        //   user = await this.helperRepository.executeInTransaction(async (trx) => {
 
-        }
+        //    const admin = await this.userRepository.createUser({ ...data, password: hashedPwd }, authProvider, trx)
+
+        //     if (!admin) throw new InternalServerErrorException('An error occured while inserting user')
+
+        //    return admin;
+
+        //  })
+        // )
+        // break;
+
+        default:
+          throw new BadRequestException(
+            'Role can either be consultant or patient',
+          );
+      }
 
       //! create user here if email has not been used
 
@@ -189,7 +206,7 @@ export class UserService {
 
     if (!isUserExist) throw new NotFoundException('No user found');
     console.log(isUserExist);
-    const updatedUser = await this.DbProvider.update(userTable)
+    const [updatedUser] = await this.DbProvider.update(userTable)
       .set(data)
       .where(eq(userTable.id, userId))
       .returning();
@@ -197,8 +214,7 @@ export class UserService {
       throw new InternalServerErrorException(
         'An error occurred while updating the user, please try again',
       );
-    console.log('updatedUser', updatedUser);
-    return { updatedUser };
+    // console.log('updatedUser', updatedUser);
+    return updatedUser ;
   }
 }
-

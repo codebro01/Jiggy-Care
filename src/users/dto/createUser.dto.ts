@@ -12,13 +12,13 @@ import { ApiProperty } from '@nestjs/swagger';
 export enum roleType {
   CONSULTANT = 'consultant',
   PATIENT = 'patient',
-  ADMIN = 'admin'
+  // ADMIN = 'admin'
 }
 
 
 export class CreateUserDto {
 
-  @ApiProperty({ example: 'john@example.com', description: 'only the roles with value consultant and patient is allowed' })
+  @ApiProperty({ example: 'consultant', description: 'only the roles with value consultant or patient is allowed' })
   @IsEnum(roleType, {message: 'only the value consultant or patient is accepted'})
   @IsNotEmpty()
   role: roleType;

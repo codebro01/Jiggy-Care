@@ -8,6 +8,7 @@ import {
   Get,
   Query,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { AuthService } from '@src/auth/auth.service';
 import { LoginUserDto } from '@src/auth/dto/login-user.dto';
@@ -18,6 +19,7 @@ import omit from 'lodash.omit'
 import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
 import type { Request } from '@src/types';
+import { roleType } from '@src/users/dto/createUser.dto';
 
 
 
@@ -56,7 +58,7 @@ export class AuthController {
       maxAge: 1000 * 60 * 60 * 24 * 30, // 30d
     });
 
-    const safeUser = omit(user, ['password', 'refreshToken']);
+    const safeUser = omit(user, ['password', 'refreshToken', 'authProvider']);
 
     res
       .status(HttpStatus.ACCEPTED)
@@ -66,7 +68,9 @@ export class AuthController {
   // ! call google api for sign in or signup with google
 
   @Get('google')
-  googleLogin(@Res() res: Response, @Query('role') role: string) {
+  googleLogin(@Res() res: Response, @Query('role') role: roleType) {
+
+    if(role !== roleType.PATIENT && role !== roleType.CONSULTANT) throw new BadRequestException('invalid role');
 
     const state = Buffer.from(JSON.stringify({ role })).toString('base64');
    console.log(state)

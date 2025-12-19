@@ -1,4 +1,4 @@
-import { IsString, IsBoolean, IsDateString, IsOptional } from 'class-validator';
+import { IsString, IsDateString, IsOptional } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdatePatientDto {
@@ -10,13 +10,13 @@ export class UpdatePatientDto {
   @IsOptional()
   displayName?: string;
 
-  @ApiPropertyOptional({
-    example: true,
-    description: "Indicates whether the user's email has been verified",
-  })
-  @IsBoolean()
-  @IsOptional()
-  emailVerified?: boolean;
+  // @ApiPropertyOptional({
+  //   example: true,
+  //   description: "Indicates whether the user's email has been verified",
+  // })
+  // @IsBoolean()
+  // @IsOptional()
+  // emailVerified?: boolean;
 
   @ApiPropertyOptional({
     example: 'John Doe',

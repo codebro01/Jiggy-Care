@@ -18,6 +18,7 @@ app.enableCors({
   origin: [
     'http://localhost:3000', // frontend dev
     'http://localhost:5173', // Vite dev
+    'https://jiggy-care.onrender.com',
   ],
   credentials: true, // allow cookies & auth headers
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',

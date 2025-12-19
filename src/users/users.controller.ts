@@ -7,24 +7,21 @@ import {
   Res,
   HttpStatus,
   Req,
-  Patch
+  Patch,
 } from '@nestjs/common';
 import { UserService } from '@src/users/users.service';
 import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { Roles } from '@src/auth/decorators/roles.decorators';
 import type { Response } from 'express';
-import {
-  UpdatePatientDto,
-  CreateUserDto,
-} from '@src/users/dto/index.dto';
+import { UpdatePatientDto, CreateUserDto } from '@src/users/dto/index.dto';
 
 import omit from 'lodash.omit';
 import type { Request } from '@src/types';
 
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
 
   // ! create users
   @Post('signup')
@@ -64,9 +61,12 @@ export class UserController {
   // ! update user basic information
   @UseGuards(JwtAuthGuard)
   @Patch('/update-user-basic-info')
-  updateUsers(@Req() req: Request, @Body() body: UpdatePatientDto) {
-    const {id: userId} = req.user;
-    return this.userService.updateUser(userId, body);
-  }
+  async updateUsers(@Req() req: Request, @Body() body: UpdatePatientDto) {
+    const { id: userId } = req.user;
+    const user = await this.userService.updateUser(userId, body);
+    console.log(user);
+    const safeUser = omit(user, ['password', 'refreshToken', 'authProvider', 'role']);
 
+    return safeUser;
+  }
 }
