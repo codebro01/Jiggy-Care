@@ -37,7 +37,7 @@ app.enableCors({
     .setVersion('1.0') // Version
     .addBearerAuth()
     .addServer('http://localhost:3000', 'Local Dev')
-    // .addServer('https://nest-js-real-estate-rema.onrender.com', 'Production')
+    .addServer('https://jiggy-care.onrender.com', 'Production')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
