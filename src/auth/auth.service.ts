@@ -64,7 +64,7 @@ export class AuthService {
         client_secret: process.env.GOOGLE_CLIENT_SECRET,
         redirect_uri:
           process.env.NODE_ENV === 'production'
-            ? `${process.env.SERVER_URI}/api/v1/auth/google/callback`
+            ? this.redirectUri
             : 'http://localhost:3000/api/v1/auth/google/callback',
         grant_type: 'authorization_code',
       }),
