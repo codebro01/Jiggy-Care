@@ -103,7 +103,7 @@ export class AuthController {
       .status(HttpStatus.ACCEPTED)
       .json({ user: safeUser, accessToken });
   }
-  @UseGuards(JwtAuthGuard)
+
   @Get('logout')
   async logoutUser(@Res() res: Response, @Req() req: Request) {
     await this.authService.logoutUser(res, req);
