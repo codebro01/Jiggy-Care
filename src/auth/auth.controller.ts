@@ -7,7 +7,6 @@ import {
   HttpStatus,
   Get,
   Query,
-  UseGuards,
   BadRequestException,
 } from '@nestjs/common';
 import { AuthService } from '@src/auth/auth.service';
@@ -16,7 +15,6 @@ import type { Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '@src/users/users.service';
 import omit from 'lodash.omit'
-import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
 import type { Request } from '@src/types';
 import { roleType } from '@src/users/dto/createUser.dto';
@@ -29,13 +27,13 @@ export class AuthController {
   private clientId = process.env.GOOGLE_CLIENT_ID;
   private redirectUri =
     process.env.NODE_ENV === 'production'
-      ? `${process.env.SERVER_URI}/api/v1/auth/google/callback`
+      ? `https://jiggy-care.onrender.com/api/v1/auth/google/callback`
       : 'http://localhost:3000/api/v1/auth/google/callback';
   constructor(
     private readonly authService: AuthService,
     private jwtService: JwtService,
     private readonly userService: UserService,
-  ) { }
+  ) {}
 
   // ! local signin (password and email)
   @Post('signin')
@@ -60,20 +58,18 @@ export class AuthController {
 
     const safeUser = omit(user, ['password', 'refreshToken', 'authProvider']);
 
-    res
-      .status(HttpStatus.ACCEPTED)
-      .json({ user: safeUser, accessToken });
+    res.status(HttpStatus.ACCEPTED).json({ user: safeUser, accessToken });
   }
 
   // ! call google api for sign in or signup with google
 
   @Get('google')
   googleLogin(@Res() res: Response, @Query('role') role: roleType) {
-
-    if(role !== roleType.PATIENT && role !== roleType.CONSULTANT) throw new BadRequestException('invalid role');
+    if (role !== roleType.PATIENT && role !== roleType.CONSULTANT)
+      throw new BadRequestException('invalid role');
 
     const state = Buffer.from(JSON.stringify({ role })).toString('base64');
-   console.log(state)
+    console.log(state);
     const googleUrl = this.authService.googleAuth(state);
     res.redirect(googleUrl);
   }
@@ -81,8 +77,13 @@ export class AuthController {
   // ! google callback  for signin or signup (this callback returns the user identity from google)
 
   @Get('google/callback')
-  async googleCallback(@Query('code') code: string, @Query('state') state: string, @Res() res: Response) {
-     const {accessToken, refreshToken, user} = await this.authService.googleAuthCallback(code, state)
+  async googleCallback(
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Res() res: Response,
+  ) {
+    const { accessToken, refreshToken, user } =
+      await this.authService.googleAuthCallback(code, state);
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
@@ -99,9 +100,7 @@ export class AuthController {
 
     const safeUser = omit(user, ['password', 'refreshToken']);
 
-    res
-      .status(HttpStatus.ACCEPTED)
-      .json({ user: safeUser, accessToken });
+    res.status(HttpStatus.ACCEPTED).json({ user: safeUser, accessToken });
   }
 
   @Get('logout')
