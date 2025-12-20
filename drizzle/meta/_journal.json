@@ -43,6 +43,13 @@
       "when": 1766208625613,
       "tag": "0005_abandoned_multiple_man",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1766258488645,
+      "tag": "0006_omniscient_klaw",
+      "breakpoints": true
     }
   ]
 }
