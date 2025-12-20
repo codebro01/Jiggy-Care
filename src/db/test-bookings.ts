@@ -23,10 +23,9 @@ export const testBookingTable = pgTable('test_bookings', {
   patientId: uuid('patientId')
     .references(() => userTable.id, { onDelete: 'cascade' })
     .notNull(),
-  paymentStatus: text('payment_status').notNull(),
+  paymentStatus: text('payment_status').notNull().default('UNPAID'),
   invoiceId: text('invoice_id'),
   reference: text('reference'),
-  paymentMethod: text('payment_method').notNull(),
   collection: testcollectionType('collection').notNull(),
   date: timestamp('date', { withTimezone: true, mode: 'date' }).notNull(),
   createdAt: timestamp('created_at').defaultNow(),

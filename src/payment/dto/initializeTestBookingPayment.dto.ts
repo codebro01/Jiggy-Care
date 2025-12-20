@@ -4,20 +4,12 @@ import { TestCollectionType } from '@src/test-booking/dto/create-test-booking.dt
 
 export class InitializeTestBookingPayment {
   @ApiProperty({
-    example: '70fd48ad-c80f-4600-8e9f-c2f9dcb56c5b',
-    description: 'id of the test type to be taken ',
+    example: 'ca3ad9c9-e9d4-40a2-89d1-e8ae91461a69',
+    description: 'test booking id',
   })
   @IsNotEmpty()
   @IsUUID()
-  testId: string;
-
-  @ApiProperty({
-    example: '70fd48ad-c80f-4600-8e9f-c2f9dcb56c5b',
-    description: 'id of the lab where the test will be taken',
-  })
-  @IsNotEmpty()
-  @IsUUID()
-  labId: string;
+  testBookingId: string;
 
   @ApiProperty({
     example: `${TestCollectionType.HOME_COLLECTION}`,
@@ -30,7 +22,8 @@ export class InitializeTestBookingPayment {
 
   @ApiProperty({
     example: '2025-11-22T09:05:30.123Z',
-    description: 'This is the date of the lab test booking with the time included',
+    description:
+      'This is the date of the lab test booking with the time included',
   })
   @IsNotEmpty()
   @IsDateString()

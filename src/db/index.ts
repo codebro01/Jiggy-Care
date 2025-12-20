@@ -10,3 +10,4 @@ export * from "@src/db/test-bookings"
 export * from "@src/db/chat"
 export * from "@src/db/rating"
 export * from "@src/db/test-result"
+export * from '@src/db/test-booking-payment'

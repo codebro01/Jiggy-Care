@@ -1,0 +1,1 @@
+ALTER TABLE "consultants" ADD COLUMN "approved_status" boolean DEFAULT false;

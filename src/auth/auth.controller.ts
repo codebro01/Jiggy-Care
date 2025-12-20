@@ -8,23 +8,25 @@ import {
   Get,
   Query,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from '@src/auth/auth.service';
 import { LoginUserDto } from '@src/auth/dto/login-user.dto';
 import type { Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '@src/users/users.service';
-import omit from 'lodash.omit'
+import omit from 'lodash.omit';
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
 import type { Request } from '@src/types';
 import { roleType } from '@src/users/dto/createUser.dto';
-
-
+import { GoogleMobileSigninDto } from '@src/auth/dto/google-mobile-signin.dto';
+import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@src/auth/guards/roles.guard';
+import { Roles } from '@src/auth/decorators/roles.decorators';
 
 @ApiTags('auth') // Groups your endpoints
 @Controller('auth')
 export class AuthController {
- 
   constructor(
     private readonly authService: AuthService,
     private jwtService: JwtService,
@@ -57,29 +59,42 @@ export class AuthController {
     res.status(HttpStatus.ACCEPTED).json({ user: safeUser, accessToken });
   }
 
-  // ! call google api for sign in or signup with google
+  // ! call google api for sign in or signup with google for mobile
 
-  @Get('google')
-  googleLogin(@Res() res: Response, @Query('role') role: roleType) {
+  @Get('google/mobile-signin')
+  async googleLoginForMobile(
+    @Res() res: Response,
+    @Query() query: GoogleMobileSigninDto,
+  ) {
+    if (query.role !== roleType.PATIENT && query.role !== roleType.CONSULTANT)
+      throw new BadRequestException('invalid role');
+
+    const result = await this.authService.googleMobileAuth(query);
+    return { message: 'success', data: result };
+  }
+  // ! call google api for sign in or signup with google for web
+
+  @Get('google/web-signin')
+  googleLoginForWeb(@Res() res: Response, @Query('role') role: roleType) {
     if (role !== roleType.PATIENT && role !== roleType.CONSULTANT)
       throw new BadRequestException('invalid role');
 
     const state = Buffer.from(JSON.stringify({ role })).toString('base64');
     console.log(state);
-    const googleUrl = this.authService.googleAuth(state);
+    const googleUrl = this.authService.googleWebAuth(state);
     res.redirect(googleUrl);
   }
 
   // ! google callback  for signin or signup (this callback returns the user identity from google)
 
   @Get('google/callback')
-  async googleCallback(
+  async googleCallbackForWeb(
     @Query('code') code: string,
     @Query('state') state: string,
     @Res() res: Response,
   ) {
     const { accessToken, refreshToken, user } =
-      await this.authService.googleAuthCallback(code, state);
+      await this.authService.googleAuthCallbackForWeb(code, state);
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
@@ -99,11 +114,15 @@ export class AuthController {
     res.status(HttpStatus.ACCEPTED).json({ user: safeUser, accessToken });
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('patient', 'consultant', 'admin')
   @Get('logout')
   async logoutUser(@Res() res: Response, @Req() req: Request) {
-    const {id: userId} = req.user;
+    console.log(req);
+    const { id: userId } = req.user;
     await this.authService.logoutUser(userId);
-
+    res.clearCookie('access_token');
+    res.clearCookie('refresh_token');
     res.status(HttpStatus.OK).json({ message: 'Logout Successful' });
   }
 }

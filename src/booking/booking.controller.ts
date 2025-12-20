@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards, Req, Res, HttpStatus, Get, Query, Param } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, Req, Res, HttpStatus, Get, Query } from '@nestjs/common';
 import { BookingService } from '@src/booking/booking.service';
 import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
 import { Roles } from '@src/auth/decorators/roles.decorators';
@@ -6,6 +6,7 @@ import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { CreateBookingDto } from './dto/createBooking.dto';
 import type { Request } from '@src/types';
 import type { Response } from 'express';
+import { FindAvailableSlotDto } from '@src/booking/dto/find-available-slot.dto';
 
 @Controller('booking')
 export class BookingController {
@@ -16,12 +17,11 @@ export class BookingController {
     @Roles('patient')
     @Get('available-slots/:consultantId')
     async getAvailableSlots(
-        @Param('consultantId') consultantId: string,
-        @Query('date') date: string
+        @Query() query: FindAvailableSlotDto
     ) {
-        console.log('consultantId in controller', consultantId)
+        console.log('consultantId in controller', query.consultantId)
 
-        return this.bookingService.getAvailableSlots(consultantId, date);
+        return this.bookingService.getAvailableSlots(query.consultantId, query.date);
     }
 
 

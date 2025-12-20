@@ -29,6 +29,7 @@ import { HealthMonitoringModule } from './health-monitoring/health-monitoring.mo
 import { TestResultModule } from './test-result/test-result.module';
 import { ChatModule } from './chat/chat.module';
 import { GoogleAuthModule } from './google-auth/google-auth.module';
+import { TestBookingPaymentModule } from './test-booking-payment/test-booking-payment.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { GoogleAuthModule } from './google-auth/google-auth.module';
     TestResultModule,
     ChatModule,
     GoogleAuthModule,
+    TestBookingPaymentModule,
   ],
   controllers: [AppController, UploadController],
   providers: [AppService, NeonProvider, MulterService],

@@ -1,19 +1,23 @@
-import { Injectable, BadRequestException, UnauthorizedException,InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  UnauthorizedException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { AuthRepository } from '@src/auth/repository/auth.repository';
 import { UserRepository } from '@src/users/repository/user.repository';
 import crypto from 'crypto';
-import qs from 'qs'
+import qs from 'qs';
 import { jwtConstants } from '@src/auth/jwtContants';
 import { JwtService } from '@nestjs/jwt';
-import axios from 'axios'
+import axios from 'axios';
 import { HelperRepository } from '@src/helpers/repository/helpers.repository';
 import { roleType } from '@src/users/dto/createUser.dto';
 import { PatientRepository } from '@src/patient/repository/patient.repository';
 import { ConsultantRepository } from '@src/consultant/repository/consultant.repository';
 import { GoogleAuthService } from '@src/google-auth/google-auth.service';
 import * as bcrypt from 'bcrypt';
-
-
+import { GoogleMobileSigninDto } from '@src/auth/dto/google-mobile-signin.dto';
 
 @Injectable()
 export class AuthService {
@@ -22,69 +26,188 @@ export class AuthService {
     process.env.NODE_ENV === 'production'
       ? `${process.env.SERVER_URI}/api/v1/auth/google/callback`
       : 'http://localhost:3000/api/v1/auth/google/callback';
-  constructor(private readonly authRepository: AuthRepository,
+  constructor(
+    private readonly authRepository: AuthRepository,
     private readonly userRepository: UserRepository,
     private readonly jwtService: JwtService,
     private readonly helperRepository: HelperRepository,
     private readonly patientRepository: PatientRepository,
     private readonly consultantRepository: ConsultantRepository,
-    private readonly googleAuthService: GoogleAuthService
-  ) { }
-
+    private readonly googleAuthService: GoogleAuthService,
+  ) {}
 
   generateRandomPassword(length = 12): string {
     return crypto.randomBytes(length).toString('hex');
   }
 
-    async loginUser(data: { email: string; password: string }) {
-      const { email, password } = data;
-  
-      if (!email || !password)
-        throw new BadRequestException('Please provide email and password');
-      const user = await this.authRepository.findUserByEmail(email);
-      if (!user)
-        throw new UnauthorizedException(
-          'Bad credentials, Please check email and password',
-        );
-      const passwordIsCorrect = await bcrypt.compare(password, user.password);
-      if (!passwordIsCorrect)
-        throw new UnauthorizedException(
-          'Bad credentials, Please check email and password',
-        );
-  
-      const payload = { id: user.id, email: user.email, role: user.role };
-  
-      const accessToken = await this.jwtService.signAsync(payload, {
-        secret: jwtConstants.accessTokenSecret,
-        expiresIn: '1h',
-      });
-      const refreshToken = await this.jwtService.signAsync(payload, {
-        secret: jwtConstants.refreshTokenSecret,
-        expiresIn: '30d',
-      });
-  
-      const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-  
-      const updateUserToken = await this.authRepository.updateUserRefreshToken(hashedRefreshToken, user.id)
-  
-      if (!updateUserToken) throw new InternalServerErrorException();
-      return { user, accessToken, refreshToken };
+  async loginUser(data: { email: string; password: string }) {
+    const { email, password } = data;
+
+    if (!email || !password)
+      throw new BadRequestException('Please provide email and password');
+    const user = await this.authRepository.findUserByEmail(email);
+    if (!user)
+      throw new UnauthorizedException(
+        'Bad credentials, Please check email and password',
+      );
+    const passwordIsCorrect = await bcrypt.compare(password, user.password);
+    if (!passwordIsCorrect)
+      throw new UnauthorizedException(
+        'Bad credentials, Please check email and password',
+      );
+
+    const payload = { id: user.id, email: user.email, role: user.role };
+
+    const accessToken = await this.jwtService.signAsync(payload, {
+      secret: jwtConstants.accessTokenSecret,
+      expiresIn: '1h',
+    });
+    const refreshToken = await this.jwtService.signAsync(payload, {
+      secret: jwtConstants.refreshTokenSecret,
+      expiresIn: '30d',
+    });
+
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+
+    const updateUserToken = await this.authRepository.updateUserRefreshToken(
+      hashedRefreshToken,
+      user.id,
+    );
+
+    if (!updateUserToken) throw new InternalServerErrorException();
+    return { user, accessToken, refreshToken };
+  }
+
+  async logoutUser(userId: string) {
+    await this.authRepository.updateUserRefreshToken(null, userId);
+  }
+
+  // * Google auth for mobile
+
+  async googleMobileAuth(data: GoogleMobileSigninDto) {
+    let googlePayload;
+    try {
+      googlePayload = await this.googleAuthService.verifyIdToken(data.idToken);
+    } catch (error) {
+      console.log(error);
+      throw new BadRequestException('Your request token is invalid');
     }
-  
-    async logoutUser(userId: string) {
-      await this.authRepository.updateUserRefreshToken(null, userId);
-      
+    if (!googlePayload.email) throw new BadRequestException('Invalid Email');
+
+    //! generate a ramdon crypto password for google users
+    const googleUserPwd = this.generateRandomPassword();
+    const hashedGoogleUserPwd = await bcrypt.hash(googleUserPwd, 10);
+    const { email, given_name, family_name, picture, email_verified } =
+      googlePayload;
+    const payload = {
+      email,
+      fullName: `${given_name} ${family_name}`,
+      dp: picture,
+      emailVerified: email_verified,
+      password: hashedGoogleUserPwd,
+      authProvider: 'google',
+      role: data.role,
+    };
+
+    switch (data.role) {
+      case roleType.PATIENT: {
+        const findUserByEmail =
+          await this.authRepository.findUserByEmail(email);
+
+        if (findUserByEmail) {
+          const accessToken = await this.jwtService.signAsync(payload, {
+            secret: jwtConstants.accessTokenSecret,
+            expiresIn: '1h',
+          });
+
+          const refreshToken = await this.jwtService.signAsync(payload, {
+            secret: jwtConstants.refreshTokenSecret,
+            expiresIn: '30d',
+          });
+
+          return { findUserByEmail, refreshToken, accessToken };
+        }
+        const user = await this.helperRepository.executeInTransaction(
+          async (trx) => {
+            const patient = await this.userRepository.createUser(
+              payload,
+              'google',
+              trx,
+            );
+            await this.patientRepository.createPatient(patient.id, trx);
+            return patient;
+          },
+        );
+
+        const accessToken = await this.jwtService.signAsync(payload, {
+          secret: jwtConstants.accessTokenSecret,
+          expiresIn: '1h',
+        });
+
+        const refreshToken = await this.jwtService.signAsync(payload, {
+          secret: jwtConstants.refreshTokenSecret,
+          expiresIn: '30d',
+        });
+
+        return { user, refreshToken, accessToken };
+      }
+
+      case roleType.CONSULTANT: {
+        const findUserByEmail =
+          await this.authRepository.findUserByEmail(email);
+
+        if (findUserByEmail) {
+          const accessToken = await this.jwtService.signAsync(payload, {
+            secret: jwtConstants.accessTokenSecret,
+            expiresIn: '1h',
+          });
+
+          const refreshToken = await this.jwtService.signAsync(payload, {
+            secret: jwtConstants.refreshTokenSecret,
+            expiresIn: '30d',
+          });
+
+          return { findUserByEmail, refreshToken, accessToken };
+        }
+        const user = await this.helperRepository.executeInTransaction(
+          async (trx) => {
+            const consultant = await this.userRepository.createUser(
+              payload,
+              'google',
+              trx,
+            );
+            await this.consultantRepository.createConsultant(
+              consultant.id,
+              trx,
+            );
+            return consultant;
+          },
+        ); // ← Fixed: closing parenthesis right after the callback
+
+        const accessToken = await this.jwtService.signAsync(payload, {
+          secret: jwtConstants.accessTokenSecret,
+          expiresIn: '1h',
+        });
+
+        const refreshToken = await this.jwtService.signAsync(payload, {
+          secret: jwtConstants.refreshTokenSecret,
+          expiresIn: '30d',
+        });
+
+        return { user, refreshToken, accessToken };
+      }
+
+      default:
+        throw new BadRequestException('Invalid role type');
     }
+  }
 
+  // * Google auth for web
 
-
-
-  // * Google auth 
-
-  googleAuth(state: any) {
+  googleWebAuth(state: any) {
     const scope = ['openid', 'email', 'profile'].join(' ');
     // console.log(this.redirectUri, process.env.SERVER_URI);
-    console.log(this.redirectUri)
+    console.log(this.redirectUri);
     const params = qs.stringify({
       client_id: this.clientId,
       redirect_uri: this.redirectUri,
@@ -92,13 +215,13 @@ export class AuthService {
       scope,
       access_type: 'offline', // so we get a refresh token
       prompt: 'consent', // ensures refresh token is returned every login
-      state
+      state,
     });
 
     const googleUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
-    return googleUrl
+    return googleUrl;
   }
-  async googleAuthCallback(code: string, state: string) {
+  async googleAuthCallbackForWeb(code: string, state: string) {
     const { data } = await axios.post(
       'https://oauth2.googleapis.com/token',
       qs.stringify({
@@ -116,18 +239,18 @@ export class AuthService {
 
     const { id_token } = data;
     const decodedState = JSON.parse(
-      Buffer.from(state, 'base64').toString('utf-8')
+      Buffer.from(state, 'base64').toString('utf-8'),
     );
     const { role } = decodedState;
     // console.log('decodedState', decodedState, data)
 
-const googlePayload = await this.googleAuthService.verifyIdToken(id_token);
+    const googlePayload = await this.googleAuthService.verifyIdToken(id_token);
 
-if(!googlePayload.email) throw new BadRequestException('Invalid Email')
+    if (!googlePayload.email) throw new BadRequestException('Invalid Email');
 
     //! generate a ramdon crypto password for google users
     const googleUserPwd = this.generateRandomPassword();
-  const  hashedGoogleUserPwd = await bcrypt.hash(googleUserPwd, 10);
+    const hashedGoogleUserPwd = await bcrypt.hash(googleUserPwd, 10);
     const { email, given_name, family_name, picture, email_verified } =
       googlePayload;
     const payload = {
@@ -137,9 +260,8 @@ if(!googlePayload.email) throw new BadRequestException('Invalid Email')
       emailVerified: email_verified,
       password: hashedGoogleUserPwd,
       authProvider: 'google',
-      role
+      role,
     };
-
 
     // switch (role) {
     //   case roleType.PATIENT:
@@ -172,8 +294,6 @@ if(!googlePayload.email) throw new BadRequestException('Invalid Email')
     //         return consultant;
     //       }
 
-        
-
     //       )
     //       const accessToken = await this.jwtService.signAsync(payload, {
     //         secret: jwtConstants.accessTokenSecret,
@@ -192,11 +312,17 @@ if(!googlePayload.email) throw new BadRequestException('Invalid Email')
 
     switch (role) {
       case roleType.PATIENT: {
-        const user = await this.helperRepository.executeInTransaction(async (trx) => {
-          const patient = await this.userRepository.createUser(payload, 'google', trx);
-          await this.patientRepository.createPatient(patient.id, trx);
-          return patient;
-        });
+        const user = await this.helperRepository.executeInTransaction(
+          async (trx) => {
+            const patient = await this.userRepository.createUser(
+              payload,
+              'google',
+              trx,
+            );
+            await this.patientRepository.createPatient(patient.id, trx);
+            return patient;
+          },
+        );
 
         const accessToken = await this.jwtService.signAsync(payload, {
           secret: jwtConstants.accessTokenSecret,
@@ -212,11 +338,20 @@ if(!googlePayload.email) throw new BadRequestException('Invalid Email')
       }
 
       case roleType.CONSULTANT: {
-        const user = await this.helperRepository.executeInTransaction(async (trx) => {
-          const consultant = await this.userRepository.createUser(payload, 'google', trx);
-          await this.consultantRepository.createConsultant(consultant.id, trx);
-          return consultant;
-        }); // ← Fixed: closing parenthesis right after the callback
+        const user = await this.helperRepository.executeInTransaction(
+          async (trx) => {
+            const consultant = await this.userRepository.createUser(
+              payload,
+              'google',
+              trx,
+            );
+            await this.consultantRepository.createConsultant(
+              consultant.id,
+              trx,
+            );
+            return consultant;
+          },
+        ); // ← Fixed: closing parenthesis right after the callback
 
         const accessToken = await this.jwtService.signAsync(payload, {
           secret: jwtConstants.accessTokenSecret,
@@ -234,9 +369,5 @@ if(!googlePayload.email) throw new BadRequestException('Invalid Email')
       default:
         throw new BadRequestException('Invalid role type');
     }
-
-
   }
-
-
 }

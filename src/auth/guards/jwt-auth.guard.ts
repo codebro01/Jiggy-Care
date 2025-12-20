@@ -33,7 +33,7 @@ export class JwtAuthGuard implements CanActivate {
       request.headers['authorization']?.split(' ')[1]; // for browser cookies // for mobile apps
 
     if (!access_token && !refresh_token) {
-      throw new UnauthorizedException('No token provided');
+      throw new UnauthorizedException('Unauthorized to access this route');
     }
 
 
@@ -44,7 +44,7 @@ export class JwtAuthGuard implements CanActivate {
       });
       if (!token)
         throw new UnauthorizedException(
-          'Could not verify token, Unauthorization error',
+          'authorization error',
         );
 
       // const payload = this.jwtService.verify(token); // verify with secret
@@ -55,7 +55,7 @@ export class JwtAuthGuard implements CanActivate {
       if (!refresh_token) {
         response.redirect('/signin');
         throw new UnauthorizedException(
-          'Access token expired and no refresh token provided',
+          'Unauthorized to access this route',
         );
       }
 
@@ -68,7 +68,7 @@ export class JwtAuthGuard implements CanActivate {
       console.log(refresh_token, access_token);
 
       if (!token) {
-        throw new UnauthorizedException('Invalid refresh token');
+        throw new UnauthorizedException('Unauthorized to access this route');
       }
 
       const { email, id, role } = token;

@@ -10,11 +10,12 @@ export class TestBookingRepository {
   constructor(
     @Inject('DB') private DbProvider: NodePgDatabase<typeof import('@src/db')>,
   ) {}
-  async savePayment(
+  async create(
     data: CreateTestBookingDto & {
       invoiceId?: string;
       reference?: string;
-      paymentStatus: string;
+      paymentStatus?: string;
+      paymentMethod?: string,
     },
     patientId: string,
     trx?: any,
@@ -42,7 +43,7 @@ export class TestBookingRepository {
   }
 
   async findOne(testBookingId: string, patientId: string) {
-    const testBooking = await this.DbProvider.select({
+    const [testBooking] = await this.DbProvider.select({
       id: testBookingTable.id,
       testId: testBookingTable.testId,
       labId: testBookingTable.labId || null,
@@ -56,7 +57,7 @@ export class TestBookingRepository {
           eq(testBookingTable.id, testBookingId),
           eq(testBookingTable.patientId, patientId),
         ),
-      );
+      ).limit(1);
 
     return testBooking;
   }

@@ -5,6 +5,8 @@ import {
   HttpStatus,
   HttpException,
   InternalServerErrorException,
+  NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
@@ -25,13 +27,14 @@ import {
   StatusType,
 } from '@src/notification/dto/createNotificationDto';
 import { CreateOrderDto } from '@src/order/dto/create-order.dto';
-import { PaymentForType } from './dto/paystackMetadataDto';
+import { PaymentForType } from './dto/booking-paystack-Metadata.dto';
 import { OrdersRepository } from '@src/order/repository/order.repository';
 import { MedicationRepository } from '@src/medication/medication.repository';
 import { LabRepository } from '@src/lab/repository/lab.repository';
 import { TestBookingRepository } from '@src/test-booking/repository/test-booking.repository';
 import { TestRepository } from '@src/test/repository/test.repository';
 import { InitializeTestBookingPayment } from '@src/payment/dto/initializeTestBookingPayment.dto';
+import { TestBookingPaymentRepository } from '@src/test-booking-payment/repository/test-booking-payment.repository';
 
 interface VerifyPaymentResponse {
   status: boolean;
@@ -65,6 +68,7 @@ export class PaymentService {
     private readonly labRepository: LabRepository,
     private readonly testBookingRepository: TestBookingRepository,
     private readonly testRepository: TestRepository,
+    private readonly testBookingPaymentRepository: TestBookingPaymentRepository,
   ) {
     const key = this.configService.get<string>('PAYSTACK_SECRET_KEY');
     if (!key) {
@@ -85,17 +89,29 @@ export class PaymentService {
       throw new BadRequestException(
         'Required payload for payment not provided',
       );
+
+    const booking = await this.bookingRepository.getBooking(
+      data.metadata.bookingId,
+      data.metadata.consultantId,
+      data.metadata.userId,
+    );
+
+    if (!booking) throw new NotFoundException('could not find bookings');
+
+    if (booking.paymentStatus === true)
+      throw new ConflictException('Duplicate payment for booking');
     try {
       const response = await firstValueFrom(
         this.httpService.post(
           `${this.baseUrl}/transaction/initialize`,
           {
             email: data.email,
-            amount: data.amount,
+            amount: booking.pricePerSession * 100,
             reference: generateSecureRef(),
             callback_url: data.callback_url,
             metadata: {
               ...data.metadata,
+              amountInNaira: booking.pricePerSession,
               invoiceId: generateSecureInvoiceId(),
               dateInitiated: new Date().toISOString(),
               paymentFor: PaymentForType.BOOKINGS,
@@ -167,11 +183,11 @@ export class PaymentService {
           `${this.baseUrl}/transaction/initialize`,
           {
             email: data.email,
-            amount: Math.round(totalAmount),
+            amount: Math.round(totalAmount) * 100,
             reference: generateSecureRef(),
             metadata: {
               ...data.metadata,
-              amountInNaira: totalAmount / 100,
+              amountInNaira: totalAmount,
               orderId: generateSecureOrderId(),
               paymentFor: PaymentForType.MEDICATIONS,
               items: orderItems,
@@ -199,32 +215,56 @@ export class PaymentService {
         'Required payload for payment not provided',
       );
 
-    try {
-      const test = await this.testRepository.findOne(data.metadata.testId);
+    const bookedDate = new Date(data.metadata.date);
+    bookedDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (bookedDate < today)
+      throw new BadRequestException(
+        'You cannot book a test appointment in the past',
+      );
 
-      if (!test)
+    try {
+      const testBooking = await this.testBookingRepository.findOne(
+        data.metadata.testBookingId,
+        data.metadata.patientId,
+      );
+
+      console.log(data.metadata.patientId, data.metadata.testBookingId);
+
+      console.log('testBooking', testBooking);
+
+      if (!testBooking)
         throw new BadRequestException(`Invalid  test type provided!!!`);
 
-      if (data.metadata.labId) {
+      if (testBooking.labId !== null) {
         const checkIsValidLab = await this.labRepository.findOne(
-          data.metadata.labId,
+          testBooking.labId,
         );
         if (!checkIsValidLab)
           throw new BadRequestException(`Invalid  lab provided!!!`);
       }
+
+      const test = await this.testRepository.findOne(testBooking.testId);
 
       const response = await firstValueFrom(
         this.httpService.post(
           `${this.baseUrl}/transaction/initialize`,
           {
             email: data.email,
-            amount: test.amount * 100,
+            amount:
+              testBooking.collection === 'home_collection'
+                ? test.amount * 100 + 250000
+                : test.amount * 100,
             reference: generateSecureRef(),
             metadata: {
               ...data.metadata,
-              orderId: generateSecureOrderId(),
+              testBookingId: data.metadata.testBookingId, 
+              testId: testBooking.testId, 
+              labId: testBooking.labId, 
+              invoiceId: generateSecureInvoiceId(),
               paymentFor: PaymentForType.TEST_BOOKINGS,
-              amountInNaira: test.amount, 
+              amountInNaira: test.amount,
               dateInitiated: new Date().toISOString(),
             },
           },
@@ -245,9 +285,8 @@ export class PaymentService {
 
   private calculateDeliveryFee(address: string): number {
     console.log(address);
-    // Your delivery fee calculation logic
     // Could be based on location, distance, etc.
-    return 150000;
+    return 0; // in kobo
   }
 
   //! verify payments
@@ -352,10 +391,7 @@ export class PaymentService {
         deliveryAddress,
         invoiceId,
         medicationPayload,
-        labId,
-        testId,
-        date,
-        collection,
+        testBookingId
       } = event.data.metadata || {};
 
       console.log(channel, 'event', event);
@@ -511,9 +547,10 @@ export class PaymentService {
 
           default:
         }
-      else if (paymentFor === 'medications')
+      else if (paymentFor === 'medications') {
         switch (event.event) {
           case 'charge.success': {
+            // console.log('got into success')
             const existingPayment =
               await this.orderRepository.findByReference(reference);
 
@@ -539,6 +576,7 @@ export class PaymentService {
                 patientId,
                 trx,
               );
+              // console.log('savePayment', savePayment)
             });
 
             await this.notificationService.createNotification(
@@ -653,19 +691,18 @@ export class PaymentService {
 
           default:
         }
-      else if (paymentFor === 'test_bookings')
+      } else if (paymentFor === 'test_bookings')
         switch (event.event) {
           case 'charge.success': {
             await this.paymentRepository.executeInTransaction(async (trx) => {
-              await this.testBookingRepository.savePayment(
+              await this.testBookingPaymentRepository.savePayment(
                 {
                   paymentMethod: channel,
                   reference,
-                  labId: labId ? labId : null,
-                  testId,
-                  paymentStatus: 'paid',
-                  date,
-                  collection,
+                  invoiceId,
+                  testBookingId,
+                  paymentStatus: 'PAID',
+                  amount: amountInNaira, 
                 },
                 patientId,
                 trx,
@@ -688,15 +725,14 @@ export class PaymentService {
           }
           case 'charge.failed': {
             await this.paymentRepository.executeInTransaction(async (trx) => {
-              await this.testBookingRepository.savePayment(
+              await this.testBookingPaymentRepository.savePayment(
                 {
                   paymentMethod: channel,
                   reference,
-                  labId: labId ? labId : null,
-                  testId,
-                  paymentStatus: 'paid',
-                  date,
-                  collection,
+                  invoiceId,
+                  testBookingId,
+                  paymentStatus: 'PAID',
+                  amount: amountInNaira,
                 },
                 patientId,
                 trx,
@@ -719,15 +755,14 @@ export class PaymentService {
 
           case 'charge.pending': {
             await this.paymentRepository.executeInTransaction(async (trx) => {
-              await this.testBookingRepository.savePayment(
+              await this.testBookingPaymentRepository.savePayment(
                 {
                   paymentMethod: channel,
                   reference,
-                  labId: labId ? labId : null,
-                  testId,
-                  paymentStatus: 'paid',
-                  date,
-                  collection,
+                  invoiceId,
+                  testBookingId,
+                  paymentStatus: 'PAID',
+                  amount: amountInNaira,
                 },
                 patientId,
                 trx,

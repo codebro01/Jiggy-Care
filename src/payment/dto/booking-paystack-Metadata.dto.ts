@@ -16,19 +16,18 @@ export enum PaymentForType {
   TEST_BOOKINGS = 'test_bookings',
 }
 
-export class PaystackMetedataDto {
-
+export class bookingPaystackMetedataDto {
   @ApiProperty({
-    description: 'bf4cd48d-441e-4e3c-b504-76ee5045b6e6',
-    example: 'An example of the id of the booking',
+    description: 'An example of the id of the booking',
+    example: 'bf4cd48d-441e-4e3c-b504-76ee5045b6e6',
   })
   @IsString()
   @IsNotEmpty({ message: 'Booking Id is required' })
   bookingId: string;
 
   @ApiProperty({
-    description: 'bf4cd48d-441e-4e3c-b504-76ee5045b6e6',
-    example: 'An example of the id of the consultant',
+    description: 'An example of the id of the consultant',
+    example: 'bf4cd48d-441e-4e3c-b504-76ee5045b6e6',
   })
   @IsString()
   @IsNotEmpty({ message: 'consultant Id is required' })

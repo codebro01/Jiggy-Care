@@ -1,102 +1,153 @@
-import { Injectable, Inject, BadRequestException } from "@nestjs/common";
-import { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { CreateBookingDto } from "../dto/createBooking.dto";
-import { or, eq, and } from "drizzle-orm";
-import { NotFoundError } from "rxjs";
-import {  bookingTable } from "@src/db";
-import { SQL } from "drizzle-orm";
-
-
-
+import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { CreateBookingDto } from '../dto/createBooking.dto';
+import { or, eq, and } from 'drizzle-orm';
+import { NotFoundError } from 'rxjs';
+import { bookingTable, consultantTable } from '@src/db';
+import { SQL } from 'drizzle-orm';
 
 @Injectable()
-
 export class BookingRepository {
-    constructor(@Inject("DB") private readonly DbProvider: NodePgDatabase<typeof import('@src/db')>) { }
+  constructor(
+    @Inject('DB')
+    private readonly DbProvider: NodePgDatabase<typeof import('@src/db')>,
+  ) {}
 
+  // ! create bookings
+  async createBooking(
+    data: CreateBookingDto,
+    patientId: string,
+    consultantId: string,
+    trx?: any,
+  ) {
+    const Trx = trx || this.DbProvider;
 
-    // ! create bookings 
-    async createBooking(data: CreateBookingDto, patientId: string, consultantId: string, trx?: any) {
-        const Trx = trx || this.DbProvider;
+    const [booking] = await Trx.insert(bookingTable)
+      .values({ ...data, date: new Date(data.date), consultantId, patientId , paymentStatus: false})
+      .returning();
 
-        const [booking] = await Trx.insert(bookingTable).values({ ...data, date: new Date(data.date), consultantId, patientId }).returning();
+    return booking;
+  }
 
-        return booking;
+  // ! get booking
+  async getBooking(
+    bookingId: string,
+    consultantId?: string,
+    patientId?: string,
+    trx?: any,
+  ) {
+    const Trx = trx || this.DbProvider;
+
+    if (!consultantId && !patientId)
+      throw new BadRequestException(
+        'Please provide either a patient or a consultant identity',
+      );
+
+    const conditions = [];
+
+    if (consultantId)
+      conditions.push(eq(bookingTable.consultantId, consultantId));
+
+    if (patientId) conditions.push(eq(bookingTable.patientId, patientId));
+
+    const query =  Trx.select({
+        pricePerSession: consultantTable.pricePerSession, 
+        paymentStatus: bookingTable.paymentStatus 
+    })
+      .from(bookingTable)
+      .where(and(eq(bookingTable.id, bookingId),  or(...conditions)));
+
+    if (consultantId) {
+      query.leftJoin(consultantTable, eq(consultantTable.userId, consultantId));
     }
 
-    // ! get booking 
-    async getBooking(bookingId: string, consultantId?: string, patientId?: string, trx?: any) {
-        const Trx = trx || this.DbProvider;
+    const [result] = await query.limit(1);
 
-        if (!consultantId && !patientId) throw new BadRequestException('Please provide either a patient or a consultant identity')
+    return result;
+  }
 
-        const conditions = [];
+  async findBookingsByConditions(conditions: SQL[], trx?: any) {
+    const Trx = trx || this.DbProvider;
+    if (conditions.length < 1)
+      throw new BadRequestException(
+        'Please provide at least one condition  to find bookings',
+      );
 
+    const bookings = await Trx.select()
+      .from(bookingTable)
+      .where(and(...conditions));
 
-        if (consultantId) conditions.push(eq(bookingTable.consultantId, consultantId))
+    return bookings;
+  }
 
-        if (patientId) conditions.push(eq(bookingTable.patientId, patientId))
+  async getBookingByDate(
+    date: string,
+    bookingId: string,
+    consultantId?: string,
+    patientId?: string,
+    trx?: any,
+  ) {
+    const Trx = trx || this.DbProvider;
 
-        const [booking] = await Trx.select().from(bookingTable).where(and(eq(bookingTable.id, bookingId), or(...conditions))).limit(1);
-        return booking;
-    }
+    if (!consultantId && !patientId)
+      throw new BadRequestException(
+        'Please provide either a patient or a consultant identity',
+      );
 
-    async findBookingsByConditions(conditions: SQL[], trx?: any) {
+    const conditions = [];
 
-        const Trx = trx || this.DbProvider;
-        if (conditions.length < 1) throw new BadRequestException('Please provide at least one condition  to find bookings')
+    if (consultantId)
+      conditions.push(eq(bookingTable.consultantId, consultantId));
 
-        const bookings = await Trx.select()
-            .from(bookingTable)
-            .where(and(...conditions));
+    if (patientId) conditions.push(eq(bookingTable.patientId, patientId));
 
-            return bookings
-    }
+    const [booking] = await Trx.select({ date: bookingTable.date })
+      .from(bookingTable)
+      .where(and(eq(bookingTable.id, bookingId), or(...conditions)))
+      .limit(1);
 
+    if (!booking) throw new NotFoundError('Booking could not be  found!!!');
 
-    async getBookingByDate(date: string, bookingId: string, consultantId?: string, patientId?: string, trx?: any) {
-        const Trx = trx || this.DbProvider;
+    return booking;
+  }
 
-        if (!consultantId && !patientId) throw new BadRequestException('Please provide either a patient or a consultant identity')
+  async getBookings(consultantId?: string, patientId?: string, trx?: any) {
+    const Trx = trx || this.DbProvider;
 
-        const conditions = [];
+    if (!consultantId && !patientId)
+      throw new BadRequestException(
+        'Please provide either a patient or a consultant identity',
+      );
 
-        if (consultantId) conditions.push(eq(bookingTable.consultantId, consultantId))
+    const conditions = [eq(bookingTable.paymentStatus, true)];
 
-        if (patientId) conditions.push(eq(bookingTable.patientId, patientId))
+    if (consultantId)
+      conditions.push(eq(bookingTable.consultantId, consultantId));
 
-        const [booking] = await Trx.select({ date: bookingTable.date }).from(bookingTable).where(and(eq(bookingTable.id, bookingId), or(...conditions))).limit(1);
+    if (patientId) conditions.push(eq(bookingTable.patientId, patientId));
 
-        if (!booking) throw new NotFoundError('Booking could not be  found!!!')
+    const [booking] = await Trx.select()
+      .from(bookingTable)
+      .where(...conditions);
+    return booking;
+  }
 
+  async updateBookingPaymentStatus(
+    data: { paymentStatus: boolean; bookingId: string },
+    patientId: string,
+    trx?: any,
+  ) {
+    const Trx = trx || this.DbProvider;
 
+    const booking = await Trx.update(bookingTable)
+      .set({ paymentStatus: data.paymentStatus })
+      .where(
+        and(
+          eq(bookingTable.id, data.bookingId),
+          eq(bookingTable.patientId, patientId),
+        ),
+      );
 
-
-
-        return booking;
-    }
-
-    async getBookings(consultantId?: string, patientId?: string, trx?: any) {
-        const Trx = trx || this.DbProvider;
-
-        if (!consultantId && !patientId) throw new BadRequestException('Please provide either a patient or a consultant identity')
-
-        const conditions = [];
-
-        if (consultantId) conditions.push(eq(bookingTable.consultantId, consultantId))
-
-        if (patientId) conditions.push(eq(bookingTable.patientId, patientId))
-
-        const [booking] = await Trx.select().from(bookingTable).where(...conditions);
-        return booking;
-    }
-
-    async updateBookingPaymentStatus(data: {paymentStatus: boolean, bookingId: string}, patientId: string, trx?:any) {
-          const Trx = trx || this.DbProvider;
-
-          const booking = await Trx.update(bookingTable).set({paymentStatus: data.paymentStatus}).where(and(eq(bookingTable.id, data.bookingId), eq(bookingTable.patientId, patientId)));
-
-          return booking;
-    }
-
+    return booking;
+  }
 }

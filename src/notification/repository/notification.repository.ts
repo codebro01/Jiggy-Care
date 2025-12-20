@@ -26,7 +26,7 @@ export class NotificationRepository {
 
       return notification;
     } catch (error) {
-      console.log(error);
+      console.log(error)
       throw new BadRequestException('An error occured, please try again')
 
     }

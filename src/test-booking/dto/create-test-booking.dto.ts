@@ -1,6 +1,11 @@
-import { IsDateString, IsNotEmpty, IsEnum, IsUUID, IsOptional, IsString } from "class-validator";
-import { ApiProperty } from "@nestjs/swagger";
-import { PaymentMethodType } from "@src/payment/dto/paystackMetadataDto";
+import {
+  IsDateString,
+  IsNotEmpty,
+  IsEnum,
+  IsUUID,
+  IsOptional,
+} from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export enum TestTitleType {
   DIABETES = 'diabetes',
@@ -14,16 +19,15 @@ export enum TestCollectionType {
 
 export class CreateTestBookingDto {
   @ApiProperty({
-    example: '70fd48ad-c80f-4600-8e9f-c2f9dcb56c5b',
-    description:
-      'The category of the test that is to be t.e the test kind',
+    example: '9058e4b3-024a-40df-8561-371097208429',
+    description: 'The category of the test that is to be t.e the test kind',
   })
   @IsNotEmpty()
   @IsUUID()
   testId: string;
 
   @ApiProperty({
-    example: '70fd48ad-c80f-4600-8e9f-c2f9dcb56c5b',
+    example: '51dcd58d-d192-4803-899a-318de14197e4',
     description:
       'The lab id of the lab that is to host the patientId for the test, and its optional if the coll',
   })
@@ -39,26 +43,6 @@ export class CreateTestBookingDto {
   @IsNotEmpty()
   @IsEnum(TestCollectionType)
   collection: TestCollectionType;
-
-
-  @ApiProperty({
-    example: 'home_collection',
-    description:
-      'The collection of the test either its home or at the lab center',
-  })
-  @IsNotEmpty()
-  @IsString()
-  paymentStatus: string;
-
-  @ApiProperty({
-    example: PaymentMethodType.CARD,
-    description:
-      'Method of payment',
-  })
-  @IsNotEmpty()
-  @IsEnum(PaymentMethodType)
-  paymentMethod: PaymentMethodType;
-
 
   @ApiProperty({
     example: '2025-11-22T09:05:30.123Z',

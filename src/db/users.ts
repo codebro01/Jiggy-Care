@@ -75,6 +75,7 @@ export const consultantTable = pgTable('consultants', {
     sunday?: string;
   }>(),
   pricePerSession: integer('price_per_session'),
+  approvedStatus: boolean('approved_status').default(false), 
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

@@ -19,14 +19,13 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
-  ApiBody,
   ApiParam,
   ApiHeader,
   // ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { PaymentService } from '@src/payment/payment.service';
 import type { RawBodyRequest } from '@nestjs/common';
-import {  PaystackMetedataDto } from './dto/paystackMetadataDto';
+import { bookingPaystackMetedataDto } from './dto/booking-paystack-Metadata.dto';
 import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { Roles } from '@src/auth/decorators/roles.decorators';
@@ -49,6 +48,9 @@ export class PaymentController {
     private readonly bookingRepository: BookingRepository,
   ) {}
 
+
+  
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Post('initialize/booking')
@@ -57,60 +59,9 @@ export class PaymentController {
     description:
       'Initializes a payment transaction with Paystack. Returns a payment authorization URL and reference that can be used to complete the payment. Only accessible by business owners.',
   })
-  @ApiBody({
-    description: 'Payment initialization data',
-    schema: {
-      type: 'object',
-      required: ['amount', 'metadata'],
-      properties: {
-        amount: {
-          type: 'number',
-          description: 'Amount in kobo (NGN minor unit, multiply naira by 100)',
-          example: 50000,
-          minimum: 100,
-        },
-        metadata: {
-          type: 'object',
-          description: 'Additional payment metadata',
-          properties: {
-            campaignName: {
-              type: 'string',
-              example: 'Christmas Campaign 2024',
-            },
-            invoiceId: {
-              type: 'string',
-              example: 'INV-2024-001',
-            },
-            dateInitiated: {
-              type: 'string',
-              format: 'date-time',
-              example: '2024-11-16T10:30:00Z',
-            },
-          },
-        },
-      },
-    },
-  })
   @ApiResponse({
     status: 200,
     description: 'Payment initialized successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'object',
-          properties: {
-            authorization_url: {
-              type: 'string',
-              example: 'https://checkout.paystack.com/abc123xyz',
-            },
-            access_code: { type: 'string', example: 'abc123xyz' },
-            reference: { type: 'string', example: 'ref_1234567890' },
-          },
-        },
-      },
-    },
   })
   @ApiResponse({
     status: 400,
@@ -126,81 +77,12 @@ export class PaymentController {
   })
   async initializeBookingPayment(
     @Body()
-    body: {
-      amount: number;
-      metadata: PaystackMetedataDto;
-    },
+    body: bookingPaystackMetedataDto,
     @Req() req: Request,
     @Res() res: Response,
   ) {
     const { email, id: userId } = req.user;
     const result = await this.paymentService.initializeBookingPayment({
-      email: email,
-      amount: body.amount,
-      metadata: {
-        ...body.metadata,
-        patientId: userId,
-        amount: body.amount,
-        amountInNaira: body.amount / 100,
-      },
-    });
-
-    res.status(HttpStatus.OK).json({
-      success: true,
-      data: result.data,
-    });
-  }
-
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('patient')
-  @Post('initialize/medication')
-  @ApiOperation({
-    summary: 'Initialize a payment transaction',
-    description:
-      'Initializes a payment transaction with Paystack. Returns a payment authorization URL and reference that can be used to complete the payment. Only accessible by business owners.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Payment initialized successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'object',
-          properties: {
-            authorization_url: {
-              type: 'string',
-              example: 'https://checkout.paystack.com/abc123xyz',
-            },
-            access_code: { type: 'string', example: 'abc123xyz' },
-            reference: { type: 'string', example: 'ref_1234567890' },
-          },
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad Request - Invalid payment data',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing JWT token',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - User is not a business owner',
-  })
-  async initializeMedicationOrder(
-    @Body()
-    body: CreateOrderDto,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
-    console.log('got in here');
-    const { email, id: userId } = req.user;
-    const result = await this.paymentService.initializeMedicationOrder({
       email: email,
       metadata: {
         ...body,
@@ -225,23 +107,52 @@ export class PaymentController {
   @ApiResponse({
     status: 200,
     description: 'Payment initialized successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'object',
-          properties: {
-            authorization_url: {
-              type: 'string',
-              example: 'https://checkout.paystack.com/abc123xyz',
-            },
-            access_code: { type: 'string', example: 'abc123xyz' },
-            reference: { type: 'string', example: 'ref_1234567890' },
-          },
-        },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid payment data',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - User is not a business owner',
+  })
+  async initializeMedicationOrder(
+    @Body()
+    body: CreateOrderDto,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const { email, id: userId } = req.user;
+    const result = await this.paymentService.initializeMedicationOrder({
+      email: email,
+      metadata: {
+        ...body,
+        patientId: userId,
       },
-    },
+    });
+
+    res.status(HttpStatus.OK).json({
+      success: true,
+      data: result.data,
+    });
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('patient')
+  @Post('initialize/test-booking')
+  @ApiOperation({
+    summary: 'Initialize a payment transaction',
+    description:
+      'Initializes a payment transaction with Paystack. Returns a payment authorization URL and reference that can be used to complete the payment. Only accessible by business owners.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment initialized successfully',
+   
   })
   @ApiResponse({
     status: 400,
@@ -261,7 +172,6 @@ export class PaymentController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    console.log('got in here');
     const { email, id: userId } = req.user;
     const result = await this.paymentService.initializeTestBookingPayment({
       email: email,
@@ -357,83 +267,22 @@ export class PaymentController {
     name: 'x-paystack-signature',
     description: 'Webhook signature for verification',
     required: true,
-    schema: { type: 'string' },
   })
-  @ApiBody({
-    description: 'Paystack webhook event payload',
-    schema: {
-      type: 'object',
-      properties: {
-        event: {
-          type: 'string',
-          enum: [
-            'charge.success',
-            'charge.failed',
-            'charge.pending',
-            'refund.processed',
-            'transfer.success',
-            'transfer.failed',
-            'transfer.reversed',
-          ],
-          example: 'charge.success',
-        },
-        data: {
-          type: 'object',
-          properties: {
-            reference: { type: 'string', example: 'ref_1234567890' },
-            amount: { type: 'number', example: 50000 },
-            currency: { type: 'string', example: 'NGN' },
-            status: { type: 'string', example: 'success' },
-            authorization: {
-              type: 'object',
-              properties: {
-                channel: { type: 'string', example: 'card' },
-              },
-            },
-            metadata: {
-              type: 'object',
-              properties: {
-                userId: { type: 'string' },
-                campaignName: { type: 'string' },
-                invoiceId: { type: 'string' },
-                amountInNaira: { type: 'number' },
-                dateInitiated: { type: 'string' },
-              },
-            },
-          },
-        },
-      },
-    },
-  })
+
   @ApiResponse({
     status: 200,
     description: 'Webhook processed successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        status: {
-          type: 'string',
-          enum: ['success', 'already processed', 'error logged'],
-          example: 'success',
-        },
-      },
-    },
   })
   @ApiResponse({
     status: 400,
     description: 'Bad Request - Invalid webhook signature',
-    schema: {
-      type: 'object',
-      properties: {
-        status: { type: 'string', example: 'invalid signature' },
-      },
-    },
   })
   async handleWebhook(
     @Req() req: RawBodyRequest<Request>,
     @Res() res: Response,
     @Headers('x-paystack-signature') signature: string,
   ) {
+
     const payload = JSON.stringify(req.body);
 
     const isValid = this.paymentService.verifyWebhookSignature(
@@ -521,32 +370,6 @@ export class PaymentController {
       type: 'object',
       properties: {
         success: { type: 'boolean', example: true },
-        data: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'string', example: 'txn_123abc' },
-              reference: { type: 'string', example: 'ref_1234567890' },
-              amount: { type: 'number', example: 50000 },
-              transactionType: {
-                type: 'string',
-                enum: ['deposit', 'withdrawal', 'campaign_payment', 'refund'],
-                example: 'deposit',
-              },
-              paymentStatus: {
-                type: 'string',
-                enum: ['success', 'failed', 'pending', 'refunded'],
-                example: 'success',
-              },
-              paymentMethod: { type: 'string', example: 'card' },
-              campaignName: { type: 'string', example: 'Christmas Campaign' },
-              invoiceId: { type: 'string', example: 'INV-2024-001' },
-              dateInitiated: { type: 'string', format: 'date-time' },
-              createdAt: { type: 'string', format: 'date-time' },
-            },
-          },
-        },
       },
     },
   })

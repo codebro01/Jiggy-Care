@@ -16,8 +16,8 @@ export class CreateOrderDto {
   @ApiPropertyOptional({
     description: 'Pass in the id of the medications here',
     example: [
-      '06f9a413-d1bc-4641-a0e3-ae59c8e56c9c',
-      '06f9a413-d1bc-4641-a0e3-ae59c8e56dfd',
+      {medicationId: '06f9a413-d1bc-4641-a0e3-ae59c8e56c9c', quantity: 5},
+      {medicationId: '06f9a413-d1bc-4641-a0e3-ae59c8e56dfd', quantity: 2},
     ],
     type: String,
   })

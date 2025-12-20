@@ -208,10 +208,10 @@ export class UserService {
 
     const updatedPatient = await this.helperRepository.executeInTransaction(
       async (trx) => {
-      const user =  await this.userRepository.updateUser(
+        const user = await this.userRepository.updateUser(
           {
             fullName: data.fullName || patient.fullName,
-            dateOfBirth: data.dateOfBirth || patient.dateOfBirth, 
+            dateOfBirth: data.dateOfBirth || patient.dateOfBirth,
             gender: data.gender || patient.gender,
             phone: data.phone || patient.phone,
           },
@@ -219,7 +219,7 @@ export class UserService {
           trx,
         );
 
-    const userPatient =    await this.userRepository.updatePatientById(
+        const userPatient = await this.userRepository.updatePatientById(
           {
             emergencyContact: data.emergencyContact || patient.emergencyContact,
             weight: data.weight,
@@ -230,8 +230,7 @@ export class UserService {
           trx,
         );
 
-              return { ...user, ...userPatient };
-
+        return { ...user, ...userPatient };
       },
     );
     return updatedPatient;
@@ -239,59 +238,56 @@ export class UserService {
   async updateConsultant(userId: string, data: UpdateConsultantDto) {
     console.log('user', userId);
     if (!data) throw new BadRequestException('Data not provided for update!');
-    const consultant = await this.userRepository.findConsultantById(userId);
+    const consultant =
+      await this.userRepository.findApprovedConsultantById(userId);
 
     if (!consultant) throw new NotFoundException('No user found');
 
-    const updatedConsultant = await this.helperRepository.executeInTransaction(async (trx) => {
-      const user =  await this.userRepository.updateUser(
-         {
-           fullName: data.fullName || consultant.fullName,
-           dateOfBirth: data.dateOfBirth || consultant.dateOfBirth,
-           gender: data.gender || consultant.gender,
-           phone: data.phone || consultant.phone,
-         },
-         userId,
-         trx,
-       );
-  const userConsultant =     await this.userRepository.updateConsultantById(
-        {
-          availability:data.availability ||  consultant.availability,
-          speciality: data.speciality || consultant.speciality,
-          yrsOfExperience: data.yrsOfExperience || consultant.yrsOfExperience,
-          about: data.about || consultant.about,
-          languages: data.languages || consultant.languages,
-          certification: data.certification || consultant.certification,
-          workingHours: data.workingHours || consultant.workingHours,
-        },
-        userId,
-        trx,
-      );
+    const updatedConsultant = await this.helperRepository.executeInTransaction(
+      async (trx) => {
+        const user = await this.userRepository.updateUser(
+          {
+            fullName: data.fullName || consultant.fullName,
+            dateOfBirth: data.dateOfBirth || consultant.dateOfBirth,
+            gender: data.gender || consultant.gender,
+            phone: data.phone || consultant.phone,
+          },
+          userId,
+          trx,
+        );
+        const userConsultant = await this.userRepository.updateConsultantById(
+          {
+            availability: data.availability || consultant.availability,
+            speciality: data.speciality || consultant.speciality,
+            yrsOfExperience: data.yrsOfExperience || consultant.yrsOfExperience,
+            about: data.about || consultant.about,
+            languages: data.languages || consultant.languages,
+            certification: data.certification || consultant.certification,
+            workingHours: data.workingHours || consultant.workingHours,
+          },
+          userId,
+          trx,
+        );
 
-      return {...user, ...userConsultant}
+        return { ...user, ...userConsultant };
+      },
+    );
 
-    })
-   
     // console.log('updatedUser', updatedUser);
     return updatedConsultant;
   }
 
-  async getUser (userId: string, role: string) {
-      if(role === 'consultant'){
-            const consultant =
-              await this.userRepository.findConsultantById(userId);
+  async getUser(userId: string, role: string) {
+    if (role === 'consultant') {
+      const consultant =
+        await this.userRepository.findApprovedConsultantById(userId);
 
+      return consultant;
+    }
+    if (role === 'patient') {
+      const patient = await this.userRepository.findPatientById(userId);
 
-              return consultant;
-      }
-      if(role === 'patient'){
-            const patient =
-              await this.userRepository.findPatientById(userId);
-
-
-              return patient;
-      }
-
-      else throw new BadRequestException('Invalid role provided')
+      return patient;
+    } else throw new BadRequestException('Invalid role provided');
   }
 }

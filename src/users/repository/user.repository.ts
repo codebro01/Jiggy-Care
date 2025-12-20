@@ -47,18 +47,18 @@ export class UserRepository {
   }
   async findPatientById(userId: string) {
     const [user] = await this.DbProvider.select({
-      fullName: userTable.fullName, 
+      fullName: userTable.fullName,
       id: userTable.id,
       email: userTable.email,
-      dateOfBirth: userTable.dateOfBirth, 
+      dateOfBirth: userTable.dateOfBirth,
       phone: userTable.phone,
       role: userTable.role,
       emailVerified: userTable.emailVerified,
-      bloodType: patientTable.bloodType, 
-      emergencyContact: patientTable.emergencyContact, 
-      height: patientTable.height, 
-      weight: patientTable.weight, 
-      gender: userTable.gender, 
+      bloodType: patientTable.bloodType,
+      emergencyContact: patientTable.emergencyContact,
+      height: patientTable.height,
+      weight: patientTable.weight,
+      gender: userTable.gender,
     })
       .from(patientTable)
       .where(eq(patientTable.userId, userId))
@@ -67,23 +67,23 @@ export class UserRepository {
 
     return user;
   }
-  async findConsultantById(userId: string) {
+  async findApprovedConsultantById(userId: string) {
     const [user] = await this.DbProvider.select({
-      fullName: userTable.fullName, 
+      fullName: userTable.fullName,
       id: userTable.id,
       email: userTable.email,
-      dateOfBirth: userTable.dateOfBirth, 
+      dateOfBirth: userTable.dateOfBirth,
       phone: userTable.phone,
       role: userTable.role,
       emailVerified: userTable.emailVerified,
-      availability: consultantTable.availability, 
-      speciality: consultantTable.speciality, 
-      yrsOfExperience: consultantTable.yrsOfExperience, 
-      about: consultantTable.about, 
-      languages: consultantTable.languages, 
-      certification: consultantTable.certification, 
-      workingHours: consultantTable.workingHours, 
-      gender: userTable.gender, 
+      availability: consultantTable.availability,
+      speciality: consultantTable.speciality,
+      yrsOfExperience: consultantTable.yrsOfExperience,
+      about: consultantTable.about,
+      languages: consultantTable.languages,
+      certification: consultantTable.certification,
+      workingHours: consultantTable.workingHours,
+      gender: userTable.gender,
     })
       .from(consultantTable)
       .where(eq(consultantTable.userId, userId))
