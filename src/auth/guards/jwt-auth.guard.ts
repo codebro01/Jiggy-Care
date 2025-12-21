@@ -115,12 +115,9 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     if (!refresh_token) {
-      if (isMobileClient) {
-        throw new UnauthorizedException('Token expired');
-      } else {
+     
         response.redirect('/signin');
         throw new UnauthorizedException('Unauthorized to access this route');
-      }
     }
 
     try {
@@ -224,10 +221,11 @@ export class JwtAuthGuard implements CanActivate {
     return request.cookies?.access_token;
   }
 
-  private extractRefreshToken(request: Request): string | undefined {
+   extractRefreshToken(request: Request): string | undefined {
     const headerToken = request.headers['x-refresh-token'];
     if (headerToken) return headerToken as string;
 
     return request.cookies?.refresh_token;
   }
+
 }

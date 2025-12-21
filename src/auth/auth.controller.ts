@@ -9,6 +9,7 @@ import {
   Query,
   BadRequestException,
   UseGuards,
+  Patch,
   HttpCode,
 } from '@nestjs/common';
 import { AuthService } from '@src/auth/auth.service';
@@ -63,7 +64,6 @@ export class AuthController {
     await this.authService.loginUser(body);
     const safeUser = omit(user, ['password', 'refreshToken', 'authProvider']);
 
-    console.log('got into auth', isMobileClient);
     if (isMobileClient) {
       res.setHeader('x-access-token', accessToken);
       res.setHeader('x-refresh-token', refreshToken);
@@ -94,15 +94,34 @@ export class AuthController {
   // ! call google api for sign in or signup with google for mobile
 
   @Get('google/mobile-signin')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
   async googleLoginForMobile(
-    @Res() res: Response,
+    @Res({ passthrough: true }) res: Response,
     @Query() query: GoogleMobileSigninDto,
   ) {
     if (query.role !== roleType.PATIENT && query.role !== roleType.CONSULTANT)
       throw new BadRequestException('invalid role');
 
-    const result = await this.authService.googleMobileAuth(query);
-    return { message: 'success', data: result };
+    const { user, accessToken, refreshToken } =
+      await this.authService.googleMobileAuth(query);
+    const safeUser = omit(user, ['password', 'refreshToken', 'authProvider']);
+
+    res.setHeader('x-access-token', accessToken);
+    res.setHeader('x-refresh-token', refreshToken);
+    return {
+      sucess: true,
+      data: safeUser,
+    };
   }
   // ! call google api for sign in or signup with google for web
 
@@ -146,15 +165,73 @@ export class AuthController {
     res.status(HttpStatus.ACCEPTED).json({ user: safeUser, accessToken });
   }
 
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile'],
+      example: 'mobile',
+    },
+  })
+  @Patch('refresh')
+  async refreshToken(
+    @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
+  ) {
+    const isMobileClient = this.jwtAuthGuard.isMobileClient(req);
+    if (!isMobileClient)
+      throw new BadRequestException(
+        'Only mobile is allowed to use this route!',
+      );
+    const refreshToken = this.jwtAuthGuard.extractRefreshToken(req);
+    if (!refreshToken)
+      throw new BadRequestException('No refresh token provided');
+    await this.authService.verifyRefreshTokenForMobile(refreshToken);
+
+    res.removeHeader('x-access-token');
+    res.removeHeader('x-refresh-token');
+    return {
+      success: true,
+      message: 'logout successful',
+    };
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient', 'consultant', 'admin')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
   @Get('logout')
-  async logoutUser(@Res() res: Response, @Req() req: Request) {
+  async logoutUser(
+    @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
+  ) {
     console.log(req);
     const { id: userId } = req.user;
     await this.authService.logoutUser(userId);
-    res.clearCookie('access_token');
-    res.clearCookie('refresh_token');
-    res.status(HttpStatus.OK).json({ message: 'Logout Successful' });
+    const isMobileClient = this.jwtAuthGuard.isMobileClient(req);
+
+    if (!isMobileClient) {
+      res.removeHeader('x-access-token');
+      res.removeHeader('x-refresh-token');
+    } else {
+      res.clearCookie('access_token');
+      res.clearCookie('refresh_token');
+    }
+    return {
+      success: true,
+      message: 'logout successful',
+    };
   }
 }

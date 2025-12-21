@@ -41,6 +41,15 @@ export class AuthRepository {
 
          return user;
   }
+  async findUserRefreshTokenByUserId(userId: string) {
+       const [user] = await this.DbProvider.select({refreshToken: userTable.refreshToken})
+         .from(userTable)
+         .where(eq(userTable.id, userId));
+
+         return user;
+  }
+
+  
 
   async updateUserRefreshToken(refreshToken: string | null, userId: string){
     const [user] = await this.DbProvider.update(userTable)

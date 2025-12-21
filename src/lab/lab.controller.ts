@@ -18,6 +18,7 @@ import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { Roles } from '@src/auth/decorators/roles.decorators';
 import type { Request } from '@src/types';
 import type { Response } from 'express';
+import { ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 
 @Controller('lab')
 export class LabController {
@@ -26,6 +27,18 @@ export class LabController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Post()
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth()
   async create(
     @Body() createLabDto: CreateLabDto,
     @Req() req: Request,
@@ -39,6 +52,18 @@ export class LabController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'patient', 'consultant')
   @Get()
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth()
   async findAll(@Res() res: Response) {
     const lab = await this.labService.findAll();
     res.status(HttpStatus.OK).json({ message: 'success', data: lab });
@@ -47,6 +72,18 @@ export class LabController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'consultant', 'patient')
   @Get(':id')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth()
   async findOne(@Param('id') labId: string, @Res() res: Response) {
     const lab = await this.labService.findOne(labId);
     res.status(HttpStatus.OK).json({ message: 'success', data: lab });
@@ -55,6 +92,18 @@ export class LabController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'consultant', 'patient')
   @Patch(':id')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth()
   async update(
     @Param('id') labId: string,
     @Body() updateLabDto: UpdateLabDto,

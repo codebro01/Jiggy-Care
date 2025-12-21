@@ -4,7 +4,7 @@ import { IsDateString, IsNotEmpty, IsUUID } from 'class-validator';
 export class FindAvailableSlotDto {
   @ApiProperty({
     example: '6a955baf-805b-4c77-b688-70adf9ab2df5',
-    description: 'Id of the consultant',
+    description: 'Id of an approved consultant',
   })
   @IsNotEmpty()
   @IsUUID()

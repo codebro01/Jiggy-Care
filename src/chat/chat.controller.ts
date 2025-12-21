@@ -11,12 +11,42 @@ import {
 import { ChatService } from '@src/chat/chat.service';
 import { CreateConversationDto } from '@src/chat/dto/create-conversation.dto';
 import { CreateMessageDto } from '@src/chat/dto/create-messages.dto';
+import { ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 
 @Controller('chat')
 export class ChatController {
   constructor(private chatService: ChatService) {}
 
   @Get('conversations')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiHeader({
+    name: 'x-access-token',
+    description: 'Access token for authenticating API requests',
+    required: false,
+    schema: {
+      type: 'string',
+      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    },
+  })
+  @ApiHeader({
+    name: 'x-refresh-token',
+    description: 'Refresh token for obtaining new access tokens',
+    required: false,
+    schema: {
+      type: 'string',
+      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    },
+  })
   async getConversations(
     @Query('consultantId') consultantId?: string,
     @Query('patientId') patientId?: string,
@@ -29,9 +59,19 @@ export class ChatController {
 
   @Post('conversations')
   @HttpCode(HttpStatus.CREATED)
-  async createConversation(
-    @Body() body: CreateConversationDto,
-  ) {
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth()
+  async createConversation(@Body() body: CreateConversationDto) {
     return await this.chatService.getOrCreateConversation(
       body.consultantId,
       body.patientId,
@@ -39,6 +79,18 @@ export class ChatController {
   }
 
   @Get('conversations/:conversationId/messages')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth()
   async getMessages(
     @Param('conversationId') conversationId: string,
     @Query('limit') limit?: string,
@@ -53,6 +105,35 @@ export class ChatController {
 
   @Post('messages')
   @HttpCode(HttpStatus.CREATED)
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiHeader({
+    name: 'x-access-token',
+    description: 'Access token for authenticating API requests',
+    required: false,
+    schema: {
+      type: 'string',
+      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    },
+  })
+  @ApiHeader({
+    name: 'x-refresh-token',
+    description: 'Refresh token for obtaining new access tokens',
+    required: false,
+    schema: {
+      type: 'string',
+      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    },
+  })
   async sendMessage(
     @Body()
     body: CreateMessageDto,
@@ -61,6 +142,35 @@ export class ChatController {
   }
 
   @Get('conversations/:conversationId/unread')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiHeader({
+    name: 'x-access-token',
+    description: 'Access token for authenticating API requests',
+    required: false,
+    schema: {
+      type: 'string',
+      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    },
+  })
+  @ApiHeader({
+    name: 'x-refresh-token',
+    description: 'Refresh token for obtaining new access tokens',
+    required: false,
+    schema: {
+      type: 'string',
+      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    },
+  })
   async getUnreadCount(
     @Param('conversationId') conversationId: string,
     @Query('userId') userId: string,
@@ -71,6 +181,35 @@ export class ChatController {
 
   @Post('conversations/:conversationId/read')
   @HttpCode(HttpStatus.OK)
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiHeader({
+    name: 'x-access-token',
+    description: 'Access token for authenticating API requests',
+    required: false,
+    schema: {
+      type: 'string',
+      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    },
+  })
+  @ApiHeader({
+    name: 'x-refresh-token',
+    description: 'Refresh token for obtaining new access tokens',
+    required: false,
+    schema: {
+      type: 'string',
+      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    },
+  })
   async markAsRead(
     @Param('conversationId') conversationId: string,
     @Body() body: { messageIds: string[] },
