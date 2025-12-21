@@ -34,6 +34,9 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('Insufficient permissions');
     }
 
+
+    console.log('got past auth')
+
     return true;
   }
 }

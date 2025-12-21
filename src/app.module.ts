@@ -35,6 +35,7 @@ import { EmailVerificationModule } from '@src/email-verification/email-verificat
 import { BullModule } from '@nestjs/bull';
 import { ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { EncryptionServiceModule } from './encryption-service/encryption-service.module';
 
 @Module({
   imports: [
@@ -92,6 +93,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     TestBookingPaymentModule,
     PasswordResetModule,
     EmailVerificationModule,
+    EncryptionServiceModule,
   ],
   controllers: [AppController, UploadController],
   providers: [AppService, NeonProvider, MulterService],

@@ -9,6 +9,7 @@ import {
   Query,
   BadRequestException,
   UseGuards,
+  HttpCode,
 } from '@nestjs/common';
 import { AuthService } from '@src/auth/auth.service';
 import { LoginUserDto } from '@src/auth/dto/login-user.dto';
@@ -16,7 +17,7 @@ import type { Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '@src/users/users.service';
 import omit from 'lodash.omit';
-import { ApiTags, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiResponse, ApiHeader } from '@nestjs/swagger';
 import type { Request } from '@src/types';
 import { roleType } from '@src/users/dto/createUser.dto';
 import { GoogleMobileSigninDto } from '@src/auth/dto/google-mobile-signin.dto';
@@ -30,33 +31,64 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private jwtService: JwtService,
+    private jwtAuthGuard: JwtAuthGuard,
     private readonly userService: UserService,
   ) {}
 
   // ! local signin (password and email)
   @Post('signin')
-  @ApiResponse({ status: 201, description: 'User created successfully.' })
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @HttpCode(HttpStatus.OK)
+  @ApiResponse({ status: 200, description: 'User logged in successfully.' })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
-  async loginUser(@Body() body: LoginUserDto, @Res() res: Response) {
+  async loginUser(
+    @Body() body: LoginUserDto,
+    @Res({ passthrough: true }) res: Response,
+    @Req() request: Request,
+  ) {
     const { user, accessToken, refreshToken } =
       await this.authService.loginUser(body);
 
-    res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      maxAge: 1000 * 60 * 60, // 1h
-    });
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      maxAge: 1000 * 60 * 60 * 24 * 30, // 30d
-    });
-
+    const isMobileClient = this.jwtAuthGuard.isMobileClient(request);
+    await this.authService.loginUser(body);
     const safeUser = omit(user, ['password', 'refreshToken', 'authProvider']);
 
-    res.status(HttpStatus.ACCEPTED).json({ user: safeUser, accessToken });
+    console.log('got into auth', isMobileClient);
+    if (isMobileClient) {
+      res.setHeader('x-access-token', accessToken);
+      res.setHeader('x-refresh-token', refreshToken);
+      return {
+        sucess: true,
+        data: safeUser,
+      };
+    } else {
+      res.cookie('access_token', accessToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 1000 * 60 * 60, // 1h
+      });
+      res.cookie('refresh_token', refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 1000 * 60 * 60 * 24 * 30, // 30d
+      });
+      return {
+        sucess: true,
+        data: safeUser,
+      };
+    }
   }
 
   // ! call google api for sign in or signup with google for mobile

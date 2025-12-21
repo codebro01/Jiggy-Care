@@ -10,6 +10,7 @@ import { HelpersModule } from '@src/helpers/helpers.module';
 import { PatientModule } from '@src/patient/patient.module';
 import { ConsultantModule } from '@src/consultant/consultant.module';
 import { GoogleAuthModule } from '@src/google-auth/google-auth.module';
+import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
 @Module({
   imports: [
     JwtModule.register({
@@ -25,7 +26,7 @@ import { GoogleAuthModule } from '@src/google-auth/google-auth.module';
     forwardRef(() => UserModule),
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepository],
+  providers: [AuthService, AuthRepository, JwtAuthGuard],
   exports: [AuthRepository, AuthService],
 })
 export class AuthModule {}
