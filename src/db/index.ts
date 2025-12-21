@@ -11,3 +11,5 @@ export * from "@src/db/chat"
 export * from "@src/db/rating"
 export * from "@src/db/test-result"
 export * from '@src/db/test-booking-payment'
+export * from '@src/db/password-reset'
+export * from '@src/db/email-verification'

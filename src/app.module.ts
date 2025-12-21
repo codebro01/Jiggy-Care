@@ -30,12 +30,41 @@ import { TestResultModule } from './test-result/test-result.module';
 import { ChatModule } from './chat/chat.module';
 import { GoogleAuthModule } from './google-auth/google-auth.module';
 import { TestBookingPaymentModule } from './test-booking-payment/test-booking-payment.module';
+import { PasswordResetModule } from '@src/password-reset/password-reset.module';
+import { EmailVerificationModule } from '@src/email-verification/email-verification.module';
+import { BullModule } from '@nestjs/bull';
+import { ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true, // makes ConfigService available everywhere
     }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        redis: {
+          host: configService.get('REDIS_HOST') || 'localhost',
+          port: configService.get('REDIS_PORT') || 6379,
+          password: configService.get('REDIS_PASSWORD'),
+          tls:
+            configService.get('NODE_ENV') === 'production'
+              ? { rejectUnauthorized: false }
+              : undefined,
+          // retryStrategy: (times) => {
+          //   if (times > 3) {
+          //     console.error('Redis connection failed after 3 attempts');
+          //     return null;
+          //   }
+          //   return Math.min(times * 1000, 3000);
+          // },
+          // connectTimeout: 5000,
+        },
+      }),
+      inject: [ConfigService],
+    }),
+    ScheduleModule.forRoot(),
     UserModule,
     AuthModule,
     SupabaseModule,
@@ -61,6 +90,8 @@ import { TestBookingPaymentModule } from './test-booking-payment/test-booking-pa
     ChatModule,
     GoogleAuthModule,
     TestBookingPaymentModule,
+    PasswordResetModule,
+    EmailVerificationModule,
   ],
   controllers: [AppController, UploadController],
   providers: [AppService, NeonProvider, MulterService],
