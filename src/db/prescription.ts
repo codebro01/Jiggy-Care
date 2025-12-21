@@ -6,7 +6,7 @@ import {
   timestamp,
   date,
 } from 'drizzle-orm/pg-core';
-import { userTable } from './users';
+import { consultantTable, patientTable } from './users';
 import { pgEnum } from 'drizzle-orm/pg-core';
 
 export const frequencyType = pgEnum('dosage_type', [
@@ -21,15 +21,17 @@ export const frequencyType = pgEnum('dosage_type', [
 export const prescriptionTable = pgTable('prescriptions', {
   id: uuid('id').defaultRandom().primaryKey(),
   patientId: uuid('patientId')
-    .references(() => userTable.id, { onDelete: 'cascade' })
+    .references(() => patientTable.userId, { onDelete: 'cascade' })
     .notNull(),
   consultantId: uuid('consultantId')
-    .references(() => userTable.id, { onDelete: 'cascade' })
+    .references(() => consultantTable.userId, { onDelete: 'cascade' })
     .notNull(),
   name: varchar('name', { length: 255 }).notNull(),
-  dosage: varchar('dosage', { length: 100 }).notNull(),
+  dosage: integer('dosage').notNull(),
+  mg: integer('mg').notNull(),
   frequency: frequencyType('frequency').notNull(),
   pillsRemaining: integer('pills_remaining').notNull(),
+  prescribedBy: varchar('prescribed_by',{length: 255}),
   totalPills: integer('total_pills').notNull(),
   startDate: date('start_date').notNull(),
   status: varchar('status', { length: 50 }).notNull().default('active'),

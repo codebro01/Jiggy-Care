@@ -6,11 +6,13 @@ import {
 import { PrescriptionRepository } from './repository/prescription.repository';
 import { CreatePrescriptionDto } from './dto/create-prescription.dto';
 import { UpdatePrescriptionDto } from './dto/update-prescription.dto';
+import { UserRepository } from '@src/users/repository/user.repository';
 
 @Injectable()
 export class PrescriptionService {
   constructor(
     private readonly prescriptionRepository: PrescriptionRepository,
+    private readonly userRepository: UserRepository,
   ) {}
 
   async create(
@@ -18,15 +20,99 @@ export class PrescriptionService {
     consultantId: string,
     patientId: string,
   ) {
+    const startDate = new Date(data.startDate);
+    startDate.setHours(0, 0, 0, 0);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (startDate < today)
+      throw new BadRequestException('start date cannot be in the past');
+
+    const prescribedBy =
+      await this.userRepository.findUserById(consultantId);
+
+    if (!prescribedBy) throw new BadRequestException('Invalid consultant');
+
     return await this.prescriptionRepository.create(
-      data,
+      {...data, prescribedBy: prescribedBy.fullName},
       consultantId,
       patientId,
     );
   }
 
   async findAll(consultantId?: string, patientId?: string) {
-    return await this.prescriptionRepository.findAll(consultantId, patientId);
+    const prescriptions = await this.prescriptionRepository.findAll(
+      consultantId,
+      patientId,
+    );
+
+    const daysToFrequency = {
+      once_daily: 1,
+      twice_daily: 2,
+      thrice_daily: 3,
+      four_times_daily: 4,
+      five_times_daily: 5,
+      often: 6,
+    };
+
+    const calculate = prescriptions.map((prescription) => {
+      const dosage = prescription.dosage;
+      const totalPills = prescription.totalPills;
+      const startDate = new Date(prescription.startDate);
+      const frequency = prescription.frequency;
+      const today = new Date();
+
+      const totalPillsDaily = dosage * daysToFrequency[frequency];
+
+      const totalDays = totalPills / totalPillsDaily;
+
+      const finishDate = new Date(startDate);
+      finishDate.setDate(finishDate.getDate() + totalDays);
+
+      const hasStarted = today >= startDate;
+
+      let daysPassed = 0;
+      let pillsConsumed = 0;
+      let remainingPills = totalPills;
+      let daysRemaining = totalDays;
+      let isFinished = false;
+
+      if (hasStarted) {
+        daysPassed = Math.floor(
+          (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+        );
+
+        pillsConsumed = daysPassed * totalPillsDaily;
+
+        remainingPills = Math.max(0, totalPills - pillsConsumed);
+
+        daysRemaining = remainingPills / totalPillsDaily;
+
+        isFinished = remainingPills === 0 || today >= finishDate;
+      } else {
+        daysPassed = 0;
+        pillsConsumed = 0;
+        remainingPills = totalPills;
+        daysRemaining = totalDays;
+        isFinished = false;
+      }
+
+      return {
+        ...prescription,
+        totalPillsDaily,
+        totalDays,
+        finishDate,
+        hasStarted,
+        daysPassed,
+        pillsConsumed,
+        remainingPills,
+        daysRemaining,
+        isFinished,
+      };
+    });
+
+    return calculate;
   }
 
   async findOne(id: string) {
@@ -61,6 +147,8 @@ export class PrescriptionService {
         `Failed to update prescription with ID ${prescriptionId}`,
       );
     }
+
+    console.log('updated');
 
     return updated;
   }

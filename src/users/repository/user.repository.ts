@@ -38,6 +38,7 @@ export class UserRepository {
       phone: userTable.phone,
       role: userTable.role,
       emailVerified: userTable.emailVerified,
+      fullName: userTable.fullName, 
     })
       .from(userTable)
       .where(eq(userTable.id, userId))

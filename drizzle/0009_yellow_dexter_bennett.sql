@@ -1,0 +1,1 @@
+ALTER TABLE "prescriptions" ADD COLUMN "prescribed_by" varchar(255);

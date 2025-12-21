@@ -50,6 +50,27 @@
       "when": 1766258488645,
       "tag": "0006_omniscient_klaw",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1766279591883,
+      "tag": "0007_jazzy_tomorrow_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1766282526372,
+      "tag": "0008_great_quasimodo",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1766283434641,
+      "tag": "0009_yellow_dexter_bennett",
+      "breakpoints": true
     }
   ]
 }

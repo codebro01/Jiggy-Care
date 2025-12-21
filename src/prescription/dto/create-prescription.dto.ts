@@ -6,6 +6,7 @@ import {
   Min,
   IsNotEmpty,
   IsEnum,
+  IsNumber,
 } from 'class-validator';
 
 import { ApiProperty } from '@nestjs/swagger';
@@ -17,6 +18,11 @@ export enum FrequencyType {
   FOUR_TIMES_DAILY = 'four_times_daily',
   FIVE_TIMES_DAILY = 'five_times_daily',
   OFTEN = 'often',
+}
+export enum PrescriptionStatusType {
+  ACTIVE = 'active',
+  RUNNING_LOW = 'running_low',
+  FINISHED = 'finished',
 }
 
 export class CreatePrescriptionDto {
@@ -37,12 +43,21 @@ export class CreatePrescriptionDto {
   name: string;
 
   @ApiProperty({
-    example: '2 X 10mg',
+    example: 2,
     description: 'The dosage quantity per intake',
   })
   @IsNotEmpty()
-  @IsString()
-  dosage: string;
+  @IsNumber()
+  dosage: number;
+
+
+  @ApiProperty({
+    example: 700,
+    description: 'The milligram of each tablet of the drug',
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  mg: number;
 
   @ApiProperty({
     example: 'once_daily',
@@ -55,13 +70,7 @@ export class CreatePrescriptionDto {
   })
   frequency: FrequencyType;
 
-  @ApiProperty({
-    example: 4,
-    description: 'This is the total number of pills remaining',
-  })
-  @IsInt()
-  @Min(0)
-  pillsRemaining: number;
+
 
   @ApiProperty({
     example: 10,
@@ -80,10 +89,11 @@ export class CreatePrescriptionDto {
   startDate: string;
 
   @ApiProperty({
-    example: "running_low",
-    description: 'This is the status of the  drug where active, running_low or finished',
+    example: 'active',
+    description:
+      'This is the status of the  drug where active, running_low or finished',
   })
   @IsOptional()
-  @IsString()
-  status?: string;
+  @IsEnum(PrescriptionStatusType)
+  status?: PrescriptionStatusType;
 }

@@ -3,7 +3,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, or, and } from 'drizzle-orm';
 import { CreatePrescriptionDto } from '@src/prescription/dto/create-prescription.dto';
 import { UpdatePrescriptionDto } from '@src/prescription/dto/update-prescription.dto';
-import { prescriptionTable } from '@src/db';
+import {  prescriptionTable } from '@src/db';
 
 @Injectable()
 export class PrescriptionRepository {
@@ -13,7 +13,7 @@ export class PrescriptionRepository {
   ) {}
 
   async create(
-    data: CreatePrescriptionDto,
+    data: CreatePrescriptionDto & {prescribedBy: string},
     consultantId: string,
     patientId: string,
   ) {
@@ -22,6 +22,7 @@ export class PrescriptionRepository {
         ...data,
         patientId,
         consultantId,
+        pillsRemaining: data.totalPills, 
         status: data.status || 'active',
       })
       .returning();
@@ -41,9 +42,14 @@ export class PrescriptionRepository {
     if (consultantId)
       condition.push(eq(prescriptionTable.consultantId, consultantId));
 
-    return await this.DbProvider.select()
+    const query = this.DbProvider.select()
       .from(prescriptionTable)
       .where(or(...condition));
+
+      // if(consultantId) query.leftJoin(consultantTable, eq(consultantTable.userId, consultantId))
+      // if(patientId) query.leftJoin(patientTable, eq(patientTable.userId, patientId))
+
+      return await query;
   }
 
   async findOne(id: string) {
@@ -62,18 +68,30 @@ export class PrescriptionRepository {
 
   async update(
     prescriptionId: string,
-    updateDto: UpdatePrescriptionDto,
+    data: UpdatePrescriptionDto,
     consultantId: string,
   ) {
+
+    const prevPrescription = await this.findOne(prescriptionId);
+
+    if(!prevPrescription) throw new BadRequestException('Could not update prescription')
+
+    if(!data.patientId) throw new BadRequestException('Please provide patient id')
     const [prescription] = await this.DbProvider.update(prescriptionTable)
       .set({
-        ...updateDto,
+        name: data.name || prevPrescription.name, 
+        dosage: data.dosage || prevPrescription.dosage, 
+        frequency: data.frequency || prevPrescription.frequency, 
+        pillsRemaining: data.pillsRemaining || prevPrescription.pillsRemaining, 
+        totalPills: data.totalPills || prevPrescription.totalPills, 
+        startDate: data.startDate || prevPrescription.startDate, 
         updatedAt: new Date(),
       })
       .where(
         and(
           eq(prescriptionTable.id, prescriptionId),
           eq(prescriptionTable.consultantId, consultantId),
+          eq(prescriptionTable.patientId, data.patientId),
         ),
       )
       .returning();
