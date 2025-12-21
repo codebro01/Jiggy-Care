@@ -61,15 +61,15 @@ export class AuthController {
 
   // ! call google api for sign in or signup with google for mobile
 
-  @Get('google/mobile-signin')
+  @Post('google/mobile-signin')
   async googleLoginForMobile(
     @Res() res: Response,
-    @Query() query: GoogleMobileSigninDto,
+    @Body() body: GoogleMobileSigninDto,
   ) {
-    if (query.role !== roleType.PATIENT && query.role !== roleType.CONSULTANT)
+    if (body.role !== roleType.PATIENT && body.role !== roleType.CONSULTANT)
       throw new BadRequestException('invalid role');
 
-    const result = await this.authService.googleMobileAuth(query);
+    const result = await this.authService.googleMobileAuth(body);
     return { message: 'success', data: result };
   }
   // ! call google api for sign in or signup with google for web
