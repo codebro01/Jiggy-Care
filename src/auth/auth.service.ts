@@ -88,6 +88,8 @@ export class AuthService {
     let googlePayload;
     try {
       googlePayload = await this.googleAuthService.verifyIdToken(data.idToken);
+
+      console.log('googlePayload', googlePayload)
     } catch (error) {
       console.log(error);
       throw new BadRequestException('Your request token is invalid');
@@ -97,12 +99,12 @@ export class AuthService {
     //! generate a ramdon crypto password for google users
     const googleUserPwd = this.generateRandomPassword();
     const hashedGoogleUserPwd = await bcrypt.hash(googleUserPwd, 10);
-    const { email, given_name, family_name, picture, email_verified } =
+    const { email, given_name, family_name, email_verified } =
       googlePayload;
     const payload = {
       email,
       fullName: `${given_name} ${family_name}`,
-      dp: picture,
+      dp: googlePayload.picture,
       emailVerified: email_verified,
       password: hashedGoogleUserPwd,
       authProvider: 'google',
@@ -111,10 +113,10 @@ export class AuthService {
 
     switch (data.role) {
       case roleType.PATIENT: {
-        const findUserByEmail =
+        let user =
           await this.authRepository.findUserByEmail(email);
 
-        if (findUserByEmail) {
+        if (user) {
           const accessToken = await this.jwtService.signAsync(payload, {
             secret: jwtConstants.accessTokenSecret,
             expiresIn: '1h',
@@ -125,9 +127,9 @@ export class AuthService {
             expiresIn: '30d',
           });
 
-          return { findUserByEmail, refreshToken, accessToken };
+          return { user, refreshToken, accessToken };
         }
-        const user = await this.helperRepository.executeInTransaction(
+         user = await this.helperRepository.executeInTransaction(
           async (trx) => {
             const patient = await this.userRepository.createUser(
               payload,
@@ -153,10 +155,10 @@ export class AuthService {
       }
 
       case roleType.CONSULTANT: {
-        const findUserByEmail =
+        let user =
           await this.authRepository.findUserByEmail(email);
 
-        if (findUserByEmail) {
+        if (user) {
           const accessToken = await this.jwtService.signAsync(payload, {
             secret: jwtConstants.accessTokenSecret,
             expiresIn: '1h',
@@ -167,9 +169,9 @@ export class AuthService {
             expiresIn: '30d',
           });
 
-          return { findUserByEmail, refreshToken, accessToken };
+          return { user, refreshToken, accessToken };
         }
-        const user = await this.helperRepository.executeInTransaction(
+         user = await this.helperRepository.executeInTransaction(
           async (trx) => {
             const consultant = await this.userRepository.createUser(
               payload,
@@ -183,6 +185,10 @@ export class AuthService {
             return consultant;
           },
         ); // ← Fixed: closing parenthesis right after the callback
+
+
+            console.log('user', user)
+
 
         const accessToken = await this.jwtService.signAsync(payload, {
           secret: jwtConstants.accessTokenSecret,

@@ -46,6 +46,21 @@ export class UserRepository {
 
     return user;
   }
+  async findUserByEmail(email: string) {
+    const [user] = await this.DbProvider.select({
+      id: userTable.id,
+      email: userTable.email,
+      phone: userTable.phone,
+      role: userTable.role,
+      emailVerified: userTable.emailVerified,
+      fullName: userTable.fullName, 
+    })
+      .from(userTable)
+      .where(eq(userTable.email, email))
+      .limit(1);
+
+    return user;
+  }
   async findPatientById(userId: string) {
     const [user] = await this.DbProvider.select({
       fullName: userTable.fullName,

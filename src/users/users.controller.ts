@@ -47,14 +47,14 @@ export class UserController {
   @HttpCode(HttpStatus.CREATED)
   async createUser(
     @Body() body: CreateUserDto,
-    @Res() res: Response,
+    @Res({passthrough: true}) res: Response,
     @Req() req: Request,
   ) {
     const { user, accessToken, refreshToken } =
       await this.userService.createUser(body, 'local');
 
     const isMobileClient = this.jwtAuthGuard.isMobileClient(req);
-
+    console.log(user, accessToken, refreshToken)
     if (isMobileClient) {
       res.setHeader('x-access-token', accessToken);
       res.setHeader('x-refresh-token', refreshToken);

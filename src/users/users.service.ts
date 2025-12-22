@@ -69,7 +69,7 @@ export class UserService {
             .where(eq(userTable.id, user.id));
 
           if (!updateUserToken) throw new InternalServerErrorException();
-          return { user, accessToken };
+          return { user, accessToken, refreshToken };
         }
       }
 
@@ -183,7 +183,7 @@ export class UserService {
 
       if (!updateUserToken) throw new InternalServerErrorException();
       // console.log('got past this unreachable code')
-      return { user, accessToken };
+      return { user, accessToken, refreshToken };
     } catch (dbError) {
       console.error('DB Insert Error:', dbError);
 
