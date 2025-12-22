@@ -41,7 +41,7 @@ app.enableCors({
       type: 'http',
       scheme: 'bearer',
       bearerFormat: 'JWT',
-      description: 'Enter JWT token (for mobile clients, use the access token instead in the response header)',
+      description: 'Enter JWT token (for mobile clients, use the access token in the response header)',
       in: 'header',
     },
     'JWT-auth',
