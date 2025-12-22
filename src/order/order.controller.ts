@@ -20,6 +20,7 @@ import { UpdateOrderDto } from '@src/order/dto/update-order.dto';
 import { OrderSelectType } from '@src/db/order';
 import type { Request } from '@src/types';
 import type { Response } from 'express';
+import { ApiBearerAuth, ApiCookieAuth, ApiHeader } from '@nestjs/swagger';
 
 @Controller('orders')
 export class OrdersController {
@@ -27,27 +28,87 @@ export class OrdersController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
   @Get()
-  async findAll(@Res() res: Response) {
+  async findAll() {
     const orders = await this.ordersService.findAll();
-    res.status(HttpStatus.OK).json({ message: 'success', data: orders });
+    return { success: true, data: orders };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Get('find-by-userId')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
   async findByUserId(@Res() res: Response, @Req() req: Request) {
     const { id: userId } = req.user;
     const orders = await this.ordersService.findByUserId(userId);
-    res.status(HttpStatus.OK).json({ message: 'success', data: orders });
+    return { success: true, data: orders };
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<OrderSelectType> {
     return await this.ordersService.findOne(id);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @Patch(':id')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
   async update(
     @Param('id') id: string,
     @Body() updateOrderDto: UpdateOrderDto,
@@ -55,7 +116,23 @@ export class OrdersController {
     return await this.ordersService.update(id, updateOrderDto);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('patient')
   @Post(':id/reorder')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
   async reorder(
     @Param('id') id: string,
     @Body('userId') userId: string,

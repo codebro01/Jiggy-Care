@@ -20,6 +20,7 @@ import type { Request } from '@src/types';
 import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { Roles } from '@src/auth/decorators/roles.decorators';
+import { ApiBearerAuth, ApiCookieAuth, ApiHeader } from '@nestjs/swagger';
 
 @Controller('prescription')
 export class PrescriptionController {
@@ -28,10 +29,22 @@ export class PrescriptionController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('consultant')
   @Post()
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   @HttpCode(HttpStatus.CREATED)
   async createPrescription(
     @Body() body: CreatePrescriptionDto,
-    @Res() res: Response,
     @Req() req: Request,
   ) {
     const { id: consultantId } = req.user;
@@ -41,28 +54,52 @@ export class PrescriptionController {
       body.patientId,
     );
 
-    res
-      .status(HttpStatus.CREATED)
-      .json({ message: 'success', data: prescription });
+    return { success: true, data: prescription };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('consultant', 'patient')
   @Get()
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
   async findAll(@Res() res: Response, @Req() req: Request) {
     const { id: userId } = req.user;
     const prescription = await this.prescriptionService.findAll(userId, userId);
-    res.status(HttpStatus.OK).json({ message: 'success', data: prescription });
+    return { success: true, data: prescription };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('consultant')
   @Patch(':prescriptionId')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   async update(
     @Param('prescriptionId') prescriptionId: string,
     @Body() updatePrescriptionDto: UpdatePrescriptionDto,
     @Req() req: Request,
-    @Res() res: Response,
   ) {
     const { id: consultantId } = req.user;
     const prescription = await this.prescriptionService.update(
@@ -71,12 +108,26 @@ export class PrescriptionController {
       consultantId,
     );
 
-    res.status(HttpStatus.OK).json({ message: 'success', data: prescription });
+    return { success: true, data: prescription };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Patch(':prescriptionId/take-pill')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
   async takePill(
     @Param('prescriptionId') prescriptionId: string,
     @Req() req: Request,
@@ -89,7 +140,7 @@ export class PrescriptionController {
       dosage,
       patientId,
     );
-    res.status(HttpStatus.OK).json({ message: 'success', data: prescription });
+    return { success: true, data: prescription };
   }
 
   @Delete(':id')

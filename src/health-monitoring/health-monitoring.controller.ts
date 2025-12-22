@@ -15,7 +15,7 @@ import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { Roles } from '@src/auth/decorators/roles.decorators';
 import type { Request } from '@src/types';
-import { ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiHeader, ApiCookieAuth } from '@nestjs/swagger';
 
 @Controller('health-monitoring')
 export class HealthMonitoringController {
@@ -37,7 +37,8 @@ export class HealthMonitoringController {
       example: 'mobile',
     },
   })
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   async createHealthReading(
     @Body() createDto: CreateHealthReadingDto,
     @Req() req: Request,
@@ -64,7 +65,8 @@ export class HealthMonitoringController {
       example: 'mobile',
     },
   })
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   async getAllHealthReadings() {
     return this.healthMonitoringService.getAllHealthReadings();
   }
@@ -83,7 +85,8 @@ export class HealthMonitoringController {
       example: 'mobile',
     },
   })
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   async getHealthReadingsByPatient(@Req() req: Request) {
     const patientId = req.user.id;
     return this.healthMonitoringService.getHealthReadingsByPatient(patientId);
@@ -103,7 +106,8 @@ export class HealthMonitoringController {
       example: 'mobile',
     },
   })
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   async getLatestReadingByPatient(@Req() req: Request) {
     const patientId = req.user?.id;
     return this.healthMonitoringService.getLatestReadingByPatient(patientId);
@@ -122,7 +126,8 @@ export class HealthMonitoringController {
       example: 'mobile',
     },
   })
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   async getHealthReadingById(@Param('id') id: string) {
     return this.healthMonitoringService.getHealthReadingById(id);
   }
@@ -141,7 +146,8 @@ export class HealthMonitoringController {
       example: 'mobile',
     },
   })
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   async updateHealthReading(
     @Param('id') id: string,
     @Req() req: Request,

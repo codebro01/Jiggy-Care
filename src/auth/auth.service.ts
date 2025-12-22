@@ -371,50 +371,57 @@ export class AuthService {
     }
   }
 
+  
+
   async verifyRefreshTokenForMobile(refresh_token: string) {
     try {
-   const payload = await this.jwtService.verifyAsync(refresh_token, {
-     secret: jwtConstants.refreshTokenSecret,
-   });
+      const payload = await this.jwtService.verifyAsync(refresh_token, {
+        secret: jwtConstants.refreshTokenSecret,
+      });
 
-   if(!payload) throw new UnauthorizedException('Unauthorized')
+      if (!payload) throw new UnauthorizedException('Unauthorized');
 
-         const { email, id, role } = payload;
+      const { email, id, role } = payload;
 
+      const user = await this.authRepository.findUserRefreshTokenByUserId(id);
+      
+      if (!user.refreshToken)
+        throw new UnauthorizedException('User not authorized');
+      
+      const compareRefreshToken = await bcrypt.compare(
+        refresh_token,
+        user.refreshToken,
+      );
+      console.log('compareRefreshToken', compareRefreshToken);
+      if (!compareRefreshToken)
+        throw new UnauthorizedException('User not authorized');
 
+      const newAccessToken = await this.jwtService.signAsync(
+        { email, id, role },
+        {
+          secret: jwtConstants.accessTokenSecret,
+          expiresIn: '1h',
+        },
+      );
 
-          const user = await this.authRepository.findUserRefreshTokenByUserId(id);
+      const newRefreshToken = await this.jwtService.signAsync(
+        { email, id, role },
+        {
+          secret: jwtConstants.refreshTokenSecret,
+          expiresIn: '30d',
+        },
+      );
 
-          if(user.refreshToken !== refresh_token) throw new UnauthorizedException('User not authorized')
-         
+      const hashedNewRefreshToken = await bcrypt.hash(newRefreshToken, 10);
 
+      await this.authRepository.updateUserRefreshToken(
+        hashedNewRefreshToken,
+        id,
+      );
 
-          const newAccessToken = await this.jwtService.signAsync(
-            { email, id, role },
-            {
-              secret: jwtConstants.accessTokenSecret,
-              expiresIn: '1h',
-            },
-          );
-
-          const newRefreshToken = await this.jwtService.signAsync(
-            { email, id, role },
-            {
-              secret: jwtConstants.refreshTokenSecret,
-              expiresIn: '30d',
-            },
-          );
-
-          const hashedNewRefreshToken = await bcrypt.hash(newRefreshToken, 10);
-          
-           await this.authRepository.updateUserRefreshToken(hashedNewRefreshToken, id)
-             
-
-          return {newAccessToken, newRefreshToken} 
-
-    }
-    catch(error) {
-      console.log(error)
+      return { newAccessToken, newRefreshToken };
+    } catch (error) {
+      console.log(error);
     }
   }
 }

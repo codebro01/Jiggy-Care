@@ -46,4 +46,8 @@ export class ConsultantService {
 
     return consultant;
   }
+
+  async listAllApprovedConsultants() {
+    return await this.consultantRepository.listAllApprovedConsultants()
+  }
 }

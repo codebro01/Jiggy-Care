@@ -10,7 +10,6 @@ import { JwtModule } from '@nestjs/jwt';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { MulterService } from './multer/multer.service';
 import { MulterModule } from './multer/multer.module';
-import { UploadController } from './upload/upload.controller';
 import { UploadModule } from './upload/upload.module';
 import { ConsultantModule } from './consultant/consultant.module';
 import { HelpersModule } from './helpers/helpers.module';
@@ -95,7 +94,7 @@ import { EncryptionServiceModule } from './encryption-service/encryption-service
     EmailVerificationModule,
     EncryptionServiceModule,
   ],
-  controllers: [AppController, UploadController],
+  controllers: [AppController],
   providers: [AppService, NeonProvider, MulterService],
 })
 export class AppModule {}

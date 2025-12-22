@@ -16,7 +16,9 @@ import {
   ApiOperation,
   ApiResponse,
   ApiParam,
-  ApiHeader
+  ApiBearerAuth,
+  ApiHeader,
+  ApiCookieAuth,
 } from '@nestjs/swagger';
 import { MedicationService } from './medication.service';
 import { CreateMedicationDto } from './dto/create-medication.dto';
@@ -46,7 +48,8 @@ export class MedicationController {
       example: 'mobile',
     },
   })
-
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   @ApiOperation({ summary: 'Create a new medication' })
   @ApiResponse({
     status: 201,
@@ -61,6 +64,19 @@ export class MedicationController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Get('find-all')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   @ApiOperation({
     summary: 'Get all medications with filtering and pagination',
   })
@@ -76,6 +92,19 @@ export class MedicationController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Get('find-one/:id')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   @ApiOperation({ summary: 'Get a medication by ID' })
   @ApiParam({ name: 'id', description: 'Medication ID', type: String })
   @ApiResponse({
@@ -91,6 +120,19 @@ export class MedicationController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Patch('update/:id')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   @ApiOperation({ summary: 'Update a medication' })
   @ApiParam({ name: 'id', description: 'Medication ID', type: String })
   @ApiResponse({

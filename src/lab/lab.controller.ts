@@ -18,7 +18,7 @@ import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { Roles } from '@src/auth/decorators/roles.decorators';
 import type { Request } from '@src/types';
 import type { Response } from 'express';
-import { ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiHeader, ApiCookieAuth } from '@nestjs/swagger';
 
 @Controller('lab')
 export class LabController {
@@ -38,7 +38,8 @@ export class LabController {
       example: 'mobile',
     },
   })
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   async create(
     @Body() createLabDto: CreateLabDto,
     @Req() req: Request,
@@ -63,7 +64,8 @@ export class LabController {
       example: 'mobile',
     },
   })
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   async findAll(@Res() res: Response) {
     const lab = await this.labService.findAll();
     res.status(HttpStatus.OK).json({ message: 'success', data: lab });
@@ -83,7 +85,8 @@ export class LabController {
       example: 'mobile',
     },
   })
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   async findOne(@Param('id') labId: string, @Res() res: Response) {
     const lab = await this.labService.findOne(labId);
     res.status(HttpStatus.OK).json({ message: 'success', data: lab });
@@ -103,7 +106,8 @@ export class LabController {
       example: 'mobile',
     },
   })
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   async update(
     @Param('id') labId: string,
     @Body() updateLabDto: UpdateLabDto,

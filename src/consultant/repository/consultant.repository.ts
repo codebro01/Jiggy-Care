@@ -76,4 +76,11 @@ export class ConsultantRepository {
 
     return consultants;
   }
+
+  async listAllApprovedConsultants() {
+    const consultants = await this.DbProvider.select()
+      .from(consultantTable)
+      .where(eq(consultantTable.approvedStatus, true));
+      return consultants;
+  }
 }

@@ -6,6 +6,10 @@ import {
   UploadedFiles,
   UseInterceptors,
   BadRequestException,
+  HttpCode,
+  Param,
+  HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import multer from 'multer';
@@ -16,14 +20,36 @@ import {
   ApiResponse,
   ApiConsumes,
   ApiBody,
+  ApiBearerAuth,
+  ApiCookieAuth,
+  ApiHeader,
+  ApiParam,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@src/auth/guards/roles.guard';
+import { Roles } from '@src/auth/decorators/roles.decorators';
 
 @ApiTags('upload')
 @Controller('upload')
 export class UploadController {
   constructor(private readonly cloudinaryService: CloudinaryService) {}
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'consultant', 'patient')
   @Post('image')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   @UseInterceptors(
     FileInterceptor('file', {
       storage: multer.memoryStorage(),
@@ -65,6 +91,7 @@ export class UploadController {
     description:
       'Bad request - No file selected, invalid format, or file too large',
   })
+  @HttpCode(HttpStatus.OK)
   async uploadImage(@UploadedFile() file: Express.Multer.File) {
     // console.log(file);
     if (!file) throw new BadRequestException('Please select an image file');
@@ -84,7 +111,22 @@ export class UploadController {
     return { uploaded: result };
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'consultant', 'patient')
   @Post('images')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   @UseInterceptors(
     FilesInterceptor('files', 5, {
       storage: multer.memoryStorage(),
@@ -133,6 +175,7 @@ export class UploadController {
     description:
       'Bad request - No files uploaded, invalid format, or file too large',
   })
+  @HttpCode(HttpStatus.OK)
   async uploadImages(@UploadedFiles() files: Express.Multer.File[]) {
     if (!files || files.length === 0) {
       throw new BadRequestException('Please upload at least one image');
@@ -144,5 +187,55 @@ export class UploadController {
     );
 
     return { uploaded: results };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'consultant', 'patient')
+  @Post('delete')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @ApiOperation({
+    summary: 'Delete image from Cloudinary',
+    description: 'Deletes an image from Cloudinary storage using its public ID',
+  })
+  @ApiParam({
+    name: 'publicId',
+    description: 'The Cloudinary public ID of the image to delete',
+    example: 'driver_frontview_001',
+    type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Image deleted successfully',
+    schema: {
+      example: {
+        message: 'Image deleted successfully',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Image not found',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
+  @HttpCode(HttpStatus.OK)
+  async deleteImage(@Param('publicId') publicId: string) {
+    await this.cloudinaryService.deleteImage(publicId);
+
+    return { messgae: 'Image deleted successfully' };
   }
 }

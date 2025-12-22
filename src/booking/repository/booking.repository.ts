@@ -111,25 +111,62 @@ export class BookingRepository {
     return booking;
   }
 
-  async getBookings(consultantId?: string, patientId?: string, trx?: any) {
+ 
+  async getPatientUpcomingBookings(patientId: string, trx?: any) {
     const Trx = trx || this.DbProvider;
 
-    if (!consultantId && !patientId)
-      throw new BadRequestException(
-        'Please provide either a patient or a consultant identity',
-      );
-
-    const conditions = [eq(bookingTable.paymentStatus, true)];
-
-    if (consultantId)
-      conditions.push(eq(bookingTable.consultantId, consultantId));
-
-    if (patientId) conditions.push(eq(bookingTable.patientId, patientId));
-
-    const [booking] = await Trx.select()
+    const bookings = await Trx.select()
       .from(bookingTable)
-      .where(...conditions);
-    return booking;
+      .where(
+        and(
+          eq(bookingTable.patientId, patientId),
+          eq(bookingTable.paymentStatus, true),
+          eq(bookingTable.status, 'upcoming'),
+        ),
+      );
+    return bookings;
+  }
+  async getPatientCompletedBookings(patientId: string, trx?: any) {
+    const Trx = trx || this.DbProvider;
+
+    const bookings = await Trx.select()
+      .from(bookingTable)
+      .where(
+        and(
+          eq(bookingTable.patientId, patientId),
+          eq(bookingTable.paymentStatus, true),
+          eq(bookingTable.status, 'completed'),
+        ),
+      );
+    return bookings;
+  }
+  async getConsultantUpcomingBookings(consultantId: string, trx?: any) {
+    const Trx = trx || this.DbProvider;
+
+    const bookings = await Trx.select()
+      .from(bookingTable)
+      .where(
+        and(
+          eq(bookingTable.consultantId, consultantId),
+          eq(bookingTable.paymentStatus, true),
+          eq(bookingTable.status, 'upcoming'),
+        ),
+      );
+    return bookings;
+  }
+  async getConsultantCompletedBookings(consultantId: string, trx?: any) {
+    const Trx = trx || this.DbProvider;
+
+    const bookings = await Trx.select()
+      .from(bookingTable)
+      .where(
+        and(
+          eq(bookingTable.consultantId, consultantId),
+          eq(bookingTable.paymentStatus, true),
+          eq(bookingTable.status, 'completed'),
+        ),
+      );
+    return bookings;
   }
 
   async updateBookingPaymentStatus(

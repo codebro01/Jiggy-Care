@@ -137,7 +137,6 @@ export class BookingService {
     };
   }
 
-  // Helper: Parse time string like "10am" or "5pm"
   private parseTime(timeStr: string): number {
     const match = timeStr.trim().match(/(\d+)(am|pm)/i);
     if (!match) return -1;
@@ -151,7 +150,6 @@ export class BookingService {
     return hours;
   }
 
-  // Helper: Generate time slots
   private generateTimeSlots(startHour: number, endHour: number) {
     const slots = [];
 
@@ -189,14 +187,12 @@ export class BookingService {
     return slots;
   }
 
-  // Helper: Format hour for display
   private formatHour(hour: number): string {
     const period = hour >= 12 ? 'PM' : 'AM';
     const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
     return `${displayHour}:00 ${period}`;
   }
 
-  // Simplified validation - just check if slot is available
   async validateBookingSlot(
     date: string,
     consultantId: string,
@@ -231,5 +227,22 @@ export class BookingService {
     }
 
     return true;
+  }
+
+  async getPatientUpcomingBookings(patientId: string) {
+    const bookings = await this.bookingRepository.getPatientUpcomingBookings( patientId);
+    return bookings;
+  }
+  async getPatientCompletedBookings( patientId:string) {
+    const bookings = await this.bookingRepository.getPatientCompletedBookings(patientId);
+    return bookings;
+  }
+  async getConsultantUpcomingBookings( consultantId:string) {
+    const bookings = await this.bookingRepository.getConsultantUpcomingBookings(consultantId);
+    return bookings;
+  }
+  async getConsultantCompletedBookings( consultantId:string) {
+    const bookings = await this.bookingRepository.getConsultantCompletedBookings(consultantId);
+    return bookings;
   }
 }

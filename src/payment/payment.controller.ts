@@ -21,6 +21,7 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiHeader,
+  ApiCookieAuth
   // ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { PaymentService } from '@src/payment/payment.service';
@@ -48,12 +49,22 @@ export class PaymentController {
     private readonly bookingRepository: BookingRepository,
   ) {}
 
-
-  
-
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Post('initialize/booking')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   @ApiOperation({
     summary: 'Initialize a payment transaction',
     description:
@@ -75,11 +86,11 @@ export class PaymentController {
     status: 403,
     description: 'Forbidden - User is not a business owner',
   })
+  @HttpCode(HttpStatus.OK)
   async initializeBookingPayment(
     @Body()
     body: bookingPaystackMetedataDto,
     @Req() req: Request,
-    @Res() res: Response,
   ) {
     const { email, id: userId } = req.user;
     const result = await this.paymentService.initializeBookingPayment({
@@ -90,15 +101,28 @@ export class PaymentController {
       },
     });
 
-    res.status(HttpStatus.OK).json({
+    return {
       success: true,
       data: result.data,
-    });
+    };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Post('initialize/medication')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   @ApiOperation({
     summary: 'Initialize a payment transaction',
     description:
@@ -120,11 +144,11 @@ export class PaymentController {
     status: 403,
     description: 'Forbidden - User is not a business owner',
   })
+  @HttpCode(HttpStatus.OK)
   async initializeMedicationOrder(
     @Body()
     body: CreateOrderDto,
     @Req() req: Request,
-    @Res() res: Response,
   ) {
     const { email, id: userId } = req.user;
     const result = await this.paymentService.initializeMedicationOrder({
@@ -135,15 +159,28 @@ export class PaymentController {
       },
     });
 
-    res.status(HttpStatus.OK).json({
+    return {
       success: true,
       data: result.data,
-    });
+    };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Post('initialize/test-booking')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   @ApiOperation({
     summary: 'Initialize a payment transaction',
     description:
@@ -152,7 +189,6 @@ export class PaymentController {
   @ApiResponse({
     status: 200,
     description: 'Payment initialized successfully',
-   
   })
   @ApiResponse({
     status: 400,
@@ -166,11 +202,11 @@ export class PaymentController {
     status: 403,
     description: 'Forbidden - User is not a business owner',
   })
+  @HttpCode(HttpStatus.OK)
   async initializeTestBookingPayment(
     @Body()
     body: InitializeTestBookingPayment,
     @Req() req: Request,
-    @Res() res: Response,
   ) {
     const { email, id: userId } = req.user;
     const result = await this.paymentService.initializeTestBookingPayment({
@@ -181,15 +217,28 @@ export class PaymentController {
       },
     });
 
-    res.status(HttpStatus.OK).json({
+    return {
       success: true,
       data: result.data,
-    });
+    };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient', 'admin')
   @Get('verify/:reference')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   @ApiOperation({
     summary: 'Verify a payment transaction',
     description:
@@ -247,6 +296,7 @@ export class PaymentController {
     status: 404,
     description: 'Not Found - Payment reference not found',
   })
+  @HttpCode(HttpStatus.OK)
   async verifyPayment(@Param('reference') reference: string) {
     const result = await this.paymentService.verifyPayment(reference);
     return {
@@ -268,7 +318,6 @@ export class PaymentController {
     description: 'Webhook signature for verification',
     required: true,
   })
-
   @ApiResponse({
     status: 200,
     description: 'Webhook processed successfully',
@@ -282,7 +331,6 @@ export class PaymentController {
     @Res() res: Response,
     @Headers('x-paystack-signature') signature: string,
   ) {
-
     const payload = JSON.stringify(req.body);
 
     const isValid = this.paymentService.verifyWebhookSignature(
@@ -305,12 +353,25 @@ export class PaymentController {
         'An unexpected error has occured while trying to process payments please try again',
       );
 
-    res.status(HttpStatus.OK).json({ message: response });
+    return { message: response };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Get('list-all-transactions')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   @ApiOperation({
     summary: 'List all transactions from Paystack',
     description:
@@ -350,6 +411,7 @@ export class PaymentController {
     status: 403,
     description: 'Forbidden - User is not a business owner',
   })
+  @HttpCode(HttpStatus.OK)
   async listTransactions() {
     const result = await this.paymentService.listAllTransactions();
     return result;
@@ -358,6 +420,19 @@ export class PaymentController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Get('list-transactions')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   @ApiOperation({
     summary: 'Get user transactions from database',
     description:
@@ -381,15 +456,16 @@ export class PaymentController {
     status: 403,
     description: 'Forbidden - User is not a business owner',
   })
-  async getTransactionsFromDB(@Req() req: Request, @Res() res: Response) {
+  @HttpCode(HttpStatus.OK)
+  async getTransactionsFromDB(@Req() req: Request) {
     const { id: userId } = req.user;
 
     const result = await this.paymentService.listTransactions(userId);
 
-    res.status(HttpStatus.OK).json({
+   return {
       success: true,
       data: result,
-    });
+    };
   }
 
   @Get('callback-test')

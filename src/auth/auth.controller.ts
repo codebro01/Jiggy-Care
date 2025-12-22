@@ -11,6 +11,7 @@ import {
   UseGuards,
   Patch,
   HttpCode,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { AuthService } from '@src/auth/auth.service';
 import { LoginUserDto } from '@src/auth/dto/login-user.dto';
@@ -18,7 +19,13 @@ import type { Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '@src/users/users.service';
 import omit from 'lodash.omit';
-import { ApiTags, ApiResponse, ApiHeader } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiResponse,
+  ApiHeader,
+  ApiBearerAuth,
+  ApiCookieAuth,
+} from '@nestjs/swagger';
 import type { Request } from '@src/types';
 import { roleType } from '@src/users/dto/createUser.dto';
 import { GoogleMobileSigninDto } from '@src/auth/dto/google-mobile-signin.dto';
@@ -165,6 +172,7 @@ export class AuthController {
     res.status(HttpStatus.ACCEPTED).json({ user: safeUser, accessToken });
   }
 
+  @Patch('refresh')
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -176,7 +184,16 @@ export class AuthController {
       example: 'mobile',
     },
   })
-  @Patch('refresh')
+  @ApiHeader({
+    name: 'x-refresh-token',
+    description: 'The refresh token that was sent to the client during login',
+    required: true,
+    schema: {
+      type: 'string',
+      example:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEyMyIsxxxxxxxxxxxxxxxxxxx',
+    },
+  })
   async refreshToken(
     @Res({ passthrough: true }) res: Response,
     @Req() req: Request,
@@ -189,18 +206,24 @@ export class AuthController {
     const refreshToken = this.jwtAuthGuard.extractRefreshToken(req);
     if (!refreshToken)
       throw new BadRequestException('No refresh token provided');
-    await this.authService.verifyRefreshTokenForMobile(refreshToken);
+    const newTokens =
+      await this.authService.verifyRefreshTokenForMobile(refreshToken);
 
-    res.removeHeader('x-access-token');
-    res.removeHeader('x-refresh-token');
+    if (!newTokens?.newAccessToken || !newTokens?.newRefreshToken)
+      throw new InternalServerErrorException('Could not issue new tokens');
+
+    res.setHeader('x-access-token', newTokens?.newAccessToken);
+    res.setHeader('x-refresh-token', newTokens?.newRefreshToken);
     return {
       success: true,
-      message: 'logout successful',
     };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient', 'consultant', 'admin')
+  @Get('logout')
+  @ApiBearerAuth('JWT-auth') // For mobile clients
+  @ApiCookieAuth('access_token')
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -212,22 +235,20 @@ export class AuthController {
       example: 'mobile',
     },
   })
-  @Get('logout')
   async logoutUser(
     @Res({ passthrough: true }) res: Response,
     @Req() req: Request,
   ) {
-    console.log(req);
     const { id: userId } = req.user;
     await this.authService.logoutUser(userId);
     const isMobileClient = this.jwtAuthGuard.isMobileClient(req);
 
     if (!isMobileClient) {
-      res.removeHeader('x-access-token');
-      res.removeHeader('x-refresh-token');
-    } else {
       res.clearCookie('access_token');
       res.clearCookie('refresh_token');
+    } else {
+      res.removeHeader('x-access-token');
+      res.removeHeader('x-refresh-token');
     }
     return {
       success: true,

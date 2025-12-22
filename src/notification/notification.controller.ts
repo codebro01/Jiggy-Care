@@ -25,6 +25,9 @@ import {
   ApiParam,
   ApiQuery,
   ApiProduces,
+  ApiCookieAuth,
+  ApiBearerAuth, 
+  ApiHeader
 } from '@nestjs/swagger';
 
 @Controller('notification')
@@ -34,6 +37,20 @@ export class NotificationController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('businessOwner', 'driver')
   @Sse('stream')
+
+   @ApiHeader({
+      name: 'x-client-type',
+      description:
+        'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+      required: false,
+      schema: {
+        type: 'string',
+        enum: ['mobile', 'web'],
+        example: 'mobile',
+      },
+    })
+    @ApiBearerAuth('JWT-auth')
+    @ApiCookieAuth('access_token')
   @ApiOperation({
     summary: 'Stream notifications in real-time',
     description:
@@ -92,6 +109,19 @@ export class NotificationController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Post('create-notification')
+   @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   @ApiOperation({
     summary: 'Create a new notification',
     description:
@@ -156,6 +186,19 @@ export class NotificationController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Post('update-notification/:id')
+   @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   @ApiOperation({
     summary: 'Update a specific notification',
     description:
@@ -235,6 +278,19 @@ export class NotificationController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin, businessOwner, driver')
   @Post('update-notifications')
+   @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   @ApiOperation({
     summary: 'Update multiple notifications',
     description:
@@ -313,6 +369,19 @@ export class NotificationController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'businessOwner', 'driver')
   @Get('dashboard-data')
+   @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   @ApiOperation({
     summary: 'Get notification dashboard data',
     description:

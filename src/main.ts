@@ -36,7 +36,22 @@ app.enableCors({
     .setTitle('Jiggy Care API') // Title of your docs
     .setDescription('Jiggy Care api') // Small description
     .setVersion('1.0') // Version
-    .addBearerAuth()
+     .addBearerAuth(
+    {
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+      description: 'Enter JWT token (for mobile clients, use the access token instead in the response header)',
+      in: 'header',
+    },
+    'JWT-auth',
+  )
+  .addCookieAuth('access_token', {
+    type: 'apiKey',
+    in: 'cookie',
+    name: 'access_token',
+    description: 'HTTP-only cookie (for web clients)',
+  })
     .addServer('http://localhost:3000', 'Local Dev')
     .addServer('https://jiggy-care.onrender.com', 'Production')
     .build();

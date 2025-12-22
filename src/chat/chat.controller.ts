@@ -11,7 +11,7 @@ import {
 import { ChatService } from '@src/chat/chat.service';
 import { CreateConversationDto } from '@src/chat/dto/create-conversation.dto';
 import { CreateMessageDto } from '@src/chat/dto/create-messages.dto';
-import { ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiHeader, ApiCookieAuth } from '@nestjs/swagger';
 
 @Controller('chat')
 export class ChatController {
@@ -29,24 +29,8 @@ export class ChatController {
       example: 'mobile',
     },
   })
-  @ApiHeader({
-    name: 'x-access-token',
-    description: 'Access token for authenticating API requests',
-    required: false,
-    schema: {
-      type: 'string',
-      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-    },
-  })
-  @ApiHeader({
-    name: 'x-refresh-token',
-    description: 'Refresh token for obtaining new access tokens',
-    required: false,
-    schema: {
-      type: 'string',
-      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-    },
-  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   async getConversations(
     @Query('consultantId') consultantId?: string,
     @Query('patientId') patientId?: string,
@@ -116,24 +100,8 @@ export class ChatController {
       example: 'mobile',
     },
   })
-  @ApiHeader({
-    name: 'x-access-token',
-    description: 'Access token for authenticating API requests',
-    required: false,
-    schema: {
-      type: 'string',
-      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-    },
-  })
-  @ApiHeader({
-    name: 'x-refresh-token',
-    description: 'Refresh token for obtaining new access tokens',
-    required: false,
-    schema: {
-      type: 'string',
-      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-    },
-  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   async sendMessage(
     @Body()
     body: CreateMessageDto,
@@ -153,24 +121,8 @@ export class ChatController {
       example: 'mobile',
     },
   })
-  @ApiHeader({
-    name: 'x-access-token',
-    description: 'Access token for authenticating API requests',
-    required: false,
-    schema: {
-      type: 'string',
-      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-    },
-  })
-  @ApiHeader({
-    name: 'x-refresh-token',
-    description: 'Refresh token for obtaining new access tokens',
-    required: false,
-    schema: {
-      type: 'string',
-      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-    },
-  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   async getUnreadCount(
     @Param('conversationId') conversationId: string,
     @Query('userId') userId: string,
@@ -192,24 +144,8 @@ export class ChatController {
       example: 'mobile',
     },
   })
-  @ApiHeader({
-    name: 'x-access-token',
-    description: 'Access token for authenticating API requests',
-    required: false,
-    schema: {
-      type: 'string',
-      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-    },
-  })
-  @ApiHeader({
-    name: 'x-refresh-token',
-    description: 'Refresh token for obtaining new access tokens',
-    required: false,
-    schema: {
-      type: 'string',
-      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-    },
-  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   async markAsRead(
     @Param('conversationId') conversationId: string,
     @Body() body: { messageIds: string[] },
