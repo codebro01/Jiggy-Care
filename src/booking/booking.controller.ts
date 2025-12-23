@@ -101,7 +101,6 @@ export class BookingController {
     const { id: userId } = req.user;
     const bookings =
       await this.bookingService.getPatientUpcomingBookings(userId);
-
     return { success: true, data: bookings };
   }
 

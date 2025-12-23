@@ -12,12 +12,12 @@ import { jwtConstants } from '@src/auth/jwtContants';
 import { JwtService } from '@nestjs/jwt';
 import axios from 'axios';
 import { HelperRepository } from '@src/helpers/repository/helpers.repository';
-import { roleType } from '@src/users/dto/createUser.dto';
 import { PatientRepository } from '@src/patient/repository/patient.repository';
 import { ConsultantRepository } from '@src/consultant/repository/consultant.repository';
 import { GoogleAuthService } from '@src/google-auth/google-auth.service';
 import * as bcrypt from 'bcrypt';
 import { GoogleMobileSigninDto } from '@src/auth/dto/google-mobile-signin.dto';
+import { roleType } from '@src/users/dto/createUser.dto';
 
 @Injectable()
 export class AuthService {
@@ -74,8 +74,21 @@ export class AuthService {
       user.id,
     );
 
+    let userInfo;
+
+    if(user.role === 'patient') {
+      userInfo = await this.userRepository.findPatientById(user.id);
+    }
+    else if(user.role === 'consultant') {
+      userInfo = await this.userRepository.findApprovedConsultantById(user.id);
+    }
+    else {
+      userInfo = user
+    }
+
+
     if (!updateUserToken) throw new InternalServerErrorException();
-    return { user, accessToken, refreshToken };
+    return { user: userInfo, accessToken, refreshToken };
   }
 
   async logoutUser(userId: string) {
@@ -89,7 +102,7 @@ export class AuthService {
     try {
       googlePayload = await this.googleAuthService.verifyIdToken(data.idToken);
 
-      console.log('googlePayload', googlePayload)
+      console.log('googlePayload', googlePayload);
     } catch (error) {
       console.log(error);
       throw new BadRequestException('Your request token is invalid');
@@ -99,8 +112,7 @@ export class AuthService {
     //! generate a ramdon crypto password for google users
     const googleUserPwd = this.generateRandomPassword();
     const hashedGoogleUserPwd = await bcrypt.hash(googleUserPwd, 10);
-    const { email, given_name, family_name, email_verified } =
-      googlePayload;
+    const { email, given_name, family_name, email_verified } = googlePayload;
     const payload = {
       email,
       fullName: `${given_name} ${family_name}`,
@@ -113,94 +125,114 @@ export class AuthService {
 
     switch (data.role) {
       case roleType.PATIENT: {
-        let user =
-          await this.authRepository.findUserByEmail(email);
+        let user = await this.authRepository.findUserByEmail(email);
 
+        let jwtPayload = {
+          email: user.email,
+          role: user.role,
+          id: user.id,
+        };
         if (user) {
-          const accessToken = await this.jwtService.signAsync(payload, {
+          const patientInfo = await this.userRepository.findPatientById(
+            user.id,
+          );
+
+          const accessToken = await this.jwtService.signAsync(jwtPayload, {
             secret: jwtConstants.accessTokenSecret,
             expiresIn: '1h',
           });
 
-          const refreshToken = await this.jwtService.signAsync(payload, {
+          const refreshToken = await this.jwtService.signAsync(jwtPayload, {
             secret: jwtConstants.refreshTokenSecret,
             expiresIn: '30d',
           });
 
-          return { user, refreshToken, accessToken };
+          return { user: patientInfo, refreshToken, accessToken };
         }
-         user = await this.helperRepository.executeInTransaction(
-          async (trx) => {
-            const patient = await this.userRepository.createUser(
-              payload,
-              'google',
-              trx,
-            );
-            await this.patientRepository.createPatient(patient.id, trx);
-            return patient;
-          },
-        );
+        user = await this.helperRepository.executeInTransaction(async (trx) => {
+          const patient = await this.userRepository.createUser(
+            payload,
+            'google',
+            trx,
+          );
+          await this.patientRepository.createPatient(patient.id, trx);
+          return patient;
+        });
 
-        const accessToken = await this.jwtService.signAsync(payload, {
+        jwtPayload = {
+          email: user.email,
+          role: user.role,
+          id: user.id,
+        };
+
+        const patientInfo = await this.userRepository.findPatientById(user.id);
+
+        const accessToken = await this.jwtService.signAsync(jwtPayload, {
           secret: jwtConstants.accessTokenSecret,
           expiresIn: '1h',
         });
 
-        const refreshToken = await this.jwtService.signAsync(payload, {
+        const refreshToken = await this.jwtService.signAsync(jwtPayload, {
           secret: jwtConstants.refreshTokenSecret,
           expiresIn: '30d',
         });
 
-        return { user, refreshToken, accessToken };
+        return { user: patientInfo, refreshToken, accessToken };
       }
 
       case roleType.CONSULTANT: {
-        let user =
-          await this.authRepository.findUserByEmail(email);
+        let user = await this.authRepository.findUserByEmail(email);
+
+        let jwtPayload = {
+          email: user.email,
+          role: user.role,
+          id: user.id,
+        };
 
         if (user) {
-          const accessToken = await this.jwtService.signAsync(payload, {
+          const consultantInfo =
+            await this.userRepository.findApprovedConsultantById(user.id);
+          const accessToken = await this.jwtService.signAsync(jwtPayload, {
             secret: jwtConstants.accessTokenSecret,
             expiresIn: '1h',
           });
 
-          const refreshToken = await this.jwtService.signAsync(payload, {
+          const refreshToken = await this.jwtService.signAsync(jwtPayload, {
             secret: jwtConstants.refreshTokenSecret,
             expiresIn: '30d',
           });
 
-          return { user, refreshToken, accessToken };
+          return { user: consultantInfo, refreshToken, accessToken };
         }
-         user = await this.helperRepository.executeInTransaction(
-          async (trx) => {
-            const consultant = await this.userRepository.createUser(
-              payload,
-              'google',
-              trx,
-            );
-            await this.consultantRepository.createConsultant(
-              consultant.id,
-              trx,
-            );
-            return consultant;
-          },
-        ); // ← Fixed: closing parenthesis right after the callback
+        user = await this.helperRepository.executeInTransaction(async (trx) => {
+          const consultant = await this.userRepository.createUser(
+            payload,
+            'google',
+            trx,
+          );
+          await this.consultantRepository.createConsultant(consultant.id, trx);
+          return consultant;
+        }); // ← Fixed: closing parenthesis right after the callback
 
+        jwtPayload = {
+          email: user.email,
+          role: user.role,
+          id: user.id,
+        };
 
-            console.log('user', user)
-
-
-        const accessToken = await this.jwtService.signAsync(payload, {
+        const consultantInfo =
+          await this.userRepository.findApprovedConsultantById(user.id);
+        const accessToken = await this.jwtService.signAsync(jwtPayload, {
           secret: jwtConstants.accessTokenSecret,
           expiresIn: '1h',
         });
 
-        const refreshToken = await this.jwtService.signAsync(payload, {
+        const refreshToken = await this.jwtService.signAsync(jwtPayload, {
           secret: jwtConstants.refreshTokenSecret,
           expiresIn: '30d',
         });
 
-        return { user, refreshToken, accessToken };
+        return { user: consultantInfo, refreshToken, accessToken };
       }
 
       default:
@@ -269,115 +301,128 @@ export class AuthService {
       role,
     };
 
-    // switch (role) {
-    //   case roleType.PATIENT:
-
-    //     {
-    //       const user = await this.helperRepository.executeInTransaction(async (trx) => {
-    //         const patient = await this.userRepository.createUser(payload, 'google', trx);
-    //         await this.patientRepository.createPatient(patient.id, trx);
-    //           return patient;
-    //       })
-
-    //       const accessToken = await this.jwtService.signAsync(payload, {
-    //         secret: jwtConstants.accessTokenSecret,
-    //         expiresIn: '1h',
-    //       });
-    //       const refreshToken = await this.jwtService.signAsync(payload, {
-    //         secret: jwtConstants.refreshTokenSecret,
-    //         expiresIn: '30d',
-    //       });
-
-    //       return { user, refreshToken, accessToken }
-    //     }
-
-    //   case roleType.CONSULTANT:
-    //     {
-    //       const user = await this.helperRepository.executeInTransaction(async (trx) => {
-    //         const consultant = await this.userRepository.createUser(payload, 'google', trx);
-    //         await this.consultantRepository.createConsultant(consultant.id, trx);
-
-    //         return consultant;
-    //       }
-
-    //       )
-    //       const accessToken = await this.jwtService.signAsync(payload, {
-    //         secret: jwtConstants.accessTokenSecret,
-    //         expiresIn: '1h',
-    //       });
-    //       const refreshToken = await this.jwtService.signAsync(payload, {
-    //         secret: jwtConstants.refreshTokenSecret,
-    //         expiresIn: '30d',
-    //       });
-
-    //       console.log('user', user)
-
-    //       return { user, refreshToken, accessToken }
-    //     }
-    // }
-
     switch (role) {
       case roleType.PATIENT: {
-        const user = await this.helperRepository.executeInTransaction(
-          async (trx) => {
-            const patient = await this.userRepository.createUser(
-              payload,
-              'google',
-              trx,
-            );
-            await this.patientRepository.createPatient(patient.id, trx);
-            return patient;
-          },
-        );
+        let user = await this.authRepository.findUserByEmail(email);
 
-        const accessToken = await this.jwtService.signAsync(payload, {
+        let jwtPayload = {
+          email,
+          role,
+          id: user.id,
+        };
+        if (user) {
+             const patientInfo = await this.userRepository.findPatientById(
+               user.id,
+             );
+          const accessToken = await this.jwtService.signAsync(jwtPayload, {
+            secret: jwtConstants.accessTokenSecret,
+            expiresIn: '1h',
+          });
+
+          const refreshToken = await this.jwtService.signAsync(jwtPayload, {
+            secret: jwtConstants.refreshTokenSecret,
+            expiresIn: '30d',
+          });
+
+          return { user: patientInfo, refreshToken, accessToken };
+        }
+
+        user = await this.helperRepository.executeInTransaction(async (trx) => {
+          const patient = await this.userRepository.createUser(
+            payload,
+            'google',
+            trx,
+          );
+          await this.patientRepository.createPatient(patient.id, trx);
+          return patient;
+        });
+
+        jwtPayload = {
+          email: user.email,
+          role: user.role,
+          id: user.id,
+        };
+
+           const patientInfo = await this.userRepository.findPatientById(
+             user.id,
+           );
+
+        const accessToken = await this.jwtService.signAsync(jwtPayload, {
           secret: jwtConstants.accessTokenSecret,
           expiresIn: '1h',
         });
 
-        const refreshToken = await this.jwtService.signAsync(payload, {
+        const refreshToken = await this.jwtService.signAsync(jwtPayload, {
           secret: jwtConstants.refreshTokenSecret,
           expiresIn: '30d',
         });
 
-        return { user, refreshToken, accessToken };
+        return { user: patientInfo, refreshToken, accessToken };
       }
 
       case roleType.CONSULTANT: {
-        const user = await this.helperRepository.executeInTransaction(
-          async (trx) => {
-            const consultant = await this.userRepository.createUser(
-              payload,
-              'google',
-              trx,
-            );
-            await this.consultantRepository.createConsultant(
-              consultant.id,
-              trx,
-            );
-            return consultant;
-          },
-        ); // ← Fixed: closing parenthesis right after the callback
+        let user = await this.authRepository.findUserByEmail(email);
 
-        const accessToken = await this.jwtService.signAsync(payload, {
+        let jwtPayload = {
+          email,
+          role,
+          id: user.id,
+        };
+
+        if (user) {
+           const consultantInfo =
+             await this.userRepository.findApprovedConsultantById(user.id);
+
+             console.log('consultantInfo', consultantInfo)
+
+          const accessToken = await this.jwtService.signAsync(jwtPayload, {
+            secret: jwtConstants.accessTokenSecret,
+            expiresIn: '1h',
+          });
+
+          const refreshToken = await this.jwtService.signAsync(jwtPayload, {
+            secret: jwtConstants.refreshTokenSecret,
+            expiresIn: '30d',
+          });
+
+          return { user: consultantInfo, refreshToken, accessToken };
+        }
+        user = await this.helperRepository.executeInTransaction(async (trx) => {
+          const consultant = await this.userRepository.createUser(
+            payload,
+            'google',
+            trx,
+          );
+          await this.consultantRepository.createConsultant(consultant.id, trx);
+          return consultant;
+        }); // ← Fixed: closing parenthesis right after the callback
+
+        jwtPayload = {
+          email: user.email,
+          role: user.role,
+          id: user.id,
+        };
+
+         const consultantInfo =
+           await this.userRepository.findApprovedConsultantById(user.id);
+
+        const accessToken = await this.jwtService.signAsync(jwtPayload, {
           secret: jwtConstants.accessTokenSecret,
           expiresIn: '1h',
         });
 
-        const refreshToken = await this.jwtService.signAsync(payload, {
+        const refreshToken = await this.jwtService.signAsync(jwtPayload, {
           secret: jwtConstants.refreshTokenSecret,
           expiresIn: '30d',
         });
 
-        return { user, refreshToken, accessToken };
+        return { user: consultantInfo, refreshToken, accessToken };
       }
 
       default:
         throw new BadRequestException('Invalid role type');
     }
   }
-
-  
 
   async verifyRefreshTokenForMobile(refresh_token: string) {
     try {
@@ -390,10 +435,10 @@ export class AuthService {
       const { email, id, role } = payload;
 
       const user = await this.authRepository.findUserRefreshTokenByUserId(id);
-      
+
       if (!user.refreshToken)
         throw new UnauthorizedException('User not authorized');
-      
+
       const compareRefreshToken = await bcrypt.compare(
         refresh_token,
         user.refreshToken,

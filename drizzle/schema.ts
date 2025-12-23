@@ -1,5 +1,4 @@
 import { pgTable, unique, uuid, varchar, boolean, timestamp, foreignKey, text, integer, jsonb, doublePrecision, date, index, pgEnum } from "drizzle-orm/pg-core"
-import { sql } from "drizzle-orm"
 
 export const bookingStatusType = pgEnum("booking_status_type", ['completed', 'upcoming'])
 export const categoryType = pgEnum("category_type", ['booking', 'order', 'health_tips'])

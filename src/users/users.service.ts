@@ -277,17 +277,19 @@ export class UserService {
     return updatedConsultant;
   }
 
-  async getUser(userId: string, role: string) {
-    if (role === 'consultant') {
+  async getPatientProfile(userId: string) {
+
+      const patient = await this.userRepository.findPatientById(userId);
+
+      return patient;
+  }
+  async getConsultantProfile(userId: string) {
+    console.log('userId',userId)
       const consultant =
         await this.userRepository.findApprovedConsultantById(userId);
 
       return consultant;
-    }
-    if (role === 'patient') {
-      const patient = await this.userRepository.findPatientById(userId);
-
-      return patient;
-    } else throw new BadRequestException('Invalid role provided');
+    
+   
   }
 }

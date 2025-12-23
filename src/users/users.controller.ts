@@ -157,7 +157,7 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard)
   @Roles('patient')
-  @Get('/profile')
+  @Get('/patient/profile')
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -172,10 +172,42 @@ export class UserController {
   @ApiBearerAuth('JWT-auth')
   @ApiCookieAuth('access_token')
   @HttpCode(HttpStatus.OK)
-  async getUser(@Req() req: Request) {
-    const { id: userId, role } = req.user;
-    const user = await this.userService.getUser(userId, role);
-    console.log(user);
+  async getPatientProfile(@Req() req: Request) {
+    const { id: userId } = req.user;
+    const user = await this.userService.getPatientProfile(userId);
+    console.log('req.user', req.user);
+    const safeUser = omit(user, [
+      'password',
+      'refreshToken',
+      'authProvider',
+      'role',
+    ]);
+
+    return { sucess: true, data: safeUser };
+  }
+
+
+  @UseGuards(JwtAuthGuard)
+  @Roles('consultant')
+  @Get('/consultant/profile')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
+  async getConsultantProfile(@Req() req: Request) {
+    const { id: userId } = req.user;
+    const user = await this.userService.getConsultantProfile(userId);
+    console.log('req.user', req.user);
     const safeUser = omit(user, [
       'password',
       'refreshToken',

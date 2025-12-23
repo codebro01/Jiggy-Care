@@ -146,10 +146,11 @@ export class AuthController {
   // ! google callback  for signin or signup (this callback returns the user identity from google)
 
   @Get('google/callback')
+  @HttpCode(HttpStatus.OK)
   async googleCallbackForWeb(
     @Query('code') code: string,
     @Query('state') state: string,
-    @Res() res: Response,
+    @Res({passthrough: true}) res: Response,
   ) {
     const { accessToken, refreshToken, user } =
       await this.authService.googleAuthCallbackForWeb(code, state);
@@ -169,7 +170,7 @@ export class AuthController {
 
     const safeUser = omit(user, ['password', 'refreshToken']);
 
-    res.status(HttpStatus.ACCEPTED).json({ user: safeUser, accessToken });
+    return {success: true,  data: safeUser };
   }
 
   @Patch('refresh')
