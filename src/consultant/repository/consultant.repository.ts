@@ -83,4 +83,15 @@ export class ConsultantRepository {
       .where(eq(consultantTable.approvedStatus, true));
       return consultants;
   }
+
+
+  // * ============================ admin section ======================================//
+
+
+  async updatePricePerSession(pricePerSession: number, consultantId: string) {
+  
+    const updateConsultant = await this.DbProvider.update(consultantTable).set({pricePerSession: pricePerSession}).where(eq(consultantTable.userId, consultantId))
+
+    return updateConsultant;
+  }
 }

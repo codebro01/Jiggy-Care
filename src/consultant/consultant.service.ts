@@ -50,4 +50,16 @@ export class ConsultantService {
   async listAllApprovedConsultants() {
     return await this.consultantRepository.listAllApprovedConsultants()
   }
+
+  async updatePricePerSession(pricePerSession: number, consultantId: string) {
+    const findConsultant = await this.consultantRepository.findApprovedConsultantById(consultantId);
+
+    if(findConsultant) throw new NotFoundException('Consultant not found')
+    const updateConsultant = await this.consultantRepository.updatePricePerSession(pricePerSession, consultantId);
+
+    return updateConsultant;
+  }
+
 }
+
+

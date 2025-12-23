@@ -121,13 +121,12 @@ export class AuthController {
 
     const { user, accessToken, refreshToken } =
       await this.authService.googleMobileAuth(query);
-    const safeUser = omit(user, ['password', 'refreshToken', 'authProvider']);
 
     res.setHeader('x-access-token', accessToken);
     res.setHeader('x-refresh-token', refreshToken);
     return {
       sucess: true,
-      data: safeUser,
+      data: user,
     };
   }
   // ! call google api for sign in or signup with google for web
@@ -150,7 +149,7 @@ export class AuthController {
   async googleCallbackForWeb(
     @Query('code') code: string,
     @Query('state') state: string,
-    @Res({passthrough: true}) res: Response,
+    @Res({ passthrough: true }) res: Response,
   ) {
     const { accessToken, refreshToken, user } =
       await this.authService.googleAuthCallbackForWeb(code, state);
@@ -168,9 +167,8 @@ export class AuthController {
       maxAge: 1000 * 60 * 60 * 24 * 30, // 30d
     });
 
-    const safeUser = omit(user, ['password', 'refreshToken']);
 
-    return {success: true,  data: safeUser };
+    return { success: true, data: user };
   }
 
   @Patch('refresh')
