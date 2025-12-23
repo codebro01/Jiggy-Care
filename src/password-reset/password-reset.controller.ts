@@ -1,11 +1,7 @@
 
 
 
-import { Controller, UseGuards, Req, Post, Body } from '@nestjs/common';
-import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
-import { RolesGuard } from '@src/auth/guards/roles.guard';
-import { Roles } from '@src/auth/decorators/roles.decorators';
-import type { Request } from '@src/types';
+import { Controller, Post, Body } from '@nestjs/common';
 import { ApiHeader, ApiCookieAuth, ApiBearerAuth } from '@nestjs/swagger';
 import { SendOTPDto } from '@src/password-reset/dto/send-otp.dto';
 import { PasswordResetService } from '@src/password-reset/password-reset.service';
@@ -39,8 +35,6 @@ export class PasswordResetController {
   }
 
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('consultant', 'patient')
   @Post('verify-otp')
   @ApiBearerAuth('JWT-auth') // For mobile clients
   @ApiCookieAuth('access_token')
@@ -55,11 +49,10 @@ export class PasswordResetController {
       example: 'mobile',
     },
   })
-  async verifyOTP(@Req() req: Request, @Body() body: PasswordResetDto) {
-    const { email } = req.user;
+  async verifyOTP( @Body() body: PasswordResetDto) {
 
     const result =
-      await this.passwordResetService.verifyOTP(body, email);
+      await this.passwordResetService.verifyOTP(body);
 
     return { success: true, message: result };
   }

@@ -77,7 +77,8 @@ export class PasswordResetService {
     return { hashRandomSixDigitCode, generateRandomSixDigitCode };
   }
 
-  async verifyOTP(data: PasswordResetDto, email: string) {
+  async verifyOTP(data: PasswordResetDto) {
+    const {email} = data;
     // ! -------------- verify code before saveing data into the db---------------
     if (!data.OTP)
       throw new Error(

@@ -100,8 +100,9 @@ export class EmailTemplate {
           <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
             <h2>Reset Your Password</h2>
             <p>You requested to reset your password. Here is your OTP:</p>
-            <a style="display: inline-block; padding: 12px 24px; background: #111111ff; color: white; text-decoration: none; margin: 20px 0;">
-${data.resetCode}            </a>
+               <h1 style="display: inline-block; padding: 12px 24px; background: #0e0e0fff; color: white; text-decoration: none; margin: 20px 0;">
+              ${data.resetCode}
+            </h1>
             <p>This code will expire in 15 Minutes</p>
             <p><small>If you didn't request this, please ignore this email.</small></p>
           </div>
@@ -120,6 +121,7 @@ ${data.resetCode}            </a>
         <body>
           <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
             <h2>Verify Your Email Address</h2>
+
             <p>Hi ${data.name},</p>
             <p>Use the OTP Below to verify your email</p>
             <h1 style="display: inline-block; padding: 12px 24px; background: #0e0e0fff; color: white; text-decoration: none; margin: 20px 0;">
