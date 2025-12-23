@@ -133,6 +133,21 @@ export class UserRepository {
       .returning();
     return user;
   }
+  async updateUserPasswordByEmail(
+    data: {password: string},
+    email: string,
+    trx?: any,
+  ) {
+    const Trx = trx || this.DbProvider;
+    const [user] = await Trx.update(userTable)
+      .set({ password: data.password})
+      .where(eq(userTable.email, email))
+      .returning();
+    return user;
+  }
+
+
+
   async updateConsultantById(
     data: Partial<
       Omit<consultantInsertType, 'id' | 'userId' | 'pricePerSession'>
