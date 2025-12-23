@@ -30,6 +30,7 @@ export class JwtAuthGuard implements CanActivate {
     const refresh_token = this.extractRefreshToken(request); // for browser cookies // for mobile apps
 
     if (!access_token && !refresh_token) {
+      // console.log('this unauthorized', access_token,  request.headers);
       throw new UnauthorizedException('Unauthorized to access this route');
     }
 
@@ -115,9 +116,8 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     if (!refresh_token) {
-     
-        response.redirect('/signin');
-        throw new UnauthorizedException('Unauthorized to access this route');
+      response.redirect('/signin');
+      throw new UnauthorizedException('Unauthorized to access this route');
     }
 
     try {
@@ -214,7 +214,7 @@ export class JwtAuthGuard implements CanActivate {
 
   private extractAccessToken(request: Request): string | undefined {
     const authHeader = request.headers['authorization'];
-console.log('auth header', request.headers);
+    console.log('auth header', request.headers);
 
     if (authHeader?.startsWith('Bearer ')) {
       return authHeader.split(' ')[1];
@@ -223,11 +223,10 @@ console.log('auth header', request.headers);
     return request.cookies?.access_token;
   }
 
-   extractRefreshToken(request: Request): string | undefined {
+  extractRefreshToken(request: Request): string | undefined {
     const headerToken = request.headers['x-refresh-token'];
     if (headerToken) return headerToken as string;
 
     return request.cookies?.refresh_token;
   }
-
 }

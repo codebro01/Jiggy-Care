@@ -38,7 +38,7 @@ export class UserRepository {
       phone: userTable.phone,
       role: userTable.role,
       emailVerified: userTable.emailVerified,
-      fullName: userTable.fullName, 
+      fullName: userTable.fullName,
     })
       .from(userTable)
       .where(eq(userTable.id, userId))
@@ -53,7 +53,7 @@ export class UserRepository {
       phone: userTable.phone,
       role: userTable.role,
       emailVerified: userTable.emailVerified,
-      fullName: userTable.fullName, 
+      fullName: userTable.fullName,
     })
       .from(userTable)
       .where(eq(userTable.email, email))
@@ -109,11 +109,27 @@ export class UserRepository {
     return user;
   }
 
-  async updateUser(data: UpdateUserDto, userId: string, trx?: any) {
+  async updateUser(
+    data: UpdateUserDto & { emailVerified?: boolean },
+    userId: string,
+    trx?: any,
+  ) {
     const Trx = trx || this.DbProvider;
     const [user] = await Trx.update(userTable)
       .set({ ...data })
       .where(eq(userTable.id, userId))
+      .returning();
+    return user;
+  }
+  async updateUserByEmail(
+    data: UpdateUserDto & { emailVerified?: boolean },
+    email: string,
+    trx?: any,
+  ) {
+    const Trx = trx || this.DbProvider;
+    const [user] = await Trx.update(userTable)
+      .set({ ...data })
+      .where(eq(userTable.email, email))
       .returning();
     return user;
   }

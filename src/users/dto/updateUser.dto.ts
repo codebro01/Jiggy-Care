@@ -2,7 +2,6 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
     // IsEmail,
     IsString,
-    IsBoolean,
     IsOptional,
     MaxLength,
     // MinLength,
@@ -61,11 +60,5 @@ export class UpdateUserDto {
     @MaxLength(50)
     phone?: string  | null;
 
-    @ApiPropertyOptional({
-        description: 'Email verification status',
-        example: true,
-    })
-    @IsOptional()
-    @IsBoolean()
-    emailVerified?: boolean;
+   
 }
