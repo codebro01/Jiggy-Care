@@ -35,6 +35,7 @@ import { BullModule } from '@nestjs/bull';
 import { ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EncryptionServiceModule } from './encryption-service/encryption-service.module';
+import { SpecialityModule } from './speciality/speciality.module';
 
 @Module({
   imports: [
@@ -93,6 +94,7 @@ import { EncryptionServiceModule } from './encryption-service/encryption-service
     PasswordResetModule,
     EmailVerificationModule,
     EncryptionServiceModule,
+    SpecialityModule,
   ],
   controllers: [AppController],
   providers: [AppService, NeonProvider, MulterService],

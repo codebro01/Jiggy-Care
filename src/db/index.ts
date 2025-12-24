@@ -13,3 +13,4 @@ export * from "@src/db/test-result"
 export * from '@src/db/test-booking-payment'
 export * from '@src/db/password-reset'
 export * from '@src/db/email-verification'
+export  * from "@src/db/speciality"
