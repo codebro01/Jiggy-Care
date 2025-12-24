@@ -35,7 +35,7 @@ export class NotificationController {
   constructor(private notificationService: NotificationService) {}
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('businessOwner', 'driver')
+  @Roles('consultant', 'patient')
   @Sse('stream')
 
    @ApiHeader({
