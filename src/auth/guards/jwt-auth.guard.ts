@@ -51,7 +51,6 @@ export class JwtAuthGuard implements CanActivate {
       } catch (error) {
         console.log(error);
         if (!refresh_token) {
-          response.redirect('/signin');
           throw new UnauthorizedException('Unauthorized to access this route');
         }
 
