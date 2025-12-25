@@ -115,7 +115,6 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     if (!refresh_token) {
-      response.redirect('/signin');
       throw new UnauthorizedException('Unauthorized to access this route');
     }
 
@@ -192,7 +191,6 @@ export class JwtAuthGuard implements CanActivate {
       if (!isMobileClient) {
         response.clearCookie('access_token');
         response.clearCookie('refresh_token');
-        response.redirect('/signin');
       }
       throw new UnauthorizedException('Invalid refresh token');
     }
