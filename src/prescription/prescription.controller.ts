@@ -74,7 +74,7 @@ export class PrescriptionController {
   @ApiBearerAuth('JWT-auth')
   @ApiCookieAuth('access_token')
   @HttpCode(HttpStatus.OK)
-  async findAll(@Res() res: Response, @Req() req: Request) {
+  async findAll(@Res({passthrough: true}) res: Response, @Req() req: Request) {
     const { id: userId } = req.user;
     const prescription = await this.prescriptionService.findAll(userId, userId);
     return { success: true, data: prescription };
@@ -131,13 +131,10 @@ export class PrescriptionController {
   async takePill(
     @Param('prescriptionId') prescriptionId: string,
     @Req() req: Request,
-    @Res() res: Response,
-    @Body('dosage') dosage: number,
   ) {
     const { id: patientId } = req.user;
     const prescription = await this.prescriptionService.takePill(
       prescriptionId,
-      dosage,
       patientId,
     );
     return { success: true, data: prescription };

@@ -167,18 +167,19 @@ export class PrescriptionService {
     return { message: 'Prescription deleted successfully', data: deleted };
   }
 
-  async takePill(prescriptionId: string, dosage: number, patientId: string) {
+  async takePill(prescriptionId: string, patientId: string) {
     const prescription = await this.findOne(prescriptionId);
 
     if (prescription.pillsRemaining <= 0) {
       throw new Error('No pills remaining');
     }
 
-    if (prescription.pillsRemaining < dosage)
-      throw new BadRequestException(
-        'You no longer have enough pills, please re-fill',
+    if (prescription.pillsRemaining < prescription.dosage)
+      throw new NotFoundException(
+        'You no longer have enough pills, please re-fill'
       );
-    const newPillsRemaining = prescription.pillsRemaining - dosage;
+    const newPillsRemaining = prescription.pillsRemaining - prescription.dosage;
+
 
     return await this.prescriptionRepository.updatePillsRemaining(
       prescriptionId,

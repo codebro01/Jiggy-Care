@@ -27,7 +27,7 @@ export enum PrescriptionStatusType {
 
 export class CreatePrescriptionDto {
   @ApiProperty({
-    example: '19529f98-ef5b-412a-8a0d-49c5f3904ae2',
+    example: '23d7a38f-f298-41ac-8ed5-f1c22cc75b61',
     description: 'The id of the  patient that the pescription is meant for',
   })
   @IsNotEmpty()
@@ -50,7 +50,6 @@ export class CreatePrescriptionDto {
   @IsNumber()
   dosage: number;
 
-
   @ApiProperty({
     example: 700,
     description: 'The milligram of each tablet of the drug',
@@ -69,8 +68,6 @@ export class CreatePrescriptionDto {
       'frequency is either of the following: once_daily, twice_daily, thrice_daily, four_times_daily, five_times_daily, often ',
   })
   frequency: FrequencyType;
-
-
 
   @ApiProperty({
     example: 10,

@@ -85,6 +85,7 @@ export class PrescriptionRepository {
         pillsRemaining: data.pillsRemaining || prevPrescription.pillsRemaining, 
         totalPills: data.totalPills || prevPrescription.totalPills, 
         startDate: data.startDate || prevPrescription.startDate, 
+        mg: data.mg || prevPrescription.mg, 
         updatedAt: new Date(),
       })
       .where(
