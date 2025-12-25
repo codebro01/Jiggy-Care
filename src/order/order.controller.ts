@@ -10,7 +10,6 @@ import {
   HttpStatus,
   UseGuards,
   Req,
-  Res,
 } from '@nestjs/common';
 import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
@@ -19,8 +18,7 @@ import { OrdersService } from '@src/order/order.service';
 import { UpdateOrderDto } from '@src/order/dto/update-order.dto';
 import { OrderSelectType } from '@src/db/order';
 import type { Request } from '@src/types';
-import type { Response } from 'express';
-import { ApiBearerAuth, ApiCookieAuth, ApiHeader } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiCookieAuth, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @Controller('orders')
 export class OrdersController {
@@ -28,6 +26,11 @@ export class OrdersController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @ApiTags('admin - order')
+  @ApiOperation({
+    description: 'The endpoint is for admin to get all orders in the db',
+    summary: 'Get all orders by admin',
+  })
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -51,6 +54,11 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Get('find-by-userId')
+  @ApiTags('patient - order')
+  @ApiOperation({
+    description: 'The endpoint is for patient to get their orders',
+    summary: 'Get all orders by patients',
+  })
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -65,14 +73,20 @@ export class OrdersController {
   @ApiBearerAuth('JWT-auth')
   @ApiCookieAuth('access_token')
   @HttpCode(HttpStatus.OK)
-  async findByUserId(@Res() res: Response, @Req() req: Request) {
+  async findByUserId(@Req() req: Request) {
     const { id: userId } = req.user;
     const orders = await this.ordersService.findByUserId(userId);
     return { success: true, data: orders };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles('admin', 'patient')
+  @ApiTags('admin - order', 'patient - order')
+  @ApiOperation({
+    description:
+      'The endpoint is for admin and patient to find information about a specific order',
+    summary: 'find specific order',
+  })
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -95,6 +109,11 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Patch(':id')
+  @ApiTags('admin - order')
+  @ApiOperation({
+    description: 'The endpoint is for admin to update a specific order',
+    summary: 'Update specific order by admin',
+  })
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -119,6 +138,12 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Post(':id/reorder')
+  @ApiTags('patient - order')
+  @ApiOperation({
+    description:
+      'The endpoint is for patient to re-order a speficic medication',
+    summary: 'Reorder medications',
+  })
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -135,11 +160,34 @@ export class OrdersController {
   @HttpCode(HttpStatus.OK)
   async reorder(
     @Param('id') id: string,
-    @Body('userId') userId: string,
+    @Req() req: Request
   ): Promise<OrderSelectType> {
+    const {id:userId} = req.user;
     return await this.ordersService.reorder(id, userId);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiTags('admin - order')
+  @ApiOperation({
+    description:
+      'The endpoint is for admin to delete a specific order',
+    summary: 'Delete orders',
+  })
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param('id') id: string): Promise<void> {
