@@ -62,7 +62,7 @@ export class MedicationController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles('admin', 'consultant', 'patient')
   @Get('find-all')
   @ApiHeader({
     name: 'x-client-type',
@@ -90,7 +90,7 @@ export class MedicationController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles('admin', 'consultant', 'patient')
   @Get('find-one/:id')
   @ApiHeader({
     name: 'x-client-type',

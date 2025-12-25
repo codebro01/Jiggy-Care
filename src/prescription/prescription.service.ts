@@ -171,7 +171,7 @@ export class PrescriptionService {
     const prescription = await this.findOne(prescriptionId);
 
     if (prescription.pillsRemaining <= 0) {
-      throw new Error('No pills remaining');
+      throw new NotFoundException('No pills remaining');
     }
 
     if (prescription.pillsRemaining < prescription.dosage)
