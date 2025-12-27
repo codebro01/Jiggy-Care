@@ -11,7 +11,7 @@ export const bookingTable = pgTable('bookings', {
     patientId: uuid('patientId').notNull().references(() => userTable.id, { onDelete: 'cascade' }),
     date: timestamp('date', { withTimezone: true, mode: 'date' }).notNull(),
     duration: integer('duration').default(1),
-    symptoms: text('symptoms').array(),
+    symptoms: text('symptoms'),
     status: bookingStatusType('status').default('upcoming').notNull(),
     paymentStatus: boolean('payment_status').default(false),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),

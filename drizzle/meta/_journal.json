@@ -85,6 +85,13 @@
       "when": 1766536002970,
       "tag": "0011_simple_liz_osborn",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1766805780626,
+      "tag": "0012_warm_scorpion",
+      "breakpoints": true
     }
   ]
 }
