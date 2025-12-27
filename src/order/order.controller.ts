@@ -18,7 +18,7 @@ import { OrdersService } from '@src/order/order.service';
 import { UpdateOrderDto } from '@src/order/dto/update-order.dto';
 import { OrderSelectType } from '@src/db/order';
 import type { Request } from '@src/types';
-import { ApiBearerAuth, ApiCookieAuth, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiCookieAuth, ApiHeader, ApiOperation } from '@nestjs/swagger';
 
 @Controller('orders')
 export class OrdersController {
@@ -26,7 +26,6 @@ export class OrdersController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  @ApiTags('admin - order')
   @ApiOperation({
     description: 'The endpoint is for admin to get all orders in the db',
     summary: 'Get all orders by admin',
@@ -54,7 +53,6 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Get('find-by-userId')
-  @ApiTags('patient - order')
   @ApiOperation({
     description: 'The endpoint is for patient to get their orders',
     summary: 'Get all orders by patients',
@@ -81,7 +79,6 @@ export class OrdersController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'patient')
-  @ApiTags('admin - order', 'patient - order')
   @ApiOperation({
     description:
       'The endpoint is for admin and patient to find information about a specific order',
@@ -109,7 +106,6 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Patch(':id')
-  @ApiTags('admin - order')
   @ApiOperation({
     description: 'The endpoint is for admin to update a specific order',
     summary: 'Update specific order by admin',
@@ -138,7 +134,6 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Post(':id/reorder')
-  @ApiTags('patient - order')
   @ApiOperation({
     description:
       'The endpoint is for patient to re-order a speficic medication',
@@ -168,7 +163,6 @@ export class OrdersController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  @ApiTags('admin - order')
   @ApiOperation({
     description:
       'The endpoint is for admin to delete a specific order',

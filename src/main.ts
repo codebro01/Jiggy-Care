@@ -22,7 +22,7 @@ app.enableCors({
   ],
   credentials: true, // allow cookies & auth headers
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  allowedHeaders: 'Content-Type, Authorization',
+  allowedHeaders: 'Content-Type, Authorization, X-Access-Token, X-Refresh-Token, X-Client-Type',
 });
 
   app.use(cookieParser());

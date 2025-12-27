@@ -1,0 +1,175 @@
+[33mcommit 38b32aa00a8d22ec801843220b3aabbd85a2374e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: codebro <samsondamilola.99@gmail.com>
+Date:   Sat Dec 27 07:05:42 2025 +0100
+
+    added test search
+
+[1mdiff --git a/src/booking/booking.controller.ts b/src/booking/booking.controller.ts[m
+[1mindex 95a7c27..1f8f024 100644[m
+[1m--- a/src/booking/booking.controller.ts[m
+[1m+++ b/src/booking/booking.controller.ts[m
+[36m@@ -16,12 +16,13 @@[m [mimport { RolesGuard } from '@src/auth/guards/roles.guard';[m
+ import { CreateBookingDto } from './dto/createBooking.dto';[m
+ import type { Request } from '@src/types';[m
+ import { FindAvailableSlotDto } from '@src/booking/dto/find-available-slot.dto';[m
+[31m-import { ApiBearerAuth, ApiHeader, ApiCookieAuth } from '@nestjs/swagger';[m
+[32m+[m[32mimport { ApiBearerAuth, ApiHeader, ApiCookieAuth, ApiTags } from '@nestjs/swagger';[m
+ [m
+ @Controller('booking')[m
+ export class BookingController {[m
+   constructor(private readonly bookingService: BookingService) {}[m
+ [m
+[32m+[m[32m  @ApiTags('patient-booking')[m
+   @UseGuards(JwtAuthGuard, RolesGuard)[m
+   @Roles('patient')[m
+   @Get('available-slots/:consultantId')[m
+[36m@@ -47,6 +48,7 @@[m [mexport class BookingController {[m
+     );[m
+   }[m
+ [m
+[32m+[m[32m  @ApiTags('patient-booking')[m
+   @UseGuards(JwtAuthGuard, RolesGuard)[m
+   @Roles('patient')[m
+   @Post('create')[m
+[36m@@ -80,6 +82,8 @@[m [mexport class BookingController {[m
+ [m
+     return { success: true, data: booking };[m
+   }[m
+[32m+[m
+[32m+[m[32m  @ApiTags('patient-booking')[m
+   @UseGuards(JwtAuthGuard, RolesGuard)[m
+   @Roles('patient')[m
+   @Get('patient/upcoming')[m
+[36m@@ -104,6 +108,7 @@[m [mexport class BookingController {[m
+     return { success: true, data: bookings };[m
+   }[m
+ [m
+[32m+[m[32m  @ApiTags('patient-booking')[m
+   @UseGuards(JwtAuthGuard, RolesGuard)[m
+   @Roles('patient')[m
+   @Get('patient/completed')[m
+[36m@@ -129,6 +134,7 @@[m [mexport class BookingController {[m
+     return { success: true, data: bookings };[m
+   }[m
+ [m
+[32m+[m[32m  @ApiTags('consultant-booking')[m
+   @UseGuards(JwtAuthGuard, RolesGuard)[m
+   @Roles('consultant')[m
+   @Get('consultant/upcoming')[m
+[36m@@ -154,6 +160,7 @@[m [mexport class BookingController {[m
+     return { success: true, data: bookings };[m
+   }[m
+ [m
+[32m+[m[32m  @ApiTags('consultant-booking')[m
+   @UseGuards(JwtAuthGuard, RolesGuard)[m
+   @Roles('consultant')[m
+   @Get('consultant/completed')[m
+[1mdiff --git a/src/medication/medication.module.ts b/src/medication/medication.module.ts[m
+[1mindex dedbf3e..a110245 100644[m
+[1m--- a/src/medication/medication.module.ts[m
+[1m+++ b/src/medication/medication.module.ts[m
+[36m@@ -1,13 +1,13 @@[m
+ import { Module } from '@nestjs/common';[m
+ import { MedicationService } from './medication.service';[m
+ import { MedicationController } from './medication.controller';[m
+[31m-import { MedicationRepository } from './medication.repository';[m
+[32m+[m[32mimport { MedicationRepository } from './repository/medication.repository';[m
+ import { DbModule } from '@src/db/db.module';[m
+ [m
+ @Module({[m
+[31m-  imports:[DbModule], [m
+[32m+[m[32m  imports: [DbModule],[m
+   controllers: [MedicationController],[m
+   providers: [MedicationService, MedicationRepository],[m
+[31m-  exports: [MedicationService, MedicationRepository][m
+[32m+[m[32m  exports: [MedicationService, MedicationRepository],[m
+ })[m
+ export class MedicationModule {}[m
+[1mdiff --git a/src/medication/medication.service.ts b/src/medication/medication.service.ts[m
+[1mindex 5e7943c..1050fc2 100644[m
+[1m--- a/src/medication/medication.service.ts[m
+[1m+++ b/src/medication/medication.service.ts[m
+[36m@@ -1,5 +1,5 @@[m
+ import { Injectable, NotFoundException } from '@nestjs/common';[m
+[31m-import { MedicationRepository } from './medication.repository';[m
+[32m+[m[32mimport { MedicationRepository } from './repository/medication.repository';[m
+ import { CreateMedicationDto } from './dto/create-medication.dto';[m
+ import { UpdateMedicationDto } from './dto/update-medication.dto';[m
+ import { QueryMedicationDto } from './dto/query-medication.dto';[m
+[1mdiff --git a/src/medication/medication.repository.ts b/src/medication/repository/medication.repository.ts[m
+[1msimilarity index 93%[m
+[1mrename from src/medication/medication.repository.ts[m
+[1mrename to src/medication/repository/medication.repository.ts[m
+[1mindex eff685c..8926628 100644[m
+[1m--- a/src/medication/medication.repository.ts[m
+[1m+++ b/src/medication/repository/medication.repository.ts[m
+[36m@@ -2,8 +2,8 @@[m [mimport { Inject, Injectable } from '@nestjs/common';[m
+ import { eq, like, and, sql, inArray } from 'drizzle-orm';[m
+ import { NodePgDatabase } from 'drizzle-orm/node-postgres';[m
+ import { medicationTable } from '@src/db/medication';[m
+[31m-import { CreateMedicationDto } from './dto/create-medication.dto';[m
+[31m-import { UpdateMedicationDto } from './dto/update-medication.dto';[m
+[32m+[m[32mimport { CreateMedicationDto } from '../dto/create-medication.dto';[m
+[32m+[m[32mimport { UpdateMedicationDto } from '../dto/update-medication.dto';[m
+ import { QueryMedicationDto } from '@src/medication/dto/query-medication.dto';[m
+ [m
+ @Injectable()[m
+[36m@@ -79,8 +79,7 @@[m [mexport class MedicationRepository {[m
+       return [];[m
+     }[m
+ [m
+[31m-    const medications = await this.DbProvider[m
+[31m-      .select()[m
+[32m+[m[32m    const medications = await this.DbProvider.select()[m
+       .from(medicationTable)[m
+       .where([m
+         and([m
+[36m@@ -89,7 +88,7 @@[m [mexport class MedicationRepository {[m
+         ),[m
+       );[m
+ [m
+[31m-      return medications;[m
+[32m+[m[32m    return medications;[m
+   }[m
+ [m
+   async update(id: string, data: UpdateMedicationDto) {[m
+[1mdiff --git a/src/payment/payment.service.ts b/src/payment/payment.service.ts[m
+[1mindex b4853f7..d4fabbe 100644[m
+[1m--- a/src/payment/payment.service.ts[m
+[1m+++ b/src/payment/payment.service.ts[m
+[36m@@ -29,7 +29,7 @@[m [mimport {[m
+ import { CreateOrderDto } from '@src/order/dto/create-order.dto';[m
+ import { PaymentForType } from './dto/booking-paystack-Metadata.dto';[m
+ import { OrdersRepository } from '@src/order/repository/order.repository';[m
+[31m-import { MedicationRepository } from '@src/medication/medication.repository';[m
+[32m+[m[32mimport { MedicationRepository } from '@src/medication/repository/medication.repository';[m
+ import { LabRepository } from '@src/lab/repository/lab.repository';[m
+ import { TestBookingRepository } from '@src/test-booking/repository/test-booking.repository';[m
+ import { TestRepository } from '@src/test/repository/test.repository';[m
+[36m@@ -259,9 +259,9 @@[m [mexport class PaymentService {[m
+             reference: generateSecureRef(),[m
+             metadata: {[m
+               ...data.metadata,[m
+[31m-              testBookingId: data.metadata.testBookingId, [m
+[31m-              testId: testBooking.testId, [m
+[31m-              labId: testBooking.labId, [m
+[32m+[m[32m              testBookingId: data.metadata.testBookingId,[m
+[32m+[m[32m              testId: testBooking.testId,[m
+[32m+[m[32m              labId: testBooking.labId,[m
+               invoiceId: generateSecureInvoiceId(),[m
+               paymentFor: PaymentForType.TEST_BOOKINGS,[m
+               amountInNaira: test.amount,[m
+[36m@@ -391,7 +391,7 @@[m [mexport class PaymentService {[m
+         deliveryAddress,[m
+         invoiceId,[m
+         medicationPayload,[m
+[31m-        testBookingId[m
+[32m+[m[32m        testBookingId,[m
+       } = event.data.metadata || {};[m
+ [m
+       console.log(channel, 'event', event);[m
+[36m@@ -702,7 +702,7 @@[m [mexport class PaymentService {[m
+                   invoiceId,[m
+                   testBookingId,[m
+                   paymentStatus: 'PAID',[m
+[31m-                  amount: amountInNai
