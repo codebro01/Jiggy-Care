@@ -9,6 +9,7 @@ import {
   Req,
   HttpStatus,
   HttpCode,
+  Query,
 } from '@nestjs/common';
 import { UpdateTestDto } from '@src/test/dto/update-test.dto';
 import { CreateTestDto } from '@src/test/dto/create-test.dto';
@@ -18,6 +19,7 @@ import { Roles } from '@src/auth/decorators/roles.decorators';
 import type { Request } from '@src/types';
 import { TestService } from '@src/test/test.service';
 import { ApiHeader, ApiCookieAuth, ApiBearerAuth } from '@nestjs/swagger';
+import { QueryTestDto } from '@src/test/dto/query-test.dto';
 
 @Controller('test')
 export class TestController {
@@ -63,8 +65,8 @@ export class TestController {
   @ApiBearerAuth('JWT-auth')
   @ApiCookieAuth('access_token')
   @HttpCode(HttpStatus.OK)
-  async findAll() {
-    const test = await this.testService.findAll();
+  async findAll(@Query() query: QueryTestDto) {
+    const test = await this.testService.findAll(query);
     return { success: true, data: test };
   }
 

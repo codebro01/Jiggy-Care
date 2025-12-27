@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CreateTestDto } from '@src/test/dto/create-test.dto';
+import { QueryTestDto } from '@src/test/dto/query-test.dto';
 import { UpdateTestDto } from '@src/test/dto/update-test.dto';
 import { TestRepository } from '@src/test/repository/test.repository';
 
@@ -10,8 +11,8 @@ export class TestService {
     return await this.testRepository.create(data, userId);
   }
 
-  async findAll() {
-    return await this.testRepository.findAll();
+  async findAll(query: QueryTestDto) {
+    return await this.testRepository.findAll(query);
   }
 
   async findOne(testId: string) {

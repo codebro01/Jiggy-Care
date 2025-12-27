@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { MedicationRepository } from './medication.repository';
+import { MedicationRepository } from './repository/medication.repository';
 import { CreateMedicationDto } from './dto/create-medication.dto';
 import { UpdateMedicationDto } from './dto/update-medication.dto';
 import { QueryMedicationDto } from './dto/query-medication.dto';

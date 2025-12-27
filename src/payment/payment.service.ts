@@ -29,7 +29,7 @@ import {
 import { CreateOrderDto } from '@src/order/dto/create-order.dto';
 import { PaymentForType } from './dto/booking-paystack-Metadata.dto';
 import { OrdersRepository } from '@src/order/repository/order.repository';
-import { MedicationRepository } from '@src/medication/medication.repository';
+import { MedicationRepository } from '@src/medication/repository/medication.repository';
 import { LabRepository } from '@src/lab/repository/lab.repository';
 import { TestBookingRepository } from '@src/test-booking/repository/test-booking.repository';
 import { TestRepository } from '@src/test/repository/test.repository';
@@ -259,9 +259,9 @@ export class PaymentService {
             reference: generateSecureRef(),
             metadata: {
               ...data.metadata,
-              testBookingId: data.metadata.testBookingId, 
-              testId: testBooking.testId, 
-              labId: testBooking.labId, 
+              testBookingId: data.metadata.testBookingId,
+              testId: testBooking.testId,
+              labId: testBooking.labId,
               invoiceId: generateSecureInvoiceId(),
               paymentFor: PaymentForType.TEST_BOOKINGS,
               amountInNaira: test.amount,
@@ -391,7 +391,7 @@ export class PaymentService {
         deliveryAddress,
         invoiceId,
         medicationPayload,
-        testBookingId
+        testBookingId,
       } = event.data.metadata || {};
 
       console.log(channel, 'event', event);
@@ -702,7 +702,7 @@ export class PaymentService {
                   invoiceId,
                   testBookingId,
                   paymentStatus: 'PAID',
-                  amount: amountInNaira, 
+                  amount: amountInNaira,
                 },
                 patientId,
                 trx,

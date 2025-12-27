@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { eq, like, and, sql, inArray } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { medicationTable } from '@src/db/medication';
-import { CreateMedicationDto } from './dto/create-medication.dto';
-import { UpdateMedicationDto } from './dto/update-medication.dto';
+import { CreateMedicationDto } from '../dto/create-medication.dto';
+import { UpdateMedicationDto } from '../dto/update-medication.dto';
 import { QueryMedicationDto } from '@src/medication/dto/query-medication.dto';
 
 @Injectable()
@@ -79,8 +79,7 @@ export class MedicationRepository {
       return [];
     }
 
-    const medications = await this.DbProvider
-      .select()
+    const medications = await this.DbProvider.select()
       .from(medicationTable)
       .where(
         and(
@@ -89,7 +88,7 @@ export class MedicationRepository {
         ),
       );
 
-      return medications;
+    return medications;
   }
 
   async update(id: string, data: UpdateMedicationDto) {

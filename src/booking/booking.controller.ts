@@ -16,12 +16,13 @@ import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { CreateBookingDto } from './dto/createBooking.dto';
 import type { Request } from '@src/types';
 import { FindAvailableSlotDto } from '@src/booking/dto/find-available-slot.dto';
-import { ApiBearerAuth, ApiHeader, ApiCookieAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiHeader, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 
 @Controller('booking')
 export class BookingController {
   constructor(private readonly bookingService: BookingService) {}
 
+  @ApiTags('patient-booking')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Get('available-slots/:consultantId')
@@ -47,6 +48,7 @@ export class BookingController {
     );
   }
 
+  @ApiTags('patient-booking')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Post('create')
@@ -80,6 +82,8 @@ export class BookingController {
 
     return { success: true, data: booking };
   }
+
+  @ApiTags('patient-booking')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Get('patient/upcoming')
@@ -104,6 +108,7 @@ export class BookingController {
     return { success: true, data: bookings };
   }
 
+  @ApiTags('patient-booking')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Get('patient/completed')
@@ -129,6 +134,7 @@ export class BookingController {
     return { success: true, data: bookings };
   }
 
+  @ApiTags('consultant-booking')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('consultant')
   @Get('consultant/upcoming')
@@ -154,6 +160,7 @@ export class BookingController {
     return { success: true, data: bookings };
   }
 
+  @ApiTags('consultant-booking')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('consultant')
   @Get('consultant/completed')
