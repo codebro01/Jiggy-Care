@@ -32,6 +32,18 @@ export class TestResultRepository {
 
     return testResult;
   }
+  async findTestResultsByPatientId(patientId: string) {
+    const testResult = await this.DbProvider.select()
+      .from(testResultTable)
+      .where(eq(testResultTable.patientId, patientId))
+      .leftJoin(
+        consultantTable,
+        eq(consultantTable.userId, testResultTable.consultantId),
+      )
+      .leftJoin(labTable, eq(labTable.id, testResultTable.labId));
+
+    return testResult;
+  }
 
   async findTestResultsByConsultant(consultantId: string) {
     const testResults = await this.DbProvider.select()

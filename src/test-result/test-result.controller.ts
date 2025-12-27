@@ -17,7 +17,7 @@ import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { Roles } from '@src/auth/decorators/roles.decorators';
 import type { Request } from '@src/types';
-import { ApiCookieAuth, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiBearerAuth, ApiHeader, ApiOperation } from '@nestjs/swagger';
 
 @Controller('test-results')
 export class TestResultController {
@@ -121,9 +121,38 @@ export class TestResultController {
     return { success: true, data: testResults };
   }
 
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles('patient')
+  // @Get()
+  // @ApiHeader({
+  //   name: 'x-client-type',
+  //   description:
+  //     'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+  //   required: false,
+  //   schema: {
+  //     type: 'string',
+  //     enum: ['mobile', 'web'],
+  //     example: 'mobile',
+  //   },
+  // })
+  // @ApiBearerAuth('JWT-auth')
+  // @ApiCookieAuth('access_token')
+  // @HttpCode(HttpStatus.OK)
+  // async getTestResulByPatientId(@Req() req: Request) {
+  //   const { id: patientId } = req.user;
+
+  //   const testResult =
+  //     await this.testResultService.getTestResultById(patientId);
+  //   return { success: true, data: testResult };
+  // }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
-  @Get(':id')
+  @Get('/results')
+  @ApiOperation({
+    summary: 'Get all patients lab test results', 
+    description: "This endpoint gets all the test result that has been done"
+  })
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -142,9 +171,12 @@ export class TestResultController {
     const { id: patientId } = req.user;
 
     const testResult =
-      await this.testResultService.getTestResultById(patientId);
+      await this.testResultService.getAllTestResultsByPatientId(patientId);
     return { success: true, data: testResult };
   }
+
+
+  
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')

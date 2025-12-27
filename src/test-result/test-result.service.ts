@@ -34,6 +34,16 @@ export class TestResultService {
 
     return testResult;
   }
+  async getAllTestResultsByPatientId(userId: string) {
+    const testResult =
+      await this.testResultRepository.findTestResultsByPatientId(userId);
+
+    if (!testResult) {
+      throw new NotFoundException('Test result not found');
+    }
+
+    return testResult;
+  }
 
   async getTestResultsByConsultant(consultantId: string) {
     const testResults =
