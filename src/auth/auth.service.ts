@@ -127,12 +127,13 @@ export class AuthService {
       case roleType.PATIENT: {
         let user = await this.authRepository.findUserByEmail(email);
 
-        let jwtPayload = {
+        let jwtPayload;
+        if (user) {
+          jwtPayload  = {
           email: user.email,
           role: user.role,
           id: user.id,
         };
-        if (user) {
           const patientInfo = await this.userRepository.findPatientById(
             user.id,
           );
@@ -183,13 +184,14 @@ export class AuthService {
       case roleType.CONSULTANT: {
         let user = await this.authRepository.findUserByEmail(email);
 
-        let jwtPayload = {
-          email: user.email,
-          role: user.role,
-          id: user.id,
-        };
+        let jwtPayload;
 
         if (user) {
+          jwtPayload = {
+            email: user.email,
+            role: user.role,
+            id: user.id,
+          };
           const consultantInfo =
             await this.userRepository.findApprovedConsultantById(user.id);
           const accessToken = await this.jwtService.signAsync(jwtPayload, {
