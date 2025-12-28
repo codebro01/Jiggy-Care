@@ -45,10 +45,12 @@ export class HealthMonitoringController {
   ) {
     const { id: patientId } = req.user;
 
-    return this.healthMonitoringService.createHealthReading(
+    const healthMonitoring = await this.healthMonitoringService.createHealthReading(
       createDto,
       patientId,
     );
+
+    return {success: true, data: healthMonitoring}
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -68,7 +70,10 @@ export class HealthMonitoringController {
   @ApiBearerAuth('JWT-auth')
   @ApiCookieAuth('access_token')
   async getAllHealthReadings() {
-    return this.healthMonitoringService.getAllHealthReadings();
+    const healthMonitoring = await this.healthMonitoringService.getAllHealthReadings();
+
+        return { success: true, data: healthMonitoring };
+
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -89,7 +94,10 @@ export class HealthMonitoringController {
   @ApiCookieAuth('access_token')
   async getHealthReadingsByPatient(@Req() req: Request) {
     const patientId = req.user.id;
-    return this.healthMonitoringService.getHealthReadingsByPatient(patientId);
+    const healthMonitoring = await this.healthMonitoringService.getHealthReadingsByPatient(patientId);
+
+        return { success: true, data: healthMonitoring };
+
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -110,7 +118,10 @@ export class HealthMonitoringController {
   @ApiCookieAuth('access_token')
   async getLatestReadingByPatient(@Req() req: Request) {
     const patientId = req.user?.id;
-    return this.healthMonitoringService.getLatestReadingByPatient(patientId);
+    const healthMonitoring = await this.healthMonitoringService.getLatestReadingByPatient(patientId);
+
+        return { success: true, data: healthMonitoring };
+
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
@@ -129,7 +140,10 @@ export class HealthMonitoringController {
   @ApiBearerAuth('JWT-auth')
   @ApiCookieAuth('access_token')
   async getHealthReadingById(@Param('id') id: string) {
-    return this.healthMonitoringService.getHealthReadingById(id);
+    const healthMonitoring = await this.healthMonitoringService.getHealthReadingById(id);
+
+        return { success: true, data: healthMonitoring };
+
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -154,11 +168,14 @@ export class HealthMonitoringController {
     @Body() updateDto: UpdateHealthReadingDto,
   ) {
     const patientId = req.user?.id;
-    return this.healthMonitoringService.updateHealthReading(
+    const healthMonitoring = await this.healthMonitoringService.updateHealthReading(
       id,
       patientId,
       updateDto,
     );
+
+        return { success: true, data: healthMonitoring };
+
   }
 
   // @Delete(':id')

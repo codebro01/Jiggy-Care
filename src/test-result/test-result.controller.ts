@@ -26,6 +26,11 @@ export class TestResultController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('consultant')
   @Post()
+  @ApiOperation({
+    summary: 'Create a test result',
+    description:
+      'This endpoint creates a test result, accessible only to consultants',
+  })
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -55,6 +60,11 @@ export class TestResultController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Get()
+  @ApiOperation({
+    summary: 'Get all patients test results',
+    description:
+      'This endpoint gets all the test result that has ever taken place, accessible only to admins',
+  })
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -77,6 +87,11 @@ export class TestResultController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('consultant')
   @Get('consultant/:consultantId')
+  @ApiOperation({
+    summary: 'Get all patients lab test results by consultants',
+    description:
+      'This endpoint gets all the test result a consultant has ever created for patients, accessible only to consultants',
+  })
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -102,6 +117,11 @@ export class TestResultController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Get('lab/:labId')
+  @ApiOperation({
+    summary: 'Get all patients lab test results by lab',
+    description:
+      'This endpoint gets all the test result that is tied to a particular lab. Endpoint is accessible only to admins',
+  })
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -148,10 +168,11 @@ export class TestResultController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
-  @Get('/results')
+  @Get('/patient')
   @ApiOperation({
-    summary: 'Get all patients lab test results', 
-    description: "This endpoint gets all the test result that has been done"
+    summary: 'Get all patients lab test results by patients',
+    description:
+      'This endpoint gets all the test result that has been uploaded for a particular patient. This enpoint is accessible only to patients',
   })
   @ApiHeader({
     name: 'x-client-type',
@@ -175,12 +196,13 @@ export class TestResultController {
     return { success: true, data: testResult };
   }
 
-
-  
-
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Patch(':id')
+  @ApiOperation({
+    summary: 'Update test results',
+    description: 'This endpoint is used to update test results. Accessible only by admins',
+  })
   @ApiHeader({
     name: 'x-client-type',
     description:
