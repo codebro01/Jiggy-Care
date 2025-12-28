@@ -15,7 +15,7 @@ import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { Roles } from '@src/auth/decorators/roles.decorators';
 import type { Request } from '@src/types';
-import { ApiBearerAuth, ApiHeader, ApiCookieAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiHeader, ApiCookieAuth, ApiOperation } from '@nestjs/swagger';
 
 @Controller('health-monitoring')
 export class HealthMonitoringController {
@@ -26,6 +26,11 @@ export class HealthMonitoringController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Post()
+  @ApiOperation({
+    summary: 'Create an health reading',
+    description:
+      'This endpoint is used to create and health reading. Accessible to patients only',
+  })
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -45,17 +50,23 @@ export class HealthMonitoringController {
   ) {
     const { id: patientId } = req.user;
 
-    const healthMonitoring = await this.healthMonitoringService.createHealthReading(
-      createDto,
-      patientId,
-    );
+    const healthMonitoring =
+      await this.healthMonitoringService.createHealthReading(
+        createDto,
+        patientId,
+      );
 
-    return {success: true, data: healthMonitoring}
+    return { success: true, data: healthMonitoring };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  @Get()
+  @Get('all')
+  @ApiOperation({
+    summary: 'Get all health reading in the  db',
+    description:
+      'This endpoint is used to get all health readings in the DB. Accessible to admins only',
+  })
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -70,15 +81,20 @@ export class HealthMonitoringController {
   @ApiBearerAuth('JWT-auth')
   @ApiCookieAuth('access_token')
   async getAllHealthReadings() {
-    const healthMonitoring = await this.healthMonitoringService.getAllHealthReadings();
+    const healthMonitoring =
+      await this.healthMonitoringService.getAllHealthReadings();
 
-        return { success: true, data: healthMonitoring };
-
+    return { success: true, data: healthMonitoring };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
-  @Get('patient/:patientId')
+  @Get()
+  @ApiOperation({
+    summary: 'Gets  health readings',
+    description:
+      'This endpoint is used to get health readings. Accessible to patients only',
+  })
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -94,15 +110,20 @@ export class HealthMonitoringController {
   @ApiCookieAuth('access_token')
   async getHealthReadingsByPatient(@Req() req: Request) {
     const patientId = req.user.id;
-    const healthMonitoring = await this.healthMonitoringService.getHealthReadingsByPatient(patientId);
+    const healthMonitoring =
+      await this.healthMonitoringService.getHealthReadingsByPatient(patientId);
 
-        return { success: true, data: healthMonitoring };
-
+    return { success: true, data: healthMonitoring };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
-  @Get('patient/:patientId/latest')
+  @Get('latest')
+  @ApiOperation({
+    summary: 'Gets letest health readings',
+    description:
+      'This endpoint is used to get the latest health readings. Accessible to patients only',
+  })
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -118,14 +139,19 @@ export class HealthMonitoringController {
   @ApiCookieAuth('access_token')
   async getLatestReadingByPatient(@Req() req: Request) {
     const patientId = req.user?.id;
-    const healthMonitoring = await this.healthMonitoringService.getLatestReadingByPatient(patientId);
+    const healthMonitoring =
+      await this.healthMonitoringService.getLatestReadingByPatient(patientId);
 
-        return { success: true, data: healthMonitoring };
-
+    return { success: true, data: healthMonitoring };
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('patient')
+  @Roles('admin')
   @Get(':id')
+  @ApiOperation({
+    summary: 'Gets a particular health readings',
+    description:
+      'This endpoint is used to get a particular health readings. Accessible to admins only',
+  })
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -140,15 +166,20 @@ export class HealthMonitoringController {
   @ApiBearerAuth('JWT-auth')
   @ApiCookieAuth('access_token')
   async getHealthReadingById(@Param('id') id: string) {
-    const healthMonitoring = await this.healthMonitoringService.getHealthReadingById(id);
+    const healthMonitoring =
+      await this.healthMonitoringService.getHealthReadingById(id);
 
-        return { success: true, data: healthMonitoring };
-
+    return { success: true, data: healthMonitoring };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Patch(':id')
+  @ApiOperation({
+    summary: 'Updates a health reading',
+    description:
+      'This endpoint is used to update a patients health reading.  Accessible to patients only',
+  })
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -168,14 +199,14 @@ export class HealthMonitoringController {
     @Body() updateDto: UpdateHealthReadingDto,
   ) {
     const patientId = req.user?.id;
-    const healthMonitoring = await this.healthMonitoringService.updateHealthReading(
-      id,
-      patientId,
-      updateDto,
-    );
+    const healthMonitoring =
+      await this.healthMonitoringService.updateHealthReading(
+        id,
+        patientId,
+        updateDto,
+      );
 
-        return { success: true, data: healthMonitoring };
-
+    return { success: true, data: healthMonitoring };
   }
 
   // @Delete(':id')
