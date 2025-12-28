@@ -1,9 +1,16 @@
 import {
-//   BadRequestException,
+  //   BadRequestException,
   Controller,
   HttpStatus,
   Post,
-  UseGuards,Body, Req, Res, Sse, Query, Param, Get
+  UseGuards,
+  Body,
+  Req,
+  Res,
+  Sse,
+  Query,
+  Param,
+  Get,
 } from '@nestjs/common';
 import { Roles } from '@src/auth/decorators/roles.decorators';
 import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
@@ -26,8 +33,8 @@ import {
   ApiQuery,
   ApiProduces,
   ApiCookieAuth,
-  ApiBearerAuth, 
-  ApiHeader
+  ApiBearerAuth,
+  ApiHeader,
 } from '@nestjs/swagger';
 
 @Controller('notification')
@@ -37,20 +44,19 @@ export class NotificationController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('consultant', 'patient')
   @Sse('stream')
-
-   @ApiHeader({
-      name: 'x-client-type',
-      description:
-        'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
-      required: false,
-      schema: {
-        type: 'string',
-        enum: ['mobile', 'web'],
-        example: 'mobile',
-      },
-    })
-    @ApiBearerAuth('JWT-auth')
-    @ApiCookieAuth('access_token')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   @ApiOperation({
     summary: 'Stream notifications in real-time',
     description:
@@ -107,9 +113,54 @@ export class NotificationController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('patient', 'consultant', 'admin')
+  @Post('all')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @ApiOperation({
+    summary: 'Gets all notifications',
+    description:
+      'Get notifications particular to a user',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Notification created successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid input data',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - User does not have admin role',
+  })
+  async getNotifications(@Req() req: Request, @Res() res: Response) {
+    const { id: userId } = req.user;
+    const notification =
+      await this.notificationService.getNotifications(userId);
+
+    res.status(HttpStatus.OK).json({ message: 'success', data: notification });
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Post('create-notification')
-   @ApiHeader({
+  @ApiHeader({
     name: 'x-client-type',
     description:
       'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
@@ -127,35 +178,9 @@ export class NotificationController {
     description:
       'Creates a new notification in the system. Only accessible by administrators.',
   })
-  @ApiBody({
-    type: CreateNotificationDto,
-    description: 'Notification creation data',
-    examples: {
-      example1: {
-        summary: 'Standard notification',
-        value: {
-          title: 'New Order Received',
-          message: 'You have received a new delivery order',
-          type: 'order',
-          recipientId: 'user-123',
-          priority: 'high',
-        },
-      },
-    },
-  })
   @ApiResponse({
     status: 200,
     description: 'Notification created successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'success' },
-        data: {
-          type: 'object',
-          description: 'Created notification object',
-        },
-      },
-    },
   })
   @ApiResponse({
     status: 400,
@@ -186,7 +211,7 @@ export class NotificationController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Post('update-notification/:id')
-   @ApiHeader({
+  @ApiHeader({
     name: 'x-client-type',
     description:
       'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
@@ -278,7 +303,7 @@ export class NotificationController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin, businessOwner, driver')
   @Post('update-notifications')
-   @ApiHeader({
+  @ApiHeader({
     name: 'x-client-type',
     description:
       'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
@@ -369,7 +394,7 @@ export class NotificationController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'businessOwner', 'driver')
   @Get('dashboard-data')
-   @ApiHeader({
+  @ApiHeader({
     name: 'x-client-type',
     description:
       'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',

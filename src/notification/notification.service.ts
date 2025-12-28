@@ -32,7 +32,7 @@ export class NotificationService {
       return notification;
     } catch (error) {
       console.log(error)
-      throw new BadRequestException('An error occured, please try again')
+      throw new BadRequestException('Could not load notifications')
 
     }
   }
