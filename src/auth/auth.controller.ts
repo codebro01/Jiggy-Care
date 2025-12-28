@@ -207,7 +207,7 @@ export class AuthController {
       throw new BadRequestException('No refresh token provided');
     const newTokens =
       await this.authService.verifyRefreshTokenForMobile(refreshToken);
-
+       console.log(newTokens)
     if (!newTokens?.newAccessToken || !newTokens?.newRefreshToken)
       throw new InternalServerErrorException('Could not issue new tokens');
 

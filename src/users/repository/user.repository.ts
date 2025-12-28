@@ -12,6 +12,7 @@ import { eq } from 'drizzle-orm';
 import { CreateUserDto } from '@src/users/dto/createUser.dto';
 import { UpdateUserDto } from '../dto/updateUser.dto';
 import { UpdatePatientDto } from '@src/users/dto/updatePatient.dto';
+import { specialityTable } from '@src/db';
 
 @Injectable()
 export class UserRepository {
@@ -104,6 +105,10 @@ export class UserRepository {
       .from(consultantTable)
       .where(eq(consultantTable.userId, userId))
       .leftJoin(userTable, eq(userTable.id, userId))
+      .leftJoin(
+        specialityTable,
+        eq(specialityTable.id, consultantTable.speciality),
+      )
       .limit(1);
 
     return user;
@@ -134,19 +139,17 @@ export class UserRepository {
     return user;
   }
   async updateUserPasswordByEmail(
-    data: {password: string},
+    data: { password: string },
     email: string,
     trx?: any,
   ) {
     const Trx = trx || this.DbProvider;
     const [user] = await Trx.update(userTable)
-      .set({ password: data.password})
+      .set({ password: data.password })
       .where(eq(userTable.email, email))
       .returning();
     return user;
   }
-
-
 
   async updateConsultantById(
     data: Partial<

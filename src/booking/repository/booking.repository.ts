@@ -3,7 +3,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CreateBookingDto } from '../dto/createBooking.dto';
 import { or, eq, and } from 'drizzle-orm';
 import { NotFoundError } from 'rxjs';
-import { bookingTable, consultantTable } from '@src/db';
+import { bookingTable,specialityTable,  consultantTable } from '@src/db';
 import { SQL } from 'drizzle-orm';
 
 @Injectable()
@@ -51,11 +51,12 @@ export class BookingRepository {
     if (patientId) conditions.push(eq(bookingTable.patientId, patientId));
 
     const query =  Trx.select({
-        pricePerSession: consultantTable.pricePerSession, 
+        pricePerSession: specialityTable.price, 
         paymentStatus: bookingTable.paymentStatus 
     })
       .from(bookingTable)
-      .where(and(eq(bookingTable.id, bookingId),  or(...conditions)));
+      .where(and(eq(bookingTable.id, bookingId),  or(...conditions)))      .leftJoin(specialityTable, eq(specialityTable.id, consultantTable.speciality))
+;
 
     if (consultantId) {
       query.leftJoin(consultantTable, eq(consultantTable.userId, consultantId));

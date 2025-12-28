@@ -278,18 +278,15 @@ export class UserService {
   }
 
   async getPatientProfile(userId: string) {
+    const patient = await this.userRepository.findPatientById(userId);
 
-      const patient = await this.userRepository.findPatientById(userId);
-
-      return patient;
+    return patient;
   }
   async getConsultantProfile(userId: string) {
-    console.log('userId',userId)
-      const consultant =
-        await this.userRepository.findApprovedConsultantById(userId);
+    console.log('userId', userId);
+    const consultant =
+      await this.userRepository.findApprovedConsultantById(userId);
 
-      return consultant;
-    
-   
+    return consultant;
   }
 }
