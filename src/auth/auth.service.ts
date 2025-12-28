@@ -140,7 +140,10 @@ export class AuthService {
           secret: jwtConstants.refreshTokenSecret,
           expiresIn: '30d',
         });
-        await this.authRepository.updateUserRefreshToken(refreshToken, user.id);
+
+                const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+
+        await this.authRepository.updateUserRefreshToken(hashedRefreshToken, user.id);
 
         return { user: patientInfo, refreshToken, accessToken };
       }
@@ -156,7 +159,13 @@ export class AuthService {
           secret: jwtConstants.refreshTokenSecret,
           expiresIn: '30d',
         });
-        await this.authRepository.updateUserRefreshToken(refreshToken, user.id);
+
+                const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+
+        await this.authRepository.updateUserRefreshToken(
+          hashedRefreshToken,
+          user.id,
+        );
 
         return { user: consultantInfo, refreshToken, accessToken };
       }
@@ -194,7 +203,13 @@ export class AuthService {
           expiresIn: '30d',
         });
 
-        await this.authRepository.updateUserRefreshToken(refreshToken, user.id);
+        const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+
+
+        await this.authRepository.updateUserRefreshToken(
+          hashedRefreshToken,
+          user.id,
+        );
 
         return { user: patientInfo, refreshToken, accessToken };
       }
@@ -232,8 +247,12 @@ export class AuthService {
           secret: jwtConstants.refreshTokenSecret,
           expiresIn: '30d',
         });
+        const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
-        await this.authRepository.updateUserRefreshToken(refreshToken, user.id);
+        await this.authRepository.updateUserRefreshToken(
+          hashedRefreshToken,
+          user.id,
+        );
 
         return { user: consultantInfo, refreshToken, accessToken };
       }
@@ -324,7 +343,12 @@ export class AuthService {
           secret: jwtConstants.refreshTokenSecret,
           expiresIn: '30d',
         });
-        await this.authRepository.updateUserRefreshToken(refreshToken, user.id);
+                const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+
+        await this.authRepository.updateUserRefreshToken(
+          hashedRefreshToken,
+          user.id,
+        );
 
         return { user: patientInfo, refreshToken, accessToken };
       }
@@ -340,7 +364,11 @@ export class AuthService {
           secret: jwtConstants.refreshTokenSecret,
           expiresIn: '30d',
         });
-        await this.authRepository.updateUserRefreshToken(refreshToken, user.id);
+        const hashedRefreshToken = await bcrypt.hash(refreshToken, 10)
+        await this.authRepository.updateUserRefreshToken(
+          hashedRefreshToken,
+          user.id,
+        );
 
         return { user: consultantInfo, refreshToken, accessToken };
       }
@@ -377,7 +405,12 @@ export class AuthService {
           secret: jwtConstants.refreshTokenSecret,
           expiresIn: '30d',
         });
-        await this.authRepository.updateUserRefreshToken(refreshToken, user.id);
+                const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+
+        await this.authRepository.updateUserRefreshToken(
+          hashedRefreshToken,
+          user.id,
+        );
 
         return { user: patientInfo, refreshToken, accessToken };
       }

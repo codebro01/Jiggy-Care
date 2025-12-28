@@ -27,7 +27,7 @@ export const userTable = pgTable('users', {
   authProvider: varchar('authProvider', { length: 20 })
     .default('local')
     .notNull(),
-  refreshToken: varchar('refreshToken', { length: 255 }),
+  refreshToken: text('refreshToken'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
