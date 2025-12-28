@@ -9,6 +9,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { InferSelectModel } from 'drizzle-orm';
 import { jsonb } from 'drizzle-orm/pg-core';
+import { specialityTable } from '@src/db/speciality';
 
 
 export const userTable = pgTable('users', {
@@ -59,6 +60,9 @@ export const consultantTable = pgTable('consultants', {
     .references(() => userTable.id, { onDelete: 'cascade' })
     .unique(),
   availability: boolean('availability').default(false),
+  specialityId: uuid('speciality_id')
+    .references(() => specialityTable.id, {onDelete: 'cascade'})
+    .default('04485053-bd76-4ca4-a8ee-250fb82cbea8'),
   speciality: varchar('speciality', { length: 50 }),
   yrsOfExperience: integer('years_of_experience'),
   about: text('about'),
@@ -75,7 +79,7 @@ export const consultantTable = pgTable('consultants', {
     sunday?: string;
   }>(),
   pricePerSession: integer('price_per_session'),
-  approvedStatus: boolean('approved_status').default(true), 
+  approvedStatus: boolean('approved_status').default(true),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

@@ -1,0 +1,2 @@
+ALTER TABLE "consultants" ADD COLUMN "speciality_id" uuid DEFAULT '04485053-bd76-4ca4-a8ee-250fb82cbea8';--> statement-breakpoint
+ALTER TABLE "consultants" ADD CONSTRAINT "consultants_speciality_id_speciality_id_fk" FOREIGN KEY ("speciality_id") REFERENCES "public"."speciality"("id") ON DELETE no action ON UPDATE no action;
