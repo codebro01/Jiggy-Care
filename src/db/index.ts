@@ -14,3 +14,5 @@ export * from '@src/db/test-booking-payment'
 export * from '@src/db/password-reset'
 export * from '@src/db/email-verification'
 export  * from "@src/db/speciality"
+export  * from '@src/db/health-tips'
+export * from '@src/db/recent-activity'
