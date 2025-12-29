@@ -8,6 +8,7 @@ import {
   Req,
   HttpCode,
   HttpStatus,
+  Get,
 } from '@nestjs/common';
 import { HealthTipsService } from './health-tips.service';
 import { CreateHealthTipDto } from './dto/create-health-tip.dto';
@@ -60,7 +61,7 @@ export class HealthTipsController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient', 'admin')
-  @Post()
+  @Get()
   @ApiOperation({
     summary: 'Gets all health tips meant for patients',
     description:

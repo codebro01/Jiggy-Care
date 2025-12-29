@@ -33,10 +33,12 @@ export class RecentActivityController {
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth('JWT-auth')
   @ApiCookieAuth('access_token')
-  create(@Body() data: CreateRecentActivityDto, @Req() req: Request) {
+  async create(@Body() data: CreateRecentActivityDto, @Req() req: Request) {
     const { id: userId } = req.user;
 
-    return this.recentActivityService.createRecentActivity(data, userId);
+    const recentActivity = await this.recentActivityService.createRecentActivity(data, userId);
+
+    return {success: true, data:recentActivity}
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -61,8 +63,10 @@ export class RecentActivityController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('JWT-auth')
   @ApiCookieAuth('access_token')
-  findAll(@Req() req: Request) {
+  async findAll(@Req() req: Request) {
     const { id: userId } = req.user;
-    return this.recentActivityService.getRecentActivity(userId);
+    const recentActivity = await this.recentActivityService.getRecentActivity(userId);
+
+    return {success: true, data: recentActivity}
   }
 }

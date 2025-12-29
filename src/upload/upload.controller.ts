@@ -108,7 +108,8 @@ export class UploadController {
       file.buffer,
       'my-folder',
     );
-    return { uploaded: result };
+
+    return {success: true,  data: {secure_url: result.secure_url, public_id: result.public_id} };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -186,7 +187,10 @@ export class UploadController {
       'my-folder',
     );
 
-    return { uploaded: results };
+    const mappedResult = results.map((result) => ({success: true,  data: {secure_url: result.secure_url, public_id: result.public_id}
+}))
+
+    return {success: true,  data: mappedResult };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

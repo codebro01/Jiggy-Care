@@ -12,9 +12,11 @@ export class RecentActivityRepository {
 
   async createRecentActivity(
     data: Omit<recentActivityTableInsertType, 'userId'>,
-    userId: string
+    userId: string, 
+    trx?:any
   ) {
-    const [recentActivity] = await this.DbProvider.insert(recentActivityTable)
+    const Trx = trx || this.DbProvider;
+    const [recentActivity] = await Trx.insert(recentActivityTable)
       .values({ ...data, userId })
       .returning();
 
