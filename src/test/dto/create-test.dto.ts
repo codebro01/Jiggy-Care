@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsNumber, IsEnum } from "class-validator";
+import { IsNotEmpty, IsString, IsNumber } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 
 export enum TestTitleType {
@@ -17,9 +17,9 @@ export class CreateTestDto {
     description:
       'The category of the test that is to be take, i.e the test kind',
   })
-  @IsEnum(TestTitleType)
+  @IsString()
   @IsNotEmpty()
-  title: TestTitleType;
+  title: string;
 
   @ApiProperty({
     example: '2 days fasting required',

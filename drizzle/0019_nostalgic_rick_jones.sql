@@ -1,0 +1,1 @@
+ALTER TABLE "test_results" ADD COLUMN "status" varchar DEFAULT 'normal' NOT NULL;

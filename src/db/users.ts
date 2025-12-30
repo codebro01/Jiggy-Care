@@ -11,7 +11,6 @@ import { InferSelectModel } from 'drizzle-orm';
 import { jsonb } from 'drizzle-orm/pg-core';
 import { specialityTable } from '@src/db/speciality';
 
-
 export const userTable = pgTable('users', {
   id: uuid().defaultRandom().primaryKey().notNull(),
   // displayName: varchar('displayName', { length: 255 }),
@@ -40,9 +39,9 @@ export const patientTable = pgTable('patients', {
     .unique(),
   id: uuid().defaultRandom().notNull(),
   emergencyContact: jsonb('emergency_contact').$type<{
-    relationship: string, 
-    name: string, 
-    phone: string
+    relationship: string;
+    name: string;
+    phone: string;
   }>(),
   weight: varchar('weight', { length: 50 }),
   height: varchar('height', { length: 50 }),
@@ -61,8 +60,9 @@ export const consultantTable = pgTable('consultants', {
     .unique(),
   availability: boolean('availability').default(false),
   speciality: uuid('speciality')
-    .references(() => specialityTable.id, {onDelete: 'cascade'})
-    .default('04485053-bd76-4ca4-a8ee-250fb82cbea8').notNull(),
+    .references(() => specialityTable.id, { onDelete: 'cascade' })
+    .default('04485053-bd76-4ca4-a8ee-250fb82cbea8')
+    .notNull(),
   yrsOfExperience: integer('years_of_experience'),
   about: text('about'),
   languages: text('languages').array(),
@@ -87,4 +87,3 @@ export const consultantTable = pgTable('consultants', {
 export type UserType = InferSelectModel<typeof userTable>;
 export type consultantInsertType = typeof consultantTable.$inferInsert;
 export type patientInsertType = typeof patientTable.$inferInsert;
-

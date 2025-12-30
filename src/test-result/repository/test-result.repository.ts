@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { testResultTableInsertType, testResultTable } from '@src/db';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, and, desc } from 'drizzle-orm';
-import { consultantTable, patientTable } from '@src/db/users';
+import { consultantTable, patientTable, userTable } from '@src/db/users';
 import { labTable } from '@src/db/lab';
 
 @Injectable()
@@ -33,13 +33,22 @@ export class TestResultRepository {
     return testResult;
   }
   async findTestResultsByPatientId(patientId: string) {
-    const testResult = await this.DbProvider.select()
+    const testResult = await this.DbProvider.select({
+      title:testResultTable.title, 
+      date: testResultTable.createdAt, 
+      doctor: userTable.fullName, 
+      lab: labTable.name, 
+      testValues: testResultTable.testValues, 
+      status: testResultTable.status, 
+
+    })
       .from(testResultTable)
       .where(eq(testResultTable.patientId, patientId))
-      .leftJoin(
+      .innerJoin(
         consultantTable,
         eq(consultantTable.userId, testResultTable.consultantId),
       )
+      .innerJoin(userTable, eq(userTable.id, consultantTable.userId))
       .leftJoin(labTable, eq(labTable.id, testResultTable.labId));
 
     return testResult;

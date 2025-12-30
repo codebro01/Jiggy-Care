@@ -12,6 +12,12 @@ import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { readingStatusType } from '@src/db/health-monitoring';
 
+
+export enum testResultStatus {
+  ATTENTION_REQUIRED  = "attention_required", 
+  NORMAL = 'normal'
+}
+
 class TestValueDto {
   @ApiProperty({
     description: 'The measured value of the test',
@@ -68,7 +74,7 @@ class TestValuesDto {
   @ValidateNested()
   @Type(() => TestValueDto)
   @IsOptional()
-  hematrocit?: TestValueDto;
+  hematocrit?: TestValueDto;
 
   @ApiProperty({
     description: 'White blood cell count',
@@ -104,7 +110,7 @@ class TestValuesDto {
 export class CreateTestResultDto {
   @ApiProperty({
     description: 'UUID of the lab that conducted the test',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    example: '151dcd58d-d192-4803-899a-318de14197e4',
     required: false,
   })
   @IsUUID()
@@ -113,7 +119,7 @@ export class CreateTestResultDto {
 
   @ApiProperty({
     description: 'UUID of the patient',
-    example: '987fcdeb-51a2-43f7-9c8d-123456789abc',
+    example: '23d7a38f-f298-41ac-8ed5-f1c22cc75b61',
     required: false,
   })
   @IsUUID()
@@ -127,6 +133,13 @@ export class CreateTestResultDto {
   @IsString()
   @IsNotEmpty()
   title: string;
+  @ApiProperty({
+    description: 'The status of the patient based on test result',
+    example: 'a ttention_required',
+  })
+  @IsEnum(testResultStatus)
+  @IsNotEmpty()
+  status: testResultStatus;
 
   @ApiProperty({
     description: 'Date the test was conducted',
@@ -135,7 +148,6 @@ export class CreateTestResultDto {
   @IsDateString()
   @IsNotEmpty()
   date: string;
-
   @ApiProperty({
     description: 'Test values and results',
     type: TestValuesDto,
