@@ -1,6 +1,5 @@
 import {
   Injectable,
-  Inject,
   BadRequestException,
   InternalServerErrorException,
   ConflictException,
@@ -11,28 +10,26 @@ import { AuthRepository } from '@src/auth/repository/auth.repository';
 import { UpdatePatientDto } from '@src/users/dto/updatePatient.dto';
 import { CreateUserDto } from '@src/users/dto/createUser.dto';
 import * as bcrypt from 'bcrypt';
-import { eq } from 'drizzle-orm';
 import { jwtConstants } from '@src/auth/jwtContants';
 import {
   consultantTable,
   patientTable,
-  userTable,
   UserType,
 } from '@src/db/users';
 import { JwtService } from '@nestjs/jwt';
-import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { HelperRepository } from '@src/helpers/repository/helpers.repository';
 import { roleType } from '@src/users/dto/createUser.dto';
 import { UpdateConsultantDto } from '@src/consultant/dto/updateConsultantDto';
+import { EmailVerificationService } from '@src/email-verification/email-verification.service';
 
 @Injectable()
 export class UserService {
   constructor(
-    @Inject('DB')
-    private DbProvider: NodePgDatabase<typeof import('@src/db')>,
     private readonly userRepository: UserRepository,
     private readonly authRepository: AuthRepository,
     private readonly helperRepository: HelperRepository,
+    private readonly emailVerificationService: EmailVerificationService,
+
 
     private jwtService: JwtService,
   ) {}
@@ -47,9 +44,7 @@ export class UserService {
       //!  check if google user is already in db before signing up
 
       if (authProvider === 'google') {
-        const [user] = await this.DbProvider.select()
-          .from(userTable)
-          .where(eq(userTable.email, email));
+        const user = await this.userRepository.findUserByEmail(email)
         if (user) {
           const payload = { id: user.id, email: user.email, role: user.role };
 
@@ -64,9 +59,8 @@ export class UserService {
 
           const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
-          const updateUserToken = await this.DbProvider.update(userTable)
-            .set({ refreshToken: hashedRefreshToken })
-            .where(eq(userTable.id, user.id));
+          const updateUserToken = await this.userRepository.updateUserTokenByUserId(hashedRefreshToken, user.id)
+           
 
           if (!updateUserToken) throw new InternalServerErrorException();
           return { user, accessToken, refreshToken };
@@ -75,16 +69,20 @@ export class UserService {
 
       //! check if email provided has been used
 
-      const isEmailUsed = await this.DbProvider.select({
-        email: userTable.email,
-      })
-        .from(userTable)
-        .where(eq(userTable.email, email));
-      console.log(isEmailUsed);
-      if (isEmailUsed.length > 0)
+      const isEmailUsed = await this.userRepository.findUserByEmail(email)
+      if (isEmailUsed)
         throw new ConflictException(
           'Email already used, please use another email!',
         );
+
+        if(!data.otp) throw new BadRequestException('Please provide the OTP sent to your email')
+
+        const verifyEmail = await this.emailVerificationService.verifyOTP(
+          { OTP: data.otp },
+          email,
+        );
+
+        if(!verifyEmail) throw new BadRequestException('Could not verify email, please try again!')
 
       let user: UserType;
 
@@ -93,7 +91,7 @@ export class UserService {
           user = await this.helperRepository.executeInTransaction(
             async (trx) => {
               const user = await this.userRepository.createUser(
-                { ...data, password: hashedPwd },
+                { ...data, password: hashedPwd, emailVerified: true },
                 authProvider,
                 trx,
               );
@@ -116,7 +114,7 @@ export class UserService {
           user = await this.helperRepository.executeInTransaction(
             async (trx) => {
               const user = await this.userRepository.createUser(
-                { ...data, password: hashedPwd },
+                { ...data, password: hashedPwd, emailVerified: true },
                 authProvider,
                 trx,
               );
@@ -177,9 +175,7 @@ export class UserService {
 
       const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
-      const updateUserToken = await this.DbProvider.update(userTable)
-        .set({ refreshToken: hashedRefreshToken })
-        .where(eq(userTable.id, user.id));
+      const updateUserToken = await this.userRepository.updateUserTokenByUserId(hashedRefreshToken, user.id)
 
       if (!updateUserToken) throw new InternalServerErrorException();
       // console.log('got past this unreachable code')
@@ -194,7 +190,7 @@ export class UserService {
   }
 
   async getAllUsers(): Promise<UserType[]> {
-    const users = await this.DbProvider.select().from(userTable);
+    const users = await this.userRepository.getAllUsers();
     return users;
   }
 

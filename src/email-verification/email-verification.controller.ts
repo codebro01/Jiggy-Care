@@ -6,18 +6,18 @@ import type { Request } from '@src/types';
 import { EmailVerificationService } from '@src/email-verification/email-verification.service';
 import { ApiHeader, ApiCookieAuth, ApiBearerAuth } from '@nestjs/swagger';
 import { VerifyOTPDto } from '@src/email-verification/dto/verify-otp.dto';
-
+import { SendOTPDtoForEmailVerification } from '@src/email-verification/dto/send-otp.dto';
 @Controller('email-verification')
 export class EmailVerificationController {
   constructor(
     private readonly emailVerificationService: EmailVerificationService,
   ) {}
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('consultant', 'patient')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles('consultant', 'patient')
   @Post('send-otp')
-  @ApiBearerAuth('JWT-auth') // For mobile clients
-  @ApiCookieAuth('access_token')
+  // @ApiBearerAuth('JWT-auth') // For mobile clients
+  // @ApiCookieAuth('access_token')
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -29,15 +29,16 @@ export class EmailVerificationController {
       example: 'mobile',
     },
   })
-  async sendOTPToEmail(@Req() req: Request) {
-    const { email } = req.user;
-    console.log('email', email)
-    const sendOTPToEmail =
-      await this.emailVerificationService.sendOTPToEmail(email);
+  async sendOTPToEmail(
+    @Body() body: SendOTPDtoForEmailVerification,
+  ) {
+    const sendOTPToEmail = await this.emailVerificationService.sendOTPToEmail(
+      body.email,
+      body.fullName,
+    );
 
     return { success: true, message: sendOTPToEmail };
   }
-
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('consultant', 'patient')
@@ -58,8 +59,7 @@ export class EmailVerificationController {
   async verifyOTP(@Req() req: Request, @Body() body: VerifyOTPDto) {
     const { email } = req.user;
 
-    const result =
-      await this.emailVerificationService.verifyOTP(body, email);
+    const result = await this.emailVerificationService.verifyOTP(body, email);
 
     return { success: true, message: result };
   }

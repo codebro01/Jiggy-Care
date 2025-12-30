@@ -86,5 +86,6 @@ export const consultantTable = pgTable('consultants', {
 // ! add ratings, prescripto, table in antoher file,
 
 export type UserType = InferSelectModel<typeof userTable>;
+export type userTableInsertType = typeof userTable.$inferInsert;
 export type consultantInsertType = typeof consultantTable.$inferInsert;
 export type patientInsertType = typeof patientTable.$inferInsert;

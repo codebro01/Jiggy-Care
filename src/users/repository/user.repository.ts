@@ -4,12 +4,13 @@ import {
   consultantTable,
   patientTable,
   userTable,
+  userTableInsertType,
+  UserType,
 } from '@src/db/users';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { JwtService } from '@nestjs/jwt';
 import { eq } from 'drizzle-orm';
 
-import { CreateUserDto } from '@src/users/dto/createUser.dto';
 import { UpdateUserDto } from '../dto/updateUser.dto';
 import { UpdatePatientDto } from '@src/users/dto/updatePatient.dto';
 import { specialityTable } from '@src/db';
@@ -24,7 +25,7 @@ export class UserRepository {
 
   // ! create user here
 
-  async createUser(data: CreateUserDto, authProvider: string, trx?: any) {
+  async createUser(data: userTableInsertType, authProvider: string, trx?: any) {
     const Trx = trx || this.DbProvider;
     const [user] = await Trx.insert(userTable)
       .values({ ...data, authProvider })
@@ -92,7 +93,7 @@ export class UserRepository {
       email: userTable.email,
       dateOfBirth: userTable.dateOfBirth,
       phone: userTable.phone,
-      address: userTable.address, 
+      address: userTable.address,
       role: userTable.role,
       emailVerified: userTable.emailVerified,
       availability: consultantTable.availability,
@@ -127,6 +128,14 @@ export class UserRepository {
       .where(eq(userTable.id, userId))
       .returning();
     return user;
+  }
+
+  async updateUserTokenByUserId(refreshToken: string, userId: string) {
+    const newToken = await this.DbProvider.update(userTable)
+      .set({ refreshToken: refreshToken })
+      .where(eq(userTable.id, userId));
+
+    return newToken;
   }
   async updateUserByEmail(
     data: UpdateUserDto & { emailVerified?: boolean },
@@ -174,5 +183,10 @@ export class UserRepository {
       .where(eq(patientTable.userId, userId))
       .returning();
     return user;
+  }
+
+  async getAllUsers(): Promise<UserType[]> {
+    const users = await this.DbProvider.select().from(userTable);
+    return users;
   }
 }

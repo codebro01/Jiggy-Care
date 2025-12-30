@@ -18,25 +18,19 @@ export class EmailVerificationService {
     private readonly userRepository: UserRepository,
   ) {}
 
-  async sendOTPToEmail(email: string) {
-    const isVerifiedInUser = await this.userRepository.findUserByEmail(email);
+  async sendOTPToEmail(email: string, fullName: string) {
+    const user = await this.userRepository.findUserByEmail(email);
 
-
-    if (isVerifiedInUser.emailVerified === true)
-      throw new BadRequestException('This email has already been verified');
-
-
+    if (user)
+      throw new BadRequestException(
+        'This email has already been used, please use another email',
+      );
 
     const emailVerificationRecord =
       await this.emailVerificationRepository.findUserByEmail({ email });
 
-          if (
-            emailVerificationRecord &&
-            emailVerificationRecord.used === true
-          )
-            throw new BadRequestException(
-              'This email has already been verified',
-            );
+    if (emailVerificationRecord && emailVerificationRecord.used === true)
+      throw new BadRequestException('This email has already been verified');
 
     const { generateRandomSixDigitCode, hashRandomSixDigitCode } =
       await this.sixDigitCodeGenerator();
@@ -58,12 +52,14 @@ export class EmailVerificationService {
       });
     }
 
+    console.log(generateRandomSixDigitCode);
+
     await this.emailService.queueTemplatedEmail(
       EmailTemplateType.EMAIL_VERIFICATION,
       email,
       {
         verificationCode: generateRandomSixDigitCode,
-        name: isVerifiedInUser.fullName,
+        name: fullName,
       },
     );
 
@@ -106,7 +102,7 @@ export class EmailVerificationService {
       throw new BadRequestException('This code has already been used');
     }
 
-    if (user.attempts === 3) {
+    if (user.attempts === 10) {
       const { hashRandomSixDigitCode } = await this.sixDigitCodeGenerator();
 
       await this.emailVerificationRepository.updateEmailVerification(
@@ -133,6 +129,8 @@ export class EmailVerificationService {
       email,
     );
 
+    console.log(data.OTP, user);
+
     if (!verifyHashedCode)
       throw new BadRequestException('Invalid OTP, please try again');
 
@@ -143,21 +141,23 @@ export class EmailVerificationService {
 
     // ! here i will upudate user info and set email verified to true
 
-    const updatedUser = await this.userRepository.updateUserByEmail(
-      { emailVerified: true },
-      user.email,
-    );
+    // const updatedUser = await this.userRepository.updateUserByEmail(
+    //   { emailVerified: true },
+    //   user.email,
+    // );
 
-    console.log('updatedUser', updatedUser);
-    console.log('user', user);
+    // console.log('updatedUser', updatedUser);
+    // console.log('user', user);
 
-    let payload;
-    if (updatedUser.role === 'patient')
-      payload = await this.userRepository.findPatientById(updatedUser.id);
-    if (updatedUser.role === 'consultant')
-      payload = await this.userRepository.findApprovedConsultantById(
-        updatedUser.id,
-      );
-    return payload;
+    // let payload;
+    // if (updatedUser.role === 'patient')
+    //   payload = await this.userRepository.findPatientById(updatedUser.id);
+    // if (updatedUser.role === 'consultant')
+    //   payload = await this.userRepository.findApprovedConsultantById(
+    //     updatedUser.id,
+    //   );
+    // return payload;
+
+    return true;
   }
 }

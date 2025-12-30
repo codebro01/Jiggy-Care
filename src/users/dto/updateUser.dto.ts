@@ -38,7 +38,7 @@ export class UpdateUserDto {
   @MaxLength(20)
   gender?: string | null;
 
-  @ApiPropertyOptional({
+   @ApiPropertyOptional({
     description: 'Display picture URL',
     example: 'https://example.com/images/profile.jpg',
     maxLength: 255,

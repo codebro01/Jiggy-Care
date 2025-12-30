@@ -36,7 +36,8 @@ export class TestResultRepository {
     const testResult = await this.DbProvider.select({
       title:testResultTable.title, 
       date: testResultTable.createdAt, 
-      doctor: userTable.fullName, 
+      doctor: userTable.fullName,
+      consultantId: testResultTable.consultantId, 
       lab: labTable.name, 
       testValues: testResultTable.testValues, 
       status: testResultTable.status, 

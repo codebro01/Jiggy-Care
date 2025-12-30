@@ -32,6 +32,11 @@ export class CreateUserDto {
   @IsNotEmpty()
   fullName: string;
 
+  @ApiProperty({ example: "909089" })
+  @IsString()
+  @IsNotEmpty()
+  otp?: string;
+
   @ApiProperty({ example: '@Example123', minLength: 8 })
   @IsNotEmpty()
   @IsString()
