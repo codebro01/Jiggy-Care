@@ -64,5 +64,5 @@ export class UpdateUserDto {
   })
   @IsString()
   @IsOptional()
-  address: string | null;
+  address?: string | null;
 }

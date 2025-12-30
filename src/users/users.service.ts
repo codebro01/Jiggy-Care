@@ -204,7 +204,7 @@ export class UserService {
 
     if (!patient) throw new NotFoundException('No user found');
 
-    // console.log('updatedUser', updatedUser);
+    console.log(data, patient);
 
     const updatedPatient = await this.helperRepository.executeInTransaction(
       async (trx) => {
@@ -214,7 +214,7 @@ export class UserService {
             dateOfBirth: data.dateOfBirth || patient.dateOfBirth,
             gender: data.gender || patient.gender,
             phone: data.phone || patient.phone,
-            address: data.address || patient.address, 
+            address: data.address || patient.address,
           },
           userId,
           trx,
@@ -252,7 +252,7 @@ export class UserService {
             dateOfBirth: data.dateOfBirth || consultant.dateOfBirth,
             gender: data.gender || consultant.gender,
             phone: data.phone || consultant.phone,
-            address: data.address || consultant.address, 
+            address: data.address || consultant.address,
           },
           userId,
           trx,

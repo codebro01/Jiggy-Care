@@ -17,11 +17,10 @@ export const userTable = pgTable('users', {
   email: varchar('email', { length: 255 }).notNull().unique(),
   role: varchar('role', { length: 10 }).notNull(),
   password: varchar('password', { length: 500 }).notNull(),
-  address: varchar('address', { length: 255 }),
+  address: varchar('address', { length: 255 }).default('Lagos, Nigeria'),
   emailVerified: boolean('is_email_Verified').default(false).notNull(),
   fullName: varchar('fullName', { length: 255 }).notNull(),
   dateOfBirth: varchar('date_of_birth', { length: 20 }),
-
   gender: varchar('gender', { length: 20 }),
   dp: varchar('dp', { length: 255 }),
   phone: varchar('phone', { length: 50 }),
