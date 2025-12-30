@@ -32,7 +32,7 @@ export class PasswordResetService {
     const { generateRandomSixDigitCode, hashRandomSixDigitCode } =
       await this.sixDigitCodeGenerator();
 
-    if (passwordResetRecord && passwordResetRecord.used === false) {
+    if (passwordResetRecord) {
       await this.passwordResetRepository.updatePasswordReset(
         {
           passwordResetCode: hashRandomSixDigitCode,
