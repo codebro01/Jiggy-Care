@@ -3,7 +3,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CreateBookingDto } from '../dto/createBooking.dto';
 import { or, eq, and } from 'drizzle-orm';
 import { NotFoundError } from 'rxjs';
-import { bookingTable,specialityTable,  consultantTable } from '@src/db';
+import { bookingTable, specialityTable, consultantTable } from '@src/db';
 import { SQL } from 'drizzle-orm';
 
 @Injectable()
@@ -23,7 +23,13 @@ export class BookingRepository {
     const Trx = trx || this.DbProvider;
 
     const [booking] = await Trx.insert(bookingTable)
-      .values({ ...data, date: new Date(data.date), consultantId, patientId , paymentStatus: false})
+      .values({
+        ...data,
+        date: new Date(data.date),
+        consultantId,
+        patientId,
+        paymentStatus: false,
+      })
       .returning();
 
     return booking;
@@ -50,17 +56,20 @@ export class BookingRepository {
 
     if (patientId) conditions.push(eq(bookingTable.patientId, patientId));
 
-    const query =  Trx.select({
-        pricePerSession: specialityTable.price, 
-        paymentStatus: bookingTable.paymentStatus 
+    let query = Trx.select({
+      pricePerSession: specialityTable.price,
+      paymentStatus: bookingTable.paymentStatus,
     })
       .from(bookingTable)
-      .where(and(eq(bookingTable.id, bookingId),  or(...conditions)))      .leftJoin(specialityTable, eq(specialityTable.id, consultantTable.speciality))
-;
-
+      .where(and(eq(bookingTable.id, bookingId), or(...conditions)));
     if (consultantId) {
       query.leftJoin(consultantTable, eq(consultantTable.userId, consultantId));
     }
+
+    query = query.leftJoin(
+      specialityTable,
+      eq(specialityTable.id, consultantTable.speciality),
+    );
 
     const [result] = await query.limit(1);
 
@@ -112,7 +121,6 @@ export class BookingRepository {
     return booking;
   }
 
- 
   async getPatientUpcomingBookings(patientId: string, trx?: any) {
     const Trx = trx || this.DbProvider;
 

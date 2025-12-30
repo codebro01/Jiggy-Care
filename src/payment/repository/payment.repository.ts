@@ -6,14 +6,10 @@ import {
 } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CreatePaymentDto } from '@src/payment/dto/createPaymentDto';
-import {
-  userTable,
-  paymentTable
-} from '@src/db';
+import { userTable, paymentTable } from '@src/db';
 import crypto from 'crypto';
 import { eq, and } from 'drizzle-orm';
 import { NotificationRepository } from '@src/notification/repository/notification.repository';
-
 
 export const generateSecureInvoiceId = () => {
   const randomHex = crypto.randomUUID().substring(0, 8);
@@ -37,7 +33,7 @@ export class PaymentRepository {
   constructor(
     @Inject('DB') private DbProvider: NodePgDatabase<typeof import('@src/db')>,
     private notificationRepository: NotificationRepository,
-  ) { }
+  ) {}
 
   // ! Transaction wrapper
   async executeInTransaction<T>(
@@ -112,7 +108,6 @@ export class PaymentRepository {
     return { message: 'succcess', payments };
   }
 
-
   async findByReference(reference: string) {
     const [payment] = await this.DbProvider.select()
       .from(paymentTable)
@@ -139,6 +134,4 @@ export class PaymentRepository {
       throw new HttpException(error.message, error.status);
     }
   }
-
-  
 }

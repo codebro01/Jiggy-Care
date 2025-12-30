@@ -41,6 +41,7 @@ export class BookingService {
 
     const isConsultantExist =
       await this.consultantRepository.findApprovedConsultantById(consultantId);
+      console.log(isConsultantExist, consultantId)
     if (!isConsultantExist) throw new NotFoundException('Consultant not found');
 
     const booking = await this.bookingRepository.createBooking(
