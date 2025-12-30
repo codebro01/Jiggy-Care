@@ -110,7 +110,7 @@ class TestValuesDto {
 export class CreateTestResultDto {
   @ApiProperty({
     description: 'UUID of the lab that conducted the test',
-    example: '151dcd58d-d192-4803-899a-318de14197e4',
+    example: '51dcd58d-d192-4803-899a-318de14197e4',
     required: false,
   })
   @IsUUID()

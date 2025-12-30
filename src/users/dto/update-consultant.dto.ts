@@ -104,6 +104,14 @@ export class UpdateConsultantDto {
   certification?: string[];
 
   @ApiPropertyOptional({
+    example: 'No 54 walkway street, Lagos',
+    description: 'The address of the patient',
+  })
+  @IsString()
+  @IsOptional()
+  address?: string | null;
+
+  @ApiPropertyOptional({
     type: WorkingHoursDto,
     description: 'Weekly availability schedule',
   })
@@ -111,5 +119,4 @@ export class UpdateConsultantDto {
   @ValidateNested()
   @Type(() => WorkingHoursDto)
   workingHours?: WorkingHoursDto;
-
 }
