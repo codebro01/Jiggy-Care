@@ -189,4 +189,6 @@ export class UserRepository {
     const users = await this.DbProvider.select().from(userTable);
     return users;
   }
+
+  
 }

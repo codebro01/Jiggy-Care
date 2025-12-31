@@ -11,16 +11,15 @@ import { UpdatePatientDto } from '@src/users/dto/updatePatient.dto';
 import { CreateUserDto } from '@src/users/dto/createUser.dto';
 import * as bcrypt from 'bcrypt';
 import { jwtConstants } from '@src/auth/jwtContants';
-import {
-  consultantTable,
-  patientTable,
-  UserType,
-} from '@src/db/users';
+import { consultantTable, patientTable, UserType } from '@src/db/users';
 import { JwtService } from '@nestjs/jwt';
 import { HelperRepository } from '@src/helpers/repository/helpers.repository';
 import { roleType } from '@src/users/dto/createUser.dto';
 import { UpdateConsultantDto } from '@src/consultant/dto/updateConsultantDto';
 import { EmailVerificationService } from '@src/email-verification/email-verification.service';
+import { BookingRepository } from '@src/booking/repository/booking.repository';
+import { TestResultRepository } from '@src/test-result/repository/test-result.repository';
+import { PrescriptionRepository } from '@src/prescription/repository/prescription.repository';
 
 @Injectable()
 export class UserService {
@@ -29,8 +28,9 @@ export class UserService {
     private readonly authRepository: AuthRepository,
     private readonly helperRepository: HelperRepository,
     private readonly emailVerificationService: EmailVerificationService,
-
-
+    private readonly bookingRepository: BookingRepository,
+    private readonly testResultRepository: TestResultRepository,
+    private readonly prescriptionRepository: PrescriptionRepository,
     private jwtService: JwtService,
   ) {}
 
@@ -44,7 +44,7 @@ export class UserService {
       //!  check if google user is already in db before signing up
 
       if (authProvider === 'google') {
-        const user = await this.userRepository.findUserByEmail(email)
+        const user = await this.userRepository.findUserByEmail(email);
         if (user) {
           const payload = { id: user.id, email: user.email, role: user.role };
 
@@ -59,8 +59,11 @@ export class UserService {
 
           const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
-          const updateUserToken = await this.userRepository.updateUserTokenByUserId(hashedRefreshToken, user.id)
-           
+          const updateUserToken =
+            await this.userRepository.updateUserTokenByUserId(
+              hashedRefreshToken,
+              user.id,
+            );
 
           if (!updateUserToken) throw new InternalServerErrorException();
           return { user, accessToken, refreshToken };
@@ -69,20 +72,26 @@ export class UserService {
 
       //! check if email provided has been used
 
-      const isEmailUsed = await this.userRepository.findUserByEmail(email)
+      const isEmailUsed = await this.userRepository.findUserByEmail(email);
       if (isEmailUsed)
         throw new ConflictException(
           'Email already used, please use another email!',
         );
 
-        if(!data.otp) throw new BadRequestException('Please provide the OTP sent to your email')
-
-        const verifyEmail = await this.emailVerificationService.verifyOTP(
-          { OTP: data.otp },
-          email,
+      if (!data.otp)
+        throw new BadRequestException(
+          'Please provide the OTP sent to your email',
         );
 
-        if(!verifyEmail) throw new BadRequestException('Could not verify email, please try again!')
+      const verifyEmail = await this.emailVerificationService.verifyOTP(
+        { OTP: data.otp },
+        email,
+      );
+
+      if (!verifyEmail)
+        throw new BadRequestException(
+          'Could not verify email, please try again!',
+        );
 
       let user: UserType;
 
@@ -175,7 +184,10 @@ export class UserService {
 
       const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
-      const updateUserToken = await this.userRepository.updateUserTokenByUserId(hashedRefreshToken, user.id)
+      const updateUserToken = await this.userRepository.updateUserTokenByUserId(
+        hashedRefreshToken,
+        user.id,
+      );
 
       if (!updateUserToken) throw new InternalServerErrorException();
       // console.log('got past this unreachable code')
@@ -286,5 +298,20 @@ export class UserService {
       await this.userRepository.findApprovedConsultantById(userId);
 
     return consultant;
+  }
+
+  async profileCards(patientId: string) {
+    const [completedAppointments, totalReports, activeMeds] = await Promise.all([
+      this.bookingRepository.totalCompletedBookings(patientId), 
+      this.testResultRepository.totalTests(patientId), 
+      this.prescriptionRepository.totalActivePresciptions(patientId)
+
+    ]);
+
+    return {
+      completedAppointments, 
+      totalReports, 
+      activeMeds, 
+    }
   }
 }

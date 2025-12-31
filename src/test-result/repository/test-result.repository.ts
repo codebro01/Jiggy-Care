@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { testResultTableInsertType, testResultTable } from '@src/db';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, count } from 'drizzle-orm';
 import { consultantTable, patientTable, userTable } from '@src/db/users';
 import { labTable } from '@src/db/lab';
 
@@ -34,14 +34,13 @@ export class TestResultRepository {
   }
   async findTestResultsByPatientId(patientId: string) {
     const testResult = await this.DbProvider.select({
-      title:testResultTable.title, 
-      date: testResultTable.createdAt, 
+      title: testResultTable.title,
+      date: testResultTable.createdAt,
       doctor: userTable.fullName,
-      consultantId: testResultTable.consultantId, 
-      lab: labTable.name, 
-      testValues: testResultTable.testValues, 
-      status: testResultTable.status, 
-
+      consultantId: testResultTable.consultantId,
+      lab: labTable.name,
+      testValues: testResultTable.testValues,
+      status: testResultTable.status,
     })
       .from(testResultTable)
       .where(eq(testResultTable.patientId, patientId))
@@ -120,5 +119,11 @@ export class TestResultRepository {
       .orderBy(desc(testResultTable.date));
 
     return testResults;
+  }
+
+  async totalTests(patientId: string): Promise<number> {
+    const [totalTest] = await this.DbProvider.select({total: count()}).from(testResultTable).where(eq(testResultTable.patientId, patientId))
+
+    return totalTest.total;
   }
 }

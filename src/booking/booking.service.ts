@@ -41,7 +41,7 @@ export class BookingService {
 
     const isConsultantExist =
       await this.consultantRepository.findApprovedConsultantById(consultantId);
-      console.log(isConsultantExist, consultantId)
+    console.log(isConsultantExist, consultantId);
     if (!isConsultantExist) throw new NotFoundException('Consultant not found');
 
     const booking = await this.bookingRepository.createBooking(
@@ -231,19 +231,23 @@ export class BookingService {
   }
 
   async getPatientUpcomingBookings(patientId: string) {
-    const bookings = await this.bookingRepository.getPatientUpcomingBookings( patientId);
+    const bookings =
+      await this.bookingRepository.getPatientUpcomingBookings(patientId);
     return bookings;
   }
-  async getPatientCompletedBookings( patientId:string) {
-    const bookings = await this.bookingRepository.getPatientCompletedBookings(patientId);
+  async getPatientCompletedBookings(patientId: string) {
+    const bookings =
+      await this.bookingRepository.getPatientCompletedBookings(patientId);
     return bookings;
   }
-  async getConsultantUpcomingBookings( consultantId:string) {
-    const bookings = await this.bookingRepository.getConsultantUpcomingBookings(consultantId);
+  async getConsultantUpcomingBookings(consultantId: string) {
+    const bookings =
+      await this.bookingRepository.getConsultantUpcomingBookings(consultantId);
     return bookings;
   }
-  async getConsultantCompletedBookings( consultantId:string) {
-    const bookings = await this.bookingRepository.getConsultantCompletedBookings(consultantId);
+  async getConsultantCompletedBookings(consultantId: string) {
+    const bookings =
+      await this.bookingRepository.getConsultantCompletedBookings(consultantId);
     return bookings;
   }
 }

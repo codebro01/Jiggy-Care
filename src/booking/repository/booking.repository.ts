@@ -4,7 +4,7 @@ import { CreateBookingDto } from '../dto/createBooking.dto';
 import { or, eq, and } from 'drizzle-orm';
 import { NotFoundError } from 'rxjs';
 import { bookingTable, specialityTable, consultantTable } from '@src/db';
-import { SQL } from 'drizzle-orm';
+import { SQL, count } from 'drizzle-orm';
 
 @Injectable()
 export class BookingRepository {
@@ -195,5 +195,20 @@ export class BookingRepository {
       );
 
     return booking;
+  }
+
+  async totalCompletedBookings(patientId: string) {
+    const [totalCompletedBookings] = await this.DbProvider.select({
+      totalCompletedAppointments: count(),
+    })
+      .from(bookingTable)
+      .where(
+        and(
+          eq(bookingTable.patientId, patientId),
+          eq(bookingTable.status, 'completed'),
+        ),
+      );
+
+    return totalCompletedBookings.totalCompletedAppointments;
   }
 }
