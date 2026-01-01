@@ -89,7 +89,7 @@ export class UserController {
   }
 
   // ! update patient information
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Patch('/update/patient')
   @ApiHeader({
@@ -121,7 +121,7 @@ export class UserController {
   }
 
   // ! update consultant information
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Patch('/update/consultant')
   @ApiHeader({
@@ -155,7 +155,31 @@ export class UserController {
     return { sucess: true, data: safeUser };
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('patient')
+  @Get('patient/profile-card')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
+  async profileCardInfo(@Req() req: Request) {
+    const { id: userId } = req.user;
+    const data = await this.userService.profileCards(userId);
+
+
+    return { sucess: true, data: data };
+  }
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
   @Get('/patient/profile')
   @ApiHeader({
@@ -187,7 +211,7 @@ export class UserController {
   }
 
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('consultant')
   @Get('/consultant/profile')
   @ApiHeader({

@@ -29,13 +29,12 @@ export class PrescriptionService {
     if (startDate < today)
       throw new BadRequestException('start date cannot be in the past');
 
-    const prescribedBy =
-      await this.userRepository.findUserById(consultantId);
+    const prescribedBy = await this.userRepository.findUserById(consultantId);
 
     if (!prescribedBy) throw new BadRequestException('Invalid consultant');
 
     return await this.prescriptionRepository.create(
-      {...data, prescribedBy: prescribedBy.fullName},
+      { ...data, prescribedBy: prescribedBy.fullName },
       consultantId,
       patientId,
     );
@@ -176,10 +175,9 @@ export class PrescriptionService {
 
     if (prescription.pillsRemaining < prescription.dosage)
       throw new NotFoundException(
-        'You no longer have enough pills, please re-fill'
+        'You no longer have enough pills, please re-fill',
       );
     const newPillsRemaining = prescription.pillsRemaining - prescription.dosage;
-
 
     return await this.prescriptionRepository.updatePillsRemaining(
       prescriptionId,
@@ -190,5 +188,9 @@ export class PrescriptionService {
 
   async getActivePrescription() {
     return await this.findByStatus('active');
+  }
+
+  async totalActivePresciptions(patientId: string): Promise<number> {
+    return await this.prescriptionRepository.totalActivePresciptions(patientId);
   }
 }

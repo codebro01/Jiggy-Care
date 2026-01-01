@@ -131,4 +131,9 @@ export class TestResultService {
       data: deletedTestResult,
     };
   }
+
+   async totalTests(patientId: string): Promise<number> {
+      return  await this.testResultRepository.totalTests(patientId)
+
+   }
 }

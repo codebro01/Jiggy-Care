@@ -309,8 +309,8 @@ export class UserService {
     ]);
 
     return {
-      completedAppointments, 
-      totalReports, 
+      appointments: completedAppointments, 
+      reports: totalReports, 
       activeMeds, 
     }
   }

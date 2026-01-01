@@ -250,4 +250,8 @@ export class BookingService {
       await this.bookingRepository.getConsultantCompletedBookings(consultantId);
     return bookings;
   }
+
+  async totalCompletedBookings(patientId: string) {
+      return await this.bookingRepository.totalCompletedBookings(patientId)
+    }
 }

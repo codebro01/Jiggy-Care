@@ -1,0 +1,2 @@
+ALTER TABLE "health_monitoring" ALTER COLUMN "blood_pressure" SET DATA TYPE jsonb[];--> statement-breakpoint
+ALTER TABLE "health_monitoring" ADD CONSTRAINT "health_monitoring_patientId_unique" UNIQUE("patientId");

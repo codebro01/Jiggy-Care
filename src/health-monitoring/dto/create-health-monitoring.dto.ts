@@ -5,6 +5,7 @@ import {
   IsString,
   IsEnum,
   ValidateNested,
+  IsDateString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
@@ -132,6 +133,15 @@ class BloodPressureDto {
   @IsString()
   @IsOptional()
   note?: string;
+
+  @ApiProperty({
+    description: 'The date of the observation of the blood pressure',
+    example: '2025-05-12T05:33:00',
+    required: false,
+  })
+  @IsDateString()
+  @IsOptional()
+  date?: string;
 }
 
 export class CreateHealthReadingDto {
@@ -189,6 +199,7 @@ export class CreateHealthReadingDto {
       diastolic: 80,
       status: 'normal',
       note: 'Patient was seated and relaxed',
+      date: "2025-05-12T05:33:00"
     },
   })
   @ValidateNested()

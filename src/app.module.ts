@@ -39,7 +39,6 @@ import { SpecialityModule } from './speciality/speciality.module';
 import { EncryptionModule } from './encryption/encryption.module';
 import { HealthTipsModule } from './health-tips/health-tips.module';
 import { RecentActivityModule } from './recent-activity/recent-activity.module';
-
 @Module({
   imports: [
     ConfigModule.forRoot({

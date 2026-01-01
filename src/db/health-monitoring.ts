@@ -14,7 +14,7 @@ export const healthMonitoringTable = pgTable('health_monitoring', {
   id: uuid('id').defaultRandom().primaryKey().notNull(),
   patientId: uuid('patientId')
     .references(() => userTable.id)
-    .notNull(),
+    .notNull().unique(),
   temperature: jsonb('temperature').$type<{
     value: number;
     status?: readingStatusType, 
@@ -36,7 +36,8 @@ export const healthMonitoringTable = pgTable('health_monitoring', {
     diastolic: number;
     status?: readingStatusType, 
     note?: string;
-  }>(),
+    date?: string, 
+  }>().array(),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });

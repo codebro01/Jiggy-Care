@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   healthMonitoringTable,
   healthMonitoringTableInsertType,
@@ -16,7 +16,7 @@ export class HealthMonitoringRepository {
 
   async createHealthReading(data: healthMonitoringTableInsertType) {
     const [healthReading] = await this.DbProvider.insert(healthMonitoringTable)
-      .values(data)
+      .values({...data, bloodPressure: [data.bloodPressure]})
       .returning();
 
     return healthReading;
@@ -32,7 +32,16 @@ export class HealthMonitoringRepository {
   }
 
   async findHealthReadingsByPatient(patientId: string) {
-    const healthReadings = await this.DbProvider.select()
+    const [healthReadings] = await this.DbProvider.select({
+      id: healthMonitoringTable.id,
+      patientId: healthMonitoringTable.patientId,
+      bloodPressure: healthMonitoringTable.bloodPressure,
+      temperature: healthMonitoringTable.temperature,
+      heartRate: healthMonitoringTable.heartRate,
+      weight: healthMonitoringTable.weight,
+      createdAt: healthMonitoringTable.createdAt,
+      updatedAt: healthMonitoringTable.updatedAt,
+    })
       .from(healthMonitoringTable)
       .where(eq(healthMonitoringTable.patientId, patientId))
       .orderBy(desc(healthMonitoringTable.createdAt));
@@ -41,15 +50,31 @@ export class HealthMonitoringRepository {
   }
 
   async updateHealthReading(
-    id: string,
     patientId: string,
     data: Partial<healthMonitoringTableInsertType>,
   ) {
+    const existingRecord = await this.findHealthReadingsByPatient(patientId)
+
+    if (!existingRecord) {
+      throw new NotFoundException('Health reading not found');
+    }
+
+    const updateData: Partial<healthMonitoringTableInsertType> = {
+      ...data,
+      updatedAt: new Date(),
+    };
+
+    console.log({ ...data.bloodPressure });
+
+    if (data.bloodPressure) {
+      const currentReadings = existingRecord.bloodPressure || [];
+      updateData.bloodPressure = [...currentReadings, data.bloodPressure];
+    }
+
     const [healthReading] = await this.DbProvider.update(healthMonitoringTable)
-      .set({ ...data, updatedAt: new Date() })
+      .set(updateData)
       .where(
         and(
-          eq(healthMonitoringTable.id, id),
           eq(healthMonitoringTable.patientId, patientId),
         ),
       )
@@ -88,5 +113,9 @@ export class HealthMonitoringRepository {
       .limit(1);
 
     return latestReading;
+  }
+
+  async bloodPressureTrends() {
+    
   }
 }
