@@ -16,3 +16,4 @@ export * from '@src/db/email-verification'
 export  * from "@src/db/speciality"
 export  * from '@src/db/health-tips'
 export * from '@src/db/recent-activity'
+export * from '@src/db/cart'

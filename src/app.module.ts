@@ -39,6 +39,7 @@ import { SpecialityModule } from './speciality/speciality.module';
 import { EncryptionModule } from './encryption/encryption.module';
 import { HealthTipsModule } from './health-tips/health-tips.module';
 import { RecentActivityModule } from './recent-activity/recent-activity.module';
+import { CartModule } from './cart/cart.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -100,6 +101,7 @@ import { RecentActivityModule } from './recent-activity/recent-activity.module';
     EncryptionModule,
     HealthTipsModule,
     RecentActivityModule,
+    CartModule,
   ],
   controllers: [AppController],
   providers: [AppService, NeonProvider, MulterService],
