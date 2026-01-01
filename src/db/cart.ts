@@ -10,8 +10,8 @@ export const cartTable = pgTable('cart', {
   items: jsonb('items')
     .$type<
       {
-        medicationId?: string;
-        quantity?: number;
+        medicationId: string;
+        quantity: number;
       }[]
     >()
     .notNull(),

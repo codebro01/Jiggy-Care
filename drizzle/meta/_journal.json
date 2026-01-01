@@ -176,6 +176,13 @@
       "when": 1767280968182,
       "tag": "0024_abnormal_ender_wiggin",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1767284000498,
+      "tag": "0025_sweet_tomorrow_man",
+      "breakpoints": true
     }
   ]
 }

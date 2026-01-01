@@ -35,6 +35,7 @@ import { TestBookingRepository } from '@src/test-booking/repository/test-booking
 import { TestRepository } from '@src/test/repository/test.repository';
 import { InitializeTestBookingPayment } from '@src/payment/dto/initializeTestBookingPayment.dto';
 import { TestBookingPaymentRepository } from '@src/test-booking-payment/repository/test-booking-payment.repository';
+import { CartRepository } from '@src/cart/repository/cart.repository';
 
 interface VerifyPaymentResponse {
   status: boolean;
@@ -69,6 +70,7 @@ export class PaymentService {
     private readonly testBookingRepository: TestBookingRepository,
     private readonly testRepository: TestRepository,
     private readonly testBookingPaymentRepository: TestBookingPaymentRepository,
+    private readonly cartRepository: CartRepository,
   ) {
     const key = this.configService.get<string>('PAYSTACK_SECRET_KEY');
     if (!key) {
@@ -138,8 +140,16 @@ export class PaymentService {
         'Required payload for payment not provided',
       );
 
+    // ! check is cartID valid for user
+
+    const isValidCartId = await this.cartRepository.findCartByUserId(data.metadata.cartId, data.metadata.patientId);
+
+    if(!isValidCartId) throw new BadRequestException('Invalid cart id')
+
+      console.log(data.metadata.cartId, isValidCartId)
+
     const medicationsAvailable = await this.medicationRepository.findByIds(
-      data.metadata.medicationPayload.map(
+      isValidCartId.items.map(
         (medication) => medication.medicationId,
       ),
     );
@@ -149,7 +159,7 @@ export class PaymentService {
         `Could not get informations of medications id provided`,
       );
     try {
-      const orderItems = data.metadata.medicationPayload.map((item) => {
+      const orderItems = isValidCartId.items.map((item) => {
         const medication = medicationsAvailable.find(
           (m) => m.id === item.medicationId,
         );
@@ -159,6 +169,8 @@ export class PaymentService {
 
         const unitPrice = medication.price;
         const subtotal = unitPrice * item.quantity;
+
+        console.log(unitPrice, item.quantity)
 
         return {
           medicationId: medication.id,
@@ -178,6 +190,7 @@ export class PaymentService {
       const tax = subtotal * 0.075; // 7.5% VAT
       const totalAmount = subtotal + deliveryFee + tax;
       console.log('totalAmount', totalAmount);
+      console.log('subtotal', subtotal);
       const response = await firstValueFrom(
         this.httpService.post(
           `${this.baseUrl}/transaction/initialize`,
@@ -192,6 +205,7 @@ export class PaymentService {
               paymentFor: PaymentForType.MEDICATIONS,
               items: orderItems,
               dateInitiated: new Date().toISOString(),
+              cartId:  isValidCartId.id, 
             },
           },
           { headers: this.getHeaders() },
@@ -386,11 +400,11 @@ export class PaymentService {
         patientId,
         amountInNaira,
         orderId,
+        cartId, 
         dateInitiated,
         items,
         deliveryAddress,
         invoiceId,
-        medicationPayload,
         testBookingId,
       } = event.data.metadata || {};
 
@@ -563,7 +577,6 @@ export class PaymentService {
             await this.paymentRepository.executeInTransaction(async (trx) => {
               await this.orderRepository.savePayment(
                 {
-                  medicationPayload,
                   deliveryAddress,
                   orderId,
                   items,
@@ -572,6 +585,7 @@ export class PaymentService {
                   reference,
                   transactionType: 'deposit',
                   amount: amountInNaira,
+                  cartId, 
                 },
                 patientId,
                 trx,
@@ -597,7 +611,7 @@ export class PaymentService {
             await this.paymentRepository.executeInTransaction(async (trx) => {
               await this.orderRepository.savePayment(
                 {
-                  medicationPayload,
+                  cartId,
                   deliveryAddress,
                   orderId,
                   items,
@@ -630,7 +644,6 @@ export class PaymentService {
             await this.paymentRepository.executeInTransaction(async (trx) => {
               await this.orderRepository.savePayment(
                 {
-                  medicationPayload,
                   deliveryAddress,
                   orderId,
                   items,
@@ -639,6 +652,7 @@ export class PaymentService {
                   reference,
                   transactionType: 'deposit',
                   amount: amountInNaira,
+                  cartId, 
                 },
                 patientId,
                 trx,

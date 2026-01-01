@@ -57,6 +57,7 @@ export class OrdersRepository {
         transactionType: 'purchase', 
         paymentStatus: 'paid', 
         reference: data.reference, 
+        cartId: data.cartId, 
 
       })
       .returning();

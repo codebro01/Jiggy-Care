@@ -51,7 +51,7 @@ export class OrdersService {
     };
 
     return await this.ordersRepository.savePayment(
-      { ...originalOrder, ...data, medicationPayload: [] , amount: originalOrder.totalAmount},
+      { ...originalOrder, ...data, amount: originalOrder.totalAmount},
       patientId,
     );    
   }

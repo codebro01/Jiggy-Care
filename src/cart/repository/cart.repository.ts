@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { cartTable, cartTableInsertType } from '@src/db/cart';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
 @Injectable()
@@ -9,7 +9,10 @@ export class CartRepository {
     @Inject('DB')
     private readonly DbProvider: NodePgDatabase<typeof import('@src/db')>,
   ) {}
-  async create(data: Omit<cartTableInsertType, 'patientId'>, patientId: string) {
+  async create(
+    data: Omit<cartTableInsertType, 'patientId'>,
+    patientId: string,
+  ) {
     const [cart] = await this.DbProvider.insert(cartTable)
       .values({ ...data, patientId })
       .returning();
@@ -24,7 +27,7 @@ export class CartRepository {
     return cart;
   }
 
-  async findOne(patientId: string) {
+  async findOne(patientId: string){
     const [cart] = await this.DbProvider.select()
       .from(cartTable)
       .where(eq(cartTable.patientId, patientId));
@@ -38,5 +41,18 @@ export class CartRepository {
       .where(eq(cartTable.patientId, patientId))
       .returning();
     return cart;
+  }
+
+  async findCartByUserId(cartId: string, patientId: string) {
+     const [cart] = await this.DbProvider.select()
+       .from(cartTable)
+       .where(
+         and(
+           eq(cartTable.patientId, patientId),
+           eq(cartTable.id, cartId),
+         ),
+       );
+
+     return cart;
   }
 }

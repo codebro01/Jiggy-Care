@@ -13,6 +13,7 @@ import { LabModule } from '@src/lab/lab.module';
 import { TestBookingModule } from '@src/test-booking/test-booking.module';
 import { TestModule } from '@src/test/test.module';
 import { TestBookingPaymentModule } from '@src/test-booking-payment/test-booking-payment.module';
+import { CartModule } from '@src/cart/cart.module';
 
 @Module({
   imports: [
@@ -25,7 +26,8 @@ import { TestBookingPaymentModule } from '@src/test-booking-payment/test-booking
     LabModule,
     TestBookingModule,
     TestModule, 
-    TestBookingPaymentModule
+    TestBookingPaymentModule, 
+    CartModule
   ],
   controllers: [PaymentController],
   providers: [PaymentService, DbProvider, PaymentRepository],

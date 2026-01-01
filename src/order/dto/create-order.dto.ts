@@ -1,29 +1,19 @@
-import {
-  IsNotEmpty,
-  IsString,
- IsArray,
-} from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
-
+import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export type MedicationPayloadType = {
-  medicationId: string, 
-  quantity: number, 
-}
-
+  medicationId: string;
+  quantity: number;
+};
 
 export class CreateOrderDto {
-  @ApiPropertyOptional({
-    description: 'Pass in the id of the medications here',
-    example: [
-      {medicationId: '06f9a413-d1bc-4641-a0e3-ae59c8e56c9c', quantity: 5},
-      {medicationId: '06f9a413-d1bc-4641-a0e3-ae59c8e56dfd', quantity: 2},
-    ],
-    type: String,
+  @ApiProperty({
+    description: 'The cart id of the cart of the user',
+    example: '60f2cc4e-3002-44bc-89ea-f91c419ebab4',
   })
-  @IsArray()
   @IsNotEmpty()
-  medicationPayload: MedicationPayloadType[];
+  @IsUUID()
+  cartId: string;
 
   @ApiPropertyOptional({
     description: 'Address where item will be delivered',
