@@ -9,7 +9,7 @@ import { Request } from 'express';
 
 interface ExtendedReq extends Request {
   user: {
-    role: string
+    role: string;
   };
 }
 
@@ -29,13 +29,12 @@ export class RolesGuard implements CanActivate {
     const user = request.user;
 
     if (!user) throw new ForbiddenException('No user found');
-    console.log(user, roles)
+    console.log('permissionns', user, roles);
     if (!roles.includes(user.role)) {
       throw new ForbiddenException('Insufficient permissions');
     }
 
-
-    console.log('got past auth')
+    console.log('got past auth');
 
     return true;
   }

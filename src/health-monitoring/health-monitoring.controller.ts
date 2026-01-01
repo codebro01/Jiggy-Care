@@ -212,7 +212,7 @@ export class HealthMonitoringController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
-  @Get('trends')
+  @Get('blood-pressure/trends')
   @ApiOperation({
     summary: 'Get blood pressure trends',
     description:
@@ -232,7 +232,7 @@ export class HealthMonitoringController {
   @ApiBearerAuth('JWT-auth')
   @ApiCookieAuth('access_token')
   async getBloodPressureTrends(@Req() req: Request) {
-    const patientId = req.user?.id;
+    const patientId = req.user.id;
     const bloodPressureTrends =
       await this.healthMonitoringService.getBloodPressureTrend(patientId);
 
