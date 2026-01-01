@@ -19,15 +19,13 @@ export class CartRepository {
     return cart;
   }
 
-  async findAll(patientId: string) {
+  async findAll() {
     const cart = await this.DbProvider.select()
-      .from(cartTable)
-      .where(eq(cartTable.patientId, patientId));
-
+      .from(cartTable);
     return cart;
   }
 
-  async findOne(patientId: string){
+  async findOne(patientId: string) {
     const [cart] = await this.DbProvider.select()
       .from(cartTable)
       .where(eq(cartTable.patientId, patientId));
@@ -44,15 +42,22 @@ export class CartRepository {
   }
 
   async findCartByUserId(cartId: string, patientId: string) {
-     const [cart] = await this.DbProvider.select()
-       .from(cartTable)
-       .where(
-         and(
-           eq(cartTable.patientId, patientId),
-           eq(cartTable.id, cartId),
-         ),
-       );
+    const [cart] = await this.DbProvider.select()
+      .from(cartTable)
+      .where(and(eq(cartTable.patientId, patientId), eq(cartTable.id, cartId)));
 
-     return cart;
+    return cart;
+  }
+
+  async clearCartItems(patientId: string) {
+    const [cart] = await this.DbProvider.update(cartTable)
+      .set({
+        items: [],
+        updatedAt: new Date(),
+      })
+      .where(eq(cartTable.patientId, patientId))
+      .returning();
+
+    return cart;
   }
 }

@@ -145,6 +145,7 @@ export class PaymentService {
     const isValidCartId = await this.cartRepository.findCartByUserId(data.metadata.cartId, data.metadata.patientId);
 
     if(!isValidCartId) throw new BadRequestException('Invalid cart id')
+    if(!isValidCartId.items) throw new NotFoundException('No item in cart')
 
       console.log(data.metadata.cartId, isValidCartId)
 
