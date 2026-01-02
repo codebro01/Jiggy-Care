@@ -56,8 +56,8 @@ export const supportMessagesTable = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => ({
-    conversationIdx: index('conversation_idx').on(table.conversationId),
-    createdAtIdx: index('created_at_idx').on(table.createdAt),
+    conversationIdx: index('support_conversation_idx').on(table.conversationId),
+    createdAtIdx: index('support_created_at_idx').on(table.createdAt),
   }),
 );
 

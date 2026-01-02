@@ -12,6 +12,7 @@ export class SupportRepository {
   ) {}
 
   async createConversation(patientId: string) {
+    console.log('patientid', patientId)
     const [conversation] = await this.DbProvider.insert(
       supportConversationsTable,
     )
