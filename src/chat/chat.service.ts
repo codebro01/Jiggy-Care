@@ -7,6 +7,7 @@ import { ConversationRepository } from '@src/chat/repository/conversation.reposi
 import { MessageRepository } from '@src/chat/repository/message.repository';
 
 export interface SendMessageDto {
+  conversationId?:string, 
   consultantId?: string;
   patientId?: string;
   content: string;
@@ -40,6 +41,10 @@ export class ChatService {
 
     return conversation;
   }
+
+   getConversationByConversationId(conversationId: string) {
+    return  this.conversationRepo.findById(conversationId)
+  } 
 
   async sendMessage(dto: SendMessageDto) {
     const { consultantId, patientId, content, senderType } = dto;

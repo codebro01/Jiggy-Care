@@ -40,6 +40,7 @@ import { EncryptionModule } from './encryption/encryption.module';
 import { HealthTipsModule } from './health-tips/health-tips.module';
 import { RecentActivityModule } from './recent-activity/recent-activity.module';
 import { CartModule } from './cart/cart.module';
+import { SupportModule } from './support/support.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -102,6 +103,7 @@ import { CartModule } from './cart/cart.module';
     HealthTipsModule,
     RecentActivityModule,
     CartModule,
+    SupportModule,
   ],
   controllers: [AppController],
   providers: [AppService, NeonProvider, MulterService],

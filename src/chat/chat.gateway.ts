@@ -10,6 +10,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
+import { NotFoundException } from '@nestjs/common';
 
 // interface JoinRoomDto {
 //   conversationId: string;
@@ -102,22 +103,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     // Handle both direct data and nested data structure
     const data = payload.data || payload;
-    const { conversationId, consultantId, patientId, content, senderType } =
-      data;
-
+    const { conversationId, content, senderType } =
+    data;
+    
+    const conversationInfo = await this.chatService.getConversationByConversationId(conversationId);
+    if(!conversationInfo) throw new NotFoundException('Could not load conversation data')
     console.log('Received send_message payload:', payload);
     console.log('Extracted data:', {
       conversationId,
-      consultantId,
-      patientId,
       content,
       senderType,
     });
 
     if (
       !conversationId ||
-      !consultantId ||
-      !patientId ||
       !content ||
       !senderType
     ) {
@@ -128,9 +127,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     try {
+
       const result = await this.chatService.sendMessage({
-        consultantId,
-        patientId,
+        consultantId: conversationInfo?.consultantId,
+        patientId: conversationInfo?.patientId,
         content,
         senderType,
       });
@@ -142,7 +142,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       console.log(`Broadcasting to room: ${conversationId}`);
       this.server.to(conversationId).emit('new_message', result);
       console.log('Event emitted successfully');
-
 
       return {
         event: 'message_sent',

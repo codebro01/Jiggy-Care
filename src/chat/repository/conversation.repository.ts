@@ -34,6 +34,8 @@ export class ConversationRepository {
     return result[0];
   }
 
+  
+
   async findByConsultant(consultantId: string) {
     return await this.DbProvider.query.conversationsTable.findMany({
       where: eq(conversationsTable.consultantId, consultantId),
