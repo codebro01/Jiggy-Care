@@ -301,17 +301,30 @@ export class UserService {
   }
 
   async profileCards(patientId: string) {
-    const [completedAppointments, totalReports, activeMeds] = await Promise.all([
-      this.bookingRepository.totalCompletedBookings(patientId), 
-      this.testResultRepository.totalTests(patientId), 
-      this.prescriptionRepository.totalActivePresciptions(patientId)
-
-    ]);
+    const [completedAppointments, totalReports, activeMeds] = await Promise.all(
+      [
+        this.bookingRepository.totalCompletedBookings(patientId),
+        this.testResultRepository.totalTests(patientId),
+        this.prescriptionRepository.totalActivePresciptions(patientId),
+      ],
+    );
 
     return {
-      appointments: completedAppointments, 
-      reports: totalReports, 
-      activeMeds, 
+      appointments: completedAppointments,
+      reports: totalReports,
+      activeMeds,
+    };
+  }
+
+  async updateUserDp(dpUrl: string, userId: string) {
+    const user = await this.userRepository.updateUserDp(dpUrl, userId);
+
+    if (user.role === 'patient') {
+      return await this.userRepository.findPatientById(user.id);
+    } else if (user.role === 'consultant') {
+      return await this.userRepository.findApprovedConsultantById(user.id);
+    } else {
+      return {};
     }
   }
 }

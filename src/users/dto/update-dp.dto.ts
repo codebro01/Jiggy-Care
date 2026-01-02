@@ -1,5 +1,5 @@
  import { ApiPropertyOptional } from "@nestjs/swagger";
- import { IsString, IsOptional } from "class-validator";
+ import { IsString, IsNotEmpty } from "class-validator";
  
 export class UpdateDpDto {
   @ApiPropertyOptional({
@@ -8,6 +8,6 @@ export class UpdateDpDto {
     description: 'Profile picture (URL)',
   })
   @IsString()
-  @IsOptional()
-  dp?: string;
+  @IsNotEmpty()
+  dp: string;
 }

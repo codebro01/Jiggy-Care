@@ -16,10 +16,11 @@ import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { Roles } from '@src/auth/decorators/roles.decorators';
 import type { Response } from 'express';
 import { UpdatePatientDto, CreateUserDto } from '@src/users/dto/index.dto';
-import { ApiCookieAuth, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiBearerAuth, ApiHeader, ApiOperation } from '@nestjs/swagger';
 import omit from 'lodash.omit';
 import { UpdateConsultantDto } from '@src/consultant/dto/updateConsultantDto';
 import type { Request } from '@src/types';
+import { UpdateDpDto } from '@src/users/dto/update-dp.dto';
 
 @Controller('users')
 export class UserController {
@@ -231,6 +232,40 @@ export class UserController {
   async getConsultantProfile(@Req() req: Request) {
     const { id: userId } = req.user;
     const user = await this.userService.getConsultantProfile(userId);
+    console.log('req.user', req.user);
+    const safeUser = omit(user, [
+      'password',
+      'refreshToken',
+      'authProvider',
+      'role',
+    ]);
+
+    return { sucess: true, data: safeUser };
+  }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('consultant', 'patient', 'admin', 'agent')
+  @Patch('profile-pic/update')
+  @ApiOperation({
+    summary: "This enpoint updates the user profile  picture", 
+    description:"This endpoint requires an image url that has been uploaded to cloudinary. This endpoint is accessible to all users"
+  })
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
+  async updateUserDp(@Req() req: Request, @Body() body: UpdateDpDto) {
+    const { id: userId } = req.user;
+    const user = await this.userService.updateUserDp(body.dp, userId);
     console.log('req.user', req.user);
     const safeUser = omit(user, [
       'password',

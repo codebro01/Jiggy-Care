@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import {
   consultantInsertType,
   consultantTable,
@@ -78,6 +78,8 @@ export class UserRepository {
       height: patientTable.height,
       weight: patientTable.weight,
       gender: userTable.gender,
+      dateJoined: userTable.createdAt, 
+      dp: userTable.dp
     })
       .from(patientTable)
       .where(eq(patientTable.userId, userId))
@@ -104,6 +106,8 @@ export class UserRepository {
       certification: consultantTable.certification,
       workingHours: consultantTable.workingHours,
       gender: userTable.gender,
+      dateJoined: userTable.createdAt,
+      dp: userTable.dp
     })
       .from(consultantTable)
       .where(eq(consultantTable.userId, userId))
@@ -188,6 +192,13 @@ export class UserRepository {
   async getAllUsers(): Promise<UserType[]> {
     const users = await this.DbProvider.select().from(userTable);
     return users;
+  }
+
+  async updateUserDp(dpUrl: string, userId: string){
+    if(!dpUrl) throw new NotFoundException('Please provide url for profile picture')
+    const [user] = await this.DbProvider.update(userTable).set({dp: dpUrl}).where(eq(userTable.id, userId)).returning();
+   
+    return user
   }
 
   
