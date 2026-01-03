@@ -128,6 +128,7 @@ export class BookingRepository {
       fullName: userTable.fullName,
       speciality: specialityTable.name,
       date: bookingTable.date,
+      consultantId: consultantTable.userId, 
     })
       .from(bookingTable)
       .where(
