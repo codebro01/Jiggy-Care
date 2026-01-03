@@ -238,6 +238,7 @@ export class UploadController {
   })
   @HttpCode(HttpStatus.OK)
   async deleteImage(@Param('publicId') publicId: string) {
+    console.log(publicId)
     await this.cloudinaryService.deleteImage(publicId);
 
     return { messgae: 'Image deleted successfully' };

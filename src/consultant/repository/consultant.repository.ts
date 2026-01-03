@@ -62,13 +62,14 @@ export class ConsultantRepository {
       userEmail: userTable.email,
       userProfilePicture: userTable.dp,
       dateCreated: userTable.createdAt,
+      fullName: userTable.fullName, 
     })
       .from(consultantTable)
       .leftJoin(userTable, eq(consultantTable.userId, userTable.id))
       .leftJoin(
         specialityTable,
         eq(specialityTable.id, consultantTable.speciality),
-      )
+      ).leftJoin(userTable, eq(userTable.id, consultantTable.userId))
 
       .where(
         and(
@@ -103,13 +104,14 @@ export class ConsultantRepository {
       updatedAt: consultantTable.updatedAt,
       speciality: specialityTable.name,
       pricePerSession: specialityTable.price,
+      fullName: userTable.fullName, 
     })
       .from(consultantTable)
       .where(eq(consultantTable.approvedStatus, true))
       .leftJoin(
         specialityTable,
         eq(specialityTable.id, consultantTable.speciality),
-      );
+      ).leftJoin(userTable, eq(userTable.id, consultantTable.userId))
     return consultants;
   }
 

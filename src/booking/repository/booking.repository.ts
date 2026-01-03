@@ -3,7 +3,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CreateBookingDto } from '../dto/createBooking.dto';
 import { or, eq, and } from 'drizzle-orm';
 import { NotFoundError } from 'rxjs';
-import { bookingTable, specialityTable, consultantTable } from '@src/db';
+import { bookingTable, specialityTable, consultantTable, userTable } from '@src/db';
 import { SQL, count } from 'drizzle-orm';
 
 @Injectable()
@@ -124,7 +124,11 @@ export class BookingRepository {
   async getPatientUpcomingBookings(patientId: string, trx?: any) {
     const Trx = trx || this.DbProvider;
 
-    const bookings = await Trx.select()
+    const bookings = await Trx.select({
+      fullName: userTable.fullName, 
+      speciality: specialityTable.name, 
+      date: bookingTable.date, 
+    })
       .from(bookingTable)
       .where(
         and(
@@ -132,7 +136,7 @@ export class BookingRepository {
           eq(bookingTable.paymentStatus, true),
           eq(bookingTable.status, 'upcoming'),
         ),
-      );
+      ).leftJoin(userTable,eq(userTable.id, bookingTable.consultantId));
     return bookings;
   }
   async getPatientCompletedBookings(patientId: string, trx?: any) {

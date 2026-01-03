@@ -1,5 +1,5 @@
 import { pgTable, uuid, timestamp, text, index, boolean, integer, pgEnum } from "drizzle-orm/pg-core";
-import { userTable } from "./users";
+import { consultantTable, userTable } from "./users";
 import { InferSelectModel } from "drizzle-orm";
 
 export const bookingStatusType = pgEnum('booking_status_type', ['completed', 'upcoming'])
@@ -7,7 +7,7 @@ export const bookingStatusType = pgEnum('booking_status_type', ['completed', 'up
 
 export const bookingTable = pgTable('bookings', {
     id: uuid('id').defaultRandom().primaryKey().notNull(),
-    consultantId: uuid('consultantId').notNull().references(() => userTable.id, { onDelete: 'cascade' }),
+    consultantId: uuid('consultantId').notNull().references(() => consultantTable.userId, { onDelete: 'cascade' }),
     patientId: uuid('patientId').notNull().references(() => userTable.id, { onDelete: 'cascade' }),
     date: timestamp('date', { withTimezone: true, mode: 'date' }).notNull(),
     duration: integer('duration').default(1),
