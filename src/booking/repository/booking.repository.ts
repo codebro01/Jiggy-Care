@@ -1,7 +1,7 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CreateBookingDto } from '../dto/createBooking.dto';
-import { or, eq, and } from 'drizzle-orm';
+import { or, eq, and, desc } from 'drizzle-orm';
 import { NotFoundError } from 'rxjs';
 import { bookingTable, specialityTable, consultantTable, userTable } from '@src/db';
 import { SQL, count } from 'drizzle-orm';
@@ -125,9 +125,9 @@ export class BookingRepository {
     const Trx = trx || this.DbProvider;
 
     const bookings = await Trx.select({
-      fullName: userTable.fullName, 
-      speciality: specialityTable.name, 
-      date: bookingTable.date, 
+      fullName: userTable.fullName,
+      speciality: specialityTable.name,
+      date: bookingTable.date,
     })
       .from(bookingTable)
       .where(
@@ -136,7 +136,17 @@ export class BookingRepository {
           eq(bookingTable.paymentStatus, true),
           eq(bookingTable.status, 'upcoming'),
         ),
-      ).leftJoin(userTable,eq(userTable.id, bookingTable.consultantId));
+      )
+      .innerJoin(
+        consultantTable,
+        eq(consultantTable.userId, bookingTable.consultantId),
+      )
+      .innerJoin(userTable, eq(userTable.id, consultantTable.userId))
+      .leftJoin(
+        specialityTable,
+        eq(specialityTable.id, consultantTable.speciality),
+      )
+      .orderBy(desc(bookingTable.date));
     return bookings;
   }
   async getPatientCompletedBookings(patientId: string, trx?: any) {
