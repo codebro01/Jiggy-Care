@@ -33,7 +33,6 @@ import { PasswordResetModule } from '@src/password-reset/password-reset.module';
 import { EmailVerificationModule } from '@src/email-verification/email-verification.module';
 import { BullModule } from '@nestjs/bull';
 import { ConfigService } from '@nestjs/config';
-import { ScheduleModule } from '@nestjs/schedule';
 import { EncryptionServiceModule } from './encryption-service/encryption-service.module';
 import { SpecialityModule } from './speciality/speciality.module';
 import { EncryptionModule } from './encryption/encryption.module';
@@ -41,8 +40,11 @@ import { HealthTipsModule } from './health-tips/health-tips.module';
 import { RecentActivityModule } from './recent-activity/recent-activity.module';
 import { CartModule } from './cart/cart.module';
 import { SupportModule } from './support/support.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { DashboardModule } from './dashboard/dashboard.module';
 @Module({
   imports: [
+    ScheduleModule.forRoot(), 
     ConfigModule.forRoot({
       isGlobal: true, // makes ConfigService available everywhere
     }),
@@ -104,6 +106,7 @@ import { SupportModule } from './support/support.module';
     RecentActivityModule,
     CartModule,
     SupportModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService, NeonProvider, MulterService],

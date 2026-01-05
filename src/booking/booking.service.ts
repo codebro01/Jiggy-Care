@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { BookingRepository } from '@src/booking/repository/booking.repository';
 import { CreateBookingDto } from '@src/booking/dto/createBooking.dto';
 import { NotFoundException } from '@nestjs/common';
@@ -6,7 +6,7 @@ import { ConsultantRepository } from '@src/consultant/repository/consultant.repo
 import { eq, gte, lte, ne } from 'drizzle-orm';
 import { bookingTable } from '@src/db';
 import { BadRequestException } from '@nestjs/common';
-import { selectBookingType } from '@src/db';
+import { bookingTableSelectType } from '@src/db';
 
 type DayName =
   | 'sunday'
@@ -120,7 +120,7 @@ export class BookingService {
     ]);
 
     // 6. Get booked hours
-    const bookedHours = bookedSlots.map((booking: selectBookingType) =>
+    const bookedHours = bookedSlots.map((booking: bookingTableSelectType) =>
       new Date(booking.date).getHours(),
     );
 
@@ -252,6 +252,138 @@ export class BookingService {
   }
 
   async totalCompletedBookings(patientId: string) {
-      return await this.bookingRepository.totalCompletedBookings(patientId)
+    return await this.bookingRepository.totalCompletedBookings(patientId);
+  }
+
+
+  // !consultant starts appointment
+
+  async startAppointment(bookingId: string, consultantId: string) {
+    const booking = await this.bookingRepository.getBooking(
+      bookingId,
+      consultantId,
+    );
+    if (!booking[0] || booking[0].consultantId !== consultantId) {
+      throw new ForbiddenException('Not authorized');
     }
+
+    if (booking[0].status !== 'upcoming') {
+      throw new BadRequestException('Appointment already started or completed');
+    }
+
+    return await this.bookingRepository.updateBooking(
+      {
+        status: 'in_progress',
+        actualStart: new Date(),
+      },
+      bookingId,
+      consultantId,
+    );
+  }
+  // ! consultant completes appointment
+  async consultantCompleteAppointment(
+    bookingId: string,
+    consultantId: string,
+    notes: string,
+  ) {
+    const booking = await this.bookingRepository.getBooking(
+      bookingId,
+      consultantId,
+    );
+    if (!booking[0] || booking[0].consultantId !== consultantId) {
+      throw new ForbiddenException('Not authorized');
+    }
+
+    if (booking[0].status !== 'in_progress') {
+      throw new BadRequestException('Appointment not in progress');
+    }
+
+    return await this.bookingRepository.updateBooking(
+      {
+        status: 'pending_confirmation',
+        actualEnd: new Date(),
+        consultantCompletedAt: new Date(),
+        consultantConfirmed: true,
+        consultationNotes: notes,
+        updatedAt: new Date(),
+      },
+      bookingId,
+      consultantId,
+    );
+
+    // TODO: Send notification to patient to confirm
+  }
+
+  // ! patient confirms consultant completion
+  async patientConfirmAppointment(
+    bookingId: string,
+    patientId: string,
+    confirmed: boolean,
+    reason?: string,
+  ) {
+    const booking = await this.bookingRepository.getBooking(
+      bookingId,
+      patientId,
+    );
+
+    if (!booking[0] || booking[0].patientId !== patientId) {
+      throw new ForbiddenException('Not authorized');
+    }
+
+    if (booking[0].status !== 'pending_confirmation') {
+      throw new BadRequestException('Appointment not pending confirmation');
+    }
+
+    const newStatus = confirmed ? 'completed' : 'disputed';
+
+    return await this.bookingRepository.updateBooking(
+      {
+        status: newStatus,
+        patientCompletedAt: new Date(),
+        patientConfirmed: confirmed,
+        disputeReason: confirmed ? null : reason,
+        updatedAt: new Date(),
+      },
+      bookingId,
+      patientId,
+    );
+
+    // TODO: If disputed, notify admin/support
+  }
+
+  //! Consultant marks patient as no-show
+  async markNoShow(bookingId: string, consultantId: string) {
+    const booking = await this.bookingRepository.getBooking(
+      bookingId,
+      consultantId,
+    );
+
+    if (!booking[0] || booking[0].consultantId !== consultantId) {
+      throw new ForbiddenException('Not authorized');
+    }
+
+    // Can only mark no-show if  in_progress
+    if (!['in_progress'].includes(booking[0].status)) {
+      throw new BadRequestException('Cannot mark as no-show');
+    }
+
+    return await this.bookingRepository.updateBooking(
+      {
+        status: 'no_show',
+        consultantMarkedNoShow: true,
+        updatedAt: new Date(),
+      },
+      bookingId,
+      consultantId,
+    );
+  }
+
+  //! Cron job: Auto-complete if patient doesn't respond within 24hrs
+  async autoCompleteStaleAppointments() {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    return await this.bookingRepository.updateBookingAfterInterval(
+      twentyFourHoursAgo,
+    );
+  }
 }
