@@ -23,7 +23,7 @@ export class TestService {
     return await this.testRepository.update(data, testId);
   }
 
-  // async remove(id: number) {
-  //   return await this.remove(id);
-  // }
+  async remove(testId: string) {
+    return await this.testRepository.remove(testId);
+  }
 }

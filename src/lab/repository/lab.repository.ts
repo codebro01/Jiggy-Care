@@ -43,4 +43,10 @@ export class LabRepository {
     const [lab] = await this.DbProvider.update(labTable).set(updateLabDto).where(eq(labTable.id, labId)).returning();
     return lab;
   }
+
+
+  async remove(labId: string) {
+    const [lab] = await this.DbProvider.delete(labTable).where(eq(labTable.id, labId)).returning();
+    return lab;
+  }
 }

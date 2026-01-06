@@ -22,7 +22,7 @@ export class LabService {
     return await this.labRepository.update(updateLabDto, labId);
   }
 
-  // async remove(id: number) {
-  //   return await this.remove(id);
-  // }
+  async remove(labId: string) {
+    return await this.labRepository.remove(labId);
+  }
 }

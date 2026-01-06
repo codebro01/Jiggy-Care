@@ -68,4 +68,11 @@ export class TestRepository {
       .returning();
     return test;
   }
+
+  async remove(testId: string) {
+    const [test] = await this.DbProvider.delete(testTable)
+      .where(eq(testTable.id, testId))
+      .returning();
+    return test;
+  }
 }

@@ -10,6 +10,7 @@ import {
   HttpStatus,
   HttpCode,
   Query,
+  Delete,
 } from '@nestjs/common';
 import { UpdateTestDto } from '@src/test/dto/update-test.dto';
 import { CreateTestDto } from '@src/test/dto/create-test.dto';
@@ -111,6 +112,29 @@ export class TestController {
   @HttpCode(HttpStatus.OK)
   async update(@Param('id') testId: string, @Body() data: UpdateTestDto) {
     const test = await this.testService.update(data, testId);
+    return { success: true, data: test };
+  }
+
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'consultant', 'patient')
+  @Delete(':testId')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
+  async remove(@Param('id') testId: string) {
+    const test = await this.testService.remove(testId);
     return { success: true, data: test };
   }
 }
