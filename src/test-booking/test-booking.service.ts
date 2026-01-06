@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { CreateTestBookingDto } from './dto/create-test-booking.dto';
 import { UpdateTestBookingDto } from './dto/update-test-booking.dto';
 import { TestBookingRepository } from '@src/test-booking/repository/test-booking.repository';
@@ -38,5 +38,25 @@ export class TestBookingService {
       testBookingId,
       patientId,
     );
+  }
+
+  async listAllTestBookings() {
+    const testBookings = await this.testBookingRepository.listAllTestBookings();
+
+    return testBookings;
+  }
+
+  async updateTestBookingCompletion(testBookingId: string) {
+
+    const isExisting = await this.testBookingRepository.findByTestBookingId(testBookingId);
+
+    if(!isExisting) throw new NotFoundException('Test booking does not exist')
+
+    const testBooking =
+      await this.testBookingRepository.updateTestBookingCompletion(
+        testBookingId,
+      );
+
+      return testBooking;
   }
 }

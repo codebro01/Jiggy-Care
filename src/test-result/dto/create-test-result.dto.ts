@@ -118,6 +118,15 @@ export class CreateTestResultDto {
   labId?: string;
 
   @ApiProperty({
+    description: 'UUID of the test that was booked',
+    example: '51dcd58d-d192-4803-899a-318de1419789',
+    required: false,
+  })
+  @IsUUID()
+  @IsNotEmpty()
+  testBookingId: string;
+
+  @ApiProperty({
     description: 'UUID of the patient',
     example: '23d7a38f-f298-41ac-8ed5-f1c22cc75b61',
     required: false,

@@ -16,7 +16,8 @@ import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { CreateBookingDto } from './dto/createBooking.dto';
 import type { Request } from '@src/types';
 import { FindAvailableSlotDto } from '@src/booking/dto/find-available-slot.dto';
-import { ApiBearerAuth, ApiHeader, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiHeader, ApiCookieAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
+import { QueryBookingDto } from '@src/booking/dto/query-booking.dto';
 
 @Controller('booking')
 export class BookingController {
@@ -134,7 +135,6 @@ export class BookingController {
     return { success: true, data: bookings };
   }
 
-  @ApiTags('consultant-booking')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('consultant')
   @Get('consultant/upcoming')
@@ -160,7 +160,6 @@ export class BookingController {
     return { success: true, data: bookings };
   }
 
-  @ApiTags('consultant-booking')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('consultant')
   @Get('consultant/completed')
@@ -182,6 +181,33 @@ export class BookingController {
     const { id: userId } = req.user;
     const bookings =
       await this.bookingService.getConsultantCompletedBookings(userId);
+
+    return { success: true, data: bookings };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Get('admin/list')
+  @ApiOperation({
+    summary: "This endpoint lists all bookings by filter", 
+    description: "This endpoints list bookings by filter such as completed, upcoming, etc. It is only accessible to admins"
+  })
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth') // For mobile clients
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
+  async listBookingsByFilter(@Query() query: QueryBookingDto) {
+    const bookings = await this.bookingService.listBookingsByFilter(query);
 
     return { success: true, data: bookings };
   }

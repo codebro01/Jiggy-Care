@@ -40,6 +40,7 @@ export class TestRepository {
       .from(testTable)
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .offset(offset)
+      .limit(limit)
       .orderBy(testTable.title);
     return test;
   }

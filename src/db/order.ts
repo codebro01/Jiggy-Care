@@ -1,4 +1,5 @@
 import { cartTable } from '@src/db/cart';
+import { pgEnum } from 'drizzle-orm/pg-core';
 import {
   pgTable,
   uuid,
@@ -17,6 +18,10 @@ export interface OrderItem {
   price: number;
 }
 
+export const orderDeliveryStatusType = pgEnum('order_delivery_status_type', ['DELIVERED', 'PROCESSING'])
+
+export const  orderPaymentStatus = pgEnum('order_payment_status', ['unpaid', 'paid'])
+
 export const orderTable = pgTable('orders', {
   id: uuid('id').defaultRandom().primaryKey(),
   orderId: varchar('order_id', { length: 50 }).notNull().unique(),
@@ -30,10 +35,10 @@ export const orderTable = pgTable('orders', {
   items: jsonb('items').$type<OrderItem[]>().notNull(), // Array of {medicationName, gram, quantity, price}
   totalAmount: doublePrecision('total_amount').notNull(),
   deliveryAddress: text('delivery_address').notNull(),
-  paymentStatus: text('payment_status').default('unpaid').notNull(),
+  paymentStatus: orderPaymentStatus('payment_status').default('unpaid').notNull(),
   paymentMethod: text('payment_method').notNull(),
   transactionType: text('transaction_type').notNull(),
-
+  deliveryStatus: orderDeliveryStatusType('delivery_status').default('PROCESSING'), 
   deliveryDate: timestamp('delivery_date'),
   orderDate: timestamp('order_date').defaultNow().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),

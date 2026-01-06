@@ -1,4 +1,5 @@
 import { labTable } from "@src/db/lab";
+import { testBookingTable } from "@src/db/test-bookings";
 import { consultantTable, patientTable } from "@src/db/users";
 import { pgTable, uuid, varchar, timestamp, jsonb} from "drizzle-orm/pg-core";
 
@@ -13,7 +14,7 @@ export const testResultTable = pgTable('test_results', {
     .notNull(),
   labId: uuid('lab_id')
     .references(() => labTable.id, { onDelete: 'cascade' }),
-
+  testBookingId: uuid('test_booking_id').references(() => testBookingTable.id, {onDelete: "cascade"}).notNull(), 
   title: varchar('title', { length: 255 }).notNull(),
   date: timestamp('date').notNull(),
   testValues: jsonb('test_values').notNull(), 

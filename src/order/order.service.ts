@@ -63,4 +63,12 @@ export class OrdersService {
     }
   }
 
+  async updateOrderDeliveryStatus(orderId: string) {
+    const isExisting = await this.ordersRepository.findOne(orderId);
+    if(!isExisting) throw new NotFoundException('Order not found')
+    const order = await this.ordersRepository.updateOrderDeliveryStatus(orderId);
+
+    return order
+  }
+
 }

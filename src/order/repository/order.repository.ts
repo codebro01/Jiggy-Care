@@ -124,4 +124,10 @@ export class OrdersRepository {
 
     return result.length > 0;
   }
+
+  async updateOrderDeliveryStatus(orderId: string) {
+    const order = await this.DbProvider.update(orderTable).set({deliveryStatus: 'DELIVERED'}).where(eq(orderTable.id, orderId));
+
+    return order
+  }
 }

@@ -16,6 +16,7 @@ export class TestResultService {
       consultantId,
       labId: data.labId,
       patientId: data.patientId,
+      testBookingId: data.testBookingId, 
       title: data.title,
       date: new Date(data.date),
       testValues: data.testValues as any,

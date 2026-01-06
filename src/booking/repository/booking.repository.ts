@@ -16,6 +16,7 @@ import {
   bookingTableInsertType,
 } from '@src/db';
 import { SQL, count } from 'drizzle-orm';
+import { QueryBookingDto } from '@src/booking/dto/query-booking.dto';
 
 @Injectable()
 export class BookingRepository {
@@ -305,4 +306,17 @@ export class BookingRepository {
       )
       .returning();
   }
+
+
+  async listBookingsByFilter(query: QueryBookingDto) {
+    const limit = query.limit || 10;
+    const page =  query.page || 1;
+
+    const offset = (page - 1) * limit
+      const bookings = await this.DbProvider.select().from(bookingTable).where(eq(bookingTable.status, query.status)).limit(limit).offset(offset)
+
+      return bookings;
+  }
+
+    
 }

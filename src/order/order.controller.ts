@@ -18,7 +18,12 @@ import { OrdersService } from '@src/order/order.service';
 import { UpdateOrderDto } from '@src/order/dto/update-order.dto';
 import { OrderSelectType } from '@src/db/order';
 import type { Request } from '@src/types';
-import { ApiBearerAuth, ApiCookieAuth, ApiHeader, ApiOperation } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCookieAuth,
+  ApiHeader,
+  ApiOperation,
+} from '@nestjs/swagger';
 
 @Controller('orders')
 export class OrdersController {
@@ -155,17 +160,16 @@ export class OrdersController {
   @HttpCode(HttpStatus.OK)
   async reorder(
     @Param('id') id: string,
-    @Req() req: Request
+    @Req() req: Request,
   ): Promise<OrderSelectType> {
-    const {id:userId} = req.user;
+    const { id: userId } = req.user;
     return await this.ordersService.reorder(id, userId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiOperation({
-    description:
-      'The endpoint is for admin to delete a specific order',
+    description: 'The endpoint is for admin to delete a specific order',
     summary: 'Delete orders',
   })
   @ApiHeader({
@@ -186,5 +190,34 @@ export class OrdersController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param('id') id: string): Promise<void> {
     return await this.ordersService.delete(id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({
+    description: 'The endpoint is only accessible to admin',
+    summary: 'Update order delivery status',
+  })
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
+  @Patch('update/delivery-status/:orderId')
+  async updateOrderDeliveryStatus(@Param() orderId: string){
+    const order = await this.ordersService.updateOrderDeliveryStatus(orderId);
+    return {
+      success: true,
+      data: order,
+    };
   }
 }

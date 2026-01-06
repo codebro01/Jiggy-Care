@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { testBookingTable } from '@src/db';
+import { labTable, patientTable, testBookingTable, testTable } from '@src/db';
 import { and, eq } from 'drizzle-orm';
 import { CreateTestBookingDto } from '@src/test-booking/dto/create-test-booking.dto';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -15,7 +15,7 @@ export class TestBookingRepository {
       invoiceId?: string;
       reference?: string;
       paymentStatus?: string;
-      paymentMethod?: string,
+      paymentMethod?: string;
     },
     patientId: string,
     trx?: any,
@@ -57,7 +57,28 @@ export class TestBookingRepository {
           eq(testBookingTable.id, testBookingId),
           eq(testBookingTable.patientId, patientId),
         ),
-      ).limit(1);
+      )
+      .limit(1);
+
+    return testBooking;
+  }
+  async findByTestBookingId(testBookingId: string) {
+    const [testBooking] = await this.DbProvider.select({
+      id: testBookingTable.id,
+      testId: testBookingTable.testId,
+      labId: testBookingTable.labId || null,
+      paymentStatus: testBookingTable.paymentStatus,
+      collection: testBookingTable.collection,
+      date: testBookingTable.date,
+    })
+      .from(testBookingTable)
+      .where(
+        and(
+          eq(testBookingTable.id, testBookingId),
+          eq(testBookingTable.paymentStatus, 'PAID'),
+        ),
+      )
+      .limit(1);
 
     return testBooking;
   }
@@ -79,18 +100,36 @@ export class TestBookingRepository {
     return testBooking;
   }
   async updatePaymentStatus(
-    data: {reference: string, paymentStatus: string}, patientId: string, trx?:any
+    data: { reference: string; paymentStatus: string },
+    patientId: string,
+    trx?: any,
   ) {
-    const Trx = trx || this.DbProvider
+    const Trx = trx || this.DbProvider;
     const [testBooking] = await Trx.update(testBookingTable)
-      .set({paymentStatus: data.paymentStatus})
-      .where(
-        and(
-          eq(testBookingTable.reference, data.reference),
-          eq(testBookingTable.patientId, patientId),
-        ),
-      )
+      .set({ paymentStatus: data.paymentStatus })
+      .where(and(eq(testBookingTable.patientId, patientId)))
       .returning();
+    return testBooking;
+  }
+
+  async listAllTestBookings() {
+    const testBookings = await this.DbProvider.select()
+      .from(testBookingTable)
+      .leftJoin(
+        patientTable,
+        eq(patientTable.userId, testBookingTable.patientId),
+      )
+      .leftJoin(labTable, eq(labTable.id, testBookingTable.labId))
+      .leftJoin(testTable, eq(testTable.id, testBookingTable.testId))
+      .where(eq(testBookingTable.paymentStatus, 'PAID'));
+    return testBookings;
+  }
+
+  async updateTestBookingCompletion(testBookingId: string) {
+    const testBooking = await this.DbProvider.update(testBookingTable)
+      .set({ completed: true })
+      .where(eq(testBookingTable.id, testBookingId));
+
     return testBooking;
   }
 }

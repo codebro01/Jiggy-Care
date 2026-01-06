@@ -1,6 +1,7 @@
 import { labTable } from '@src/db/lab';
 import { testTable } from '@src/db/test';
 import { userTable } from '@src/db/users';
+import { boolean } from 'drizzle-orm/pg-core';
 import {
   pgTable,
   uuid,
@@ -23,9 +24,8 @@ export const testBookingTable = pgTable('test_bookings', {
   patientId: uuid('patientId')
     .references(() => userTable.id, { onDelete: 'cascade' })
     .notNull(),
+  completed: boolean('completed').default(false), 
   paymentStatus: text('payment_status').notNull().default('UNPAID'),
-  invoiceId: text('invoice_id'),
-  reference: text('reference'),
   collection: testcollectionType('collection').notNull(),
   date: timestamp('date', { withTimezone: true, mode: 'date' }).notNull(),
   createdAt: timestamp('created_at').defaultNow(),

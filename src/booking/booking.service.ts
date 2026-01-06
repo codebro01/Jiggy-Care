@@ -7,6 +7,8 @@ import { eq, gte, lte, ne } from 'drizzle-orm';
 import { bookingTable } from '@src/db';
 import { BadRequestException } from '@nestjs/common';
 import { bookingTableSelectType } from '@src/db';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { QueryBookingDto } from '@src/booking/dto/query-booking.dto';
 
 type DayName =
   | 'sunday'
@@ -255,7 +257,6 @@ export class BookingService {
     return await this.bookingRepository.totalCompletedBookings(patientId);
   }
 
-
   // !consultant starts appointment
 
   async startAppointment(bookingId: string, consultantId: string) {
@@ -362,7 +363,7 @@ export class BookingService {
       throw new ForbiddenException('Not authorized');
     }
 
-    // Can only mark no-show if  in_progress
+    //! consultant Can only mark no-show if  in_progress
     if (!['in_progress'].includes(booking[0].status)) {
       throw new BadRequestException('Cannot mark as no-show');
     }
@@ -379,11 +380,19 @@ export class BookingService {
   }
 
   //! Cron job: Auto-complete if patient doesn't respond within 24hrs
+  @Cron(CronExpression.EVERY_HOUR)
   async autoCompleteStaleAppointments() {
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     return await this.bookingRepository.updateBookingAfterInterval(
       twentyFourHoursAgo,
     );
+  }
+
+  async listBookingsByFilter(query: QueryBookingDto) {
+   
+    const bookings = await this.bookingRepository.listBookingsByFilter(query)
+
+    return bookings;
   }
 }

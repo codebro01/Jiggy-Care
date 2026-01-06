@@ -148,12 +148,28 @@ export class MedicationController {
     return await this.medicationService.update(id, updateMedicationDto);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @Delete('delete/:id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete a medication' })
-  @ApiParam({ name: 'id', description: 'Medication ID', type: String })
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiOperation({
+    summary: 'Delete a medication',
+    description:
+    'Delete a medication by its id and its only accessible to admins',
+  })
   @ApiResponse({ status: 204, description: 'Medication successfully deleted' })
   @ApiResponse({ status: 404, description: 'Medication not found' })
+  @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string) {
     await this.medicationService.remove(id);
   }

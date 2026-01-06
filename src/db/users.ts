@@ -62,7 +62,6 @@ export const consultantTable = pgTable('consultants', {
   availability: boolean('availability').default(false),
   speciality: uuid('speciality')
     .references(() => specialityTable.id, { onDelete: 'cascade' })
-    .default('04485053-bd76-4ca4-a8ee-250fb82cbea8')
     .notNull(),
   yrsOfExperience: integer('years_of_experience'),
   about: text('about'),

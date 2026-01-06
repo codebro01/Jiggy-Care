@@ -3,7 +3,8 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { consultantTable, userTable, specialityTable } from '@src/db';
 import { and, eq, ilike, or } from 'drizzle-orm';
 import { UpdateConsultantDto } from '@src/consultant/dto/updateConsultantDto';
-
+import { QueryPendingConsultantApprovalDto } from '@src/consultant/dto/query-consultant-approval.dto';
+import { ToggleConsultantApprovalDto } from '@src/consultant/dto/toggle-consultant-approval.dto';
 
 @Injectable()
 export class ConsultantRepository {
@@ -62,14 +63,15 @@ export class ConsultantRepository {
       userEmail: userTable.email,
       userProfilePicture: userTable.dp,
       dateCreated: userTable.createdAt,
-      fullName: userTable.fullName, 
+      fullName: userTable.fullName,
     })
       .from(consultantTable)
       .leftJoin(userTable, eq(consultantTable.userId, userTable.id))
       .leftJoin(
         specialityTable,
         eq(specialityTable.id, consultantTable.speciality),
-      ).leftJoin(userTable, eq(userTable.id, consultantTable.userId))
+      )
+      .leftJoin(userTable, eq(userTable.id, consultantTable.userId))
 
       .where(
         and(
@@ -87,7 +89,6 @@ export class ConsultantRepository {
   async listAllApprovedConsultants() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
 
-
     const consultants = await this.DbProvider.select({
       id: consultantTable.id,
       userId: consultantTable.userId,
@@ -104,17 +105,40 @@ export class ConsultantRepository {
       updatedAt: consultantTable.updatedAt,
       speciality: specialityTable.name,
       pricePerSession: specialityTable.price,
-      fullName: userTable.fullName, 
+      fullName: userTable.fullName,
     })
       .from(consultantTable)
       .where(eq(consultantTable.approvedStatus, true))
       .leftJoin(
         specialityTable,
         eq(specialityTable.id, consultantTable.speciality),
-      ).leftJoin(userTable, eq(userTable.id, consultantTable.userId))
+      )
+      .leftJoin(userTable, eq(userTable.id, consultantTable.userId));
     return consultants;
   }
 
   // * ============================ admin section ======================================//
 
+  async pendingConsultantApprovals(query: QueryPendingConsultantApprovalDto) {
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+
+    const offset = (page - 1) * limit;
+    const pendingConsultantApprovals = await this.DbProvider.select()
+      .from(consultantTable)
+      .where(and(eq(consultantTable.approvedStatus, true)))
+      .limit(limit)
+      .offset(offset);
+
+    return pendingConsultantApprovals;
+  }
+
+  async toggleConsultantApproval(data: ToggleConsultantApprovalDto) {
+    const [consultant] = await this.DbProvider.update(consultantTable)
+      .set({ approvedStatus: data.approvalStatus })
+      .where(eq(consultantTable.userId, data.consultantId))
+      .returning();
+
+    return consultant;
+  }
 }

@@ -3,6 +3,8 @@ import { ConsultantRepository } from '@src/consultant/repository/consultant.repo
 import { UpdateConsultantDto } from './dto/updateConsultantDto';
 import { UserRepository } from '@src/users/repository/user.repository';
 import { HelperRepository } from '@src/helpers/repository/helpers.repository';
+import { QueryPendingConsultantApprovalDto } from '@src/consultant/dto/query-consultant-approval.dto';
+import { ToggleConsultantApprovalDto } from '@src/consultant/dto/toggle-consultant-approval.dto';
 
 @Injectable()
 export class ConsultantService {
@@ -48,9 +50,27 @@ export class ConsultantService {
   }
 
   async listAllApprovedConsultants() {
-    return await this.consultantRepository.listAllApprovedConsultants()
+    return await this.consultantRepository.listAllApprovedConsultants();
   }
 
+  async pendingConsultantApprovals(query: QueryPendingConsultantApprovalDto) {
+    const [pendingConsultantApprovals] =
+      await this.consultantRepository.pendingConsultantApprovals(query);
+
+    return pendingConsultantApprovals;
+  }
+
+  async toggleConsultantApproval(data: ToggleConsultantApprovalDto) {
+    const consultant =
+      await this.consultantRepository.findApprovedConsultantById(
+        data.consultantId,
+      );
+
+    if (!consultant) throw new NotFoundException('Consultant not found');
+
+    const updateConsultant =
+      await this.consultantRepository.toggleConsultantApproval(data);
+
+    return updateConsultant;
+  }
 }
-
-
