@@ -3,7 +3,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { consultantTable, userTable, specialityTable } from '@src/db';
 import { and, eq, ilike, or } from 'drizzle-orm';
 import { UpdateConsultantDto } from '@src/consultant/dto/updateConsultantDto';
-import { QueryPendingConsultantApprovalDto } from '@src/consultant/dto/query-consultant-approval.dto';
+import { QueryPendingConsultantApprovalDto } from '@src/dashboard/dto/query-consultant-approval.dto';
 import { ToggleConsultantApprovalDto } from '@src/consultant/dto/toggle-consultant-approval.dto';
 
 @Injectable()

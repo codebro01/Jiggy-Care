@@ -3,7 +3,7 @@ import { ConsultantRepository } from '@src/consultant/repository/consultant.repo
 import { UpdateConsultantDto } from './dto/updateConsultantDto';
 import { UserRepository } from '@src/users/repository/user.repository';
 import { HelperRepository } from '@src/helpers/repository/helpers.repository';
-import { QueryPendingConsultantApprovalDto } from '@src/consultant/dto/query-consultant-approval.dto';
+import { QueryPendingConsultantApprovalDto } from '@src/dashboard/dto/query-consultant-approval.dto';
 import { ToggleConsultantApprovalDto } from '@src/consultant/dto/toggle-consultant-approval.dto';
 
 @Injectable()

@@ -18,7 +18,7 @@ import {
   ApiCookieAuth,
   ApiOperation,
 } from '@nestjs/swagger';
-import { QueryPendingConsultantApprovalDto } from '@src/consultant/dto/query-consultant-approval.dto';
+import { QueryPendingConsultantApprovalDto } from '@src/dashboard/dto/query-consultant-approval.dto';
 import { ToggleConsultantApprovalDto } from '@src/consultant/dto/toggle-consultant-approval.dto';
 
 @Controller('consultant')
@@ -132,9 +132,7 @@ export class ConsultantController {
   @ApiBearerAuth('JWT-auth')
   @ApiCookieAuth('access_token')
   @HttpCode(HttpStatus.OK)
-  async toggleConsultantApproval(
-    @Query() query: ToggleConsultantApprovalDto,
-  ) {
+  async toggleConsultantApproval(@Query() query: ToggleConsultantApprovalDto) {
     const toggleConsultantApproval =
       await this.consultantService.toggleConsultantApproval(query);
 

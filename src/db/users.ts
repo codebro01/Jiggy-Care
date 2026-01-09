@@ -61,8 +61,7 @@ export const consultantTable = pgTable('consultants', {
     .unique(),
   availability: boolean('availability').default(false),
   speciality: uuid('speciality')
-    .references(() => specialityTable.id, { onDelete: 'cascade' })
-    .notNull(),
+    .references(() => specialityTable.id, { onDelete: 'set null' }),
   yrsOfExperience: integer('years_of_experience'),
   about: text('about'),
   languages: text('languages').array(),
