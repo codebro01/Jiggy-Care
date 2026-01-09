@@ -211,6 +211,13 @@
       "when": 1767670333048,
       "tag": "0029_naive_northstar",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1767960242280,
+      "tag": "0030_nasty_mongu",
+      "breakpoints": true
     }
   ]
 }
