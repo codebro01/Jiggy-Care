@@ -247,6 +247,11 @@ export class BookingService {
       await this.bookingRepository.getConsultantUpcomingBookings(consultantId);
     return bookings;
   }
+  async getConsultantAllBookings(consultantId: string) {
+    const bookings =
+      await this.bookingRepository.getConsultantAllBookings(consultantId);
+    return bookings;
+  }
   async getConsultantCompletedBookings(consultantId: string) {
     const bookings =
       await this.bookingRepository.getConsultantCompletedBookings(consultantId);
@@ -390,8 +395,7 @@ export class BookingService {
   }
 
   async listBookingsByFilter(query: QueryBookingDto) {
-   
-    const bookings = await this.bookingRepository.listBookingsByFilter(query)
+    const bookings = await this.bookingRepository.listBookingsByFilter(query);
 
     return bookings;
   }

@@ -219,6 +219,26 @@ export class BookingRepository {
       ).leftJoin(userTable, eq(userTable.id, bookingTable.patientId));
     return bookings;
   }
+  async getConsultantAllBookings(consultantId: string, trx?: any) {
+    const Trx = trx || this.DbProvider;
+
+    const bookings = await Trx.select({
+      patientId: bookingTable.patientId, 
+      bookingId: bookingTable.id, 
+      patientName: userTable.fullName, 
+      date: bookingTable.date, 
+      status: bookingTable.status, 
+      duration: bookingTable.duration, 
+    })
+      .from(bookingTable)
+      .where(
+        and(
+          eq(bookingTable.consultantId, consultantId),
+          eq(bookingTable.paymentStatus, true),
+        ),
+      ).leftJoin(userTable, eq(userTable.id, bookingTable.patientId));
+    return bookings;
+  }
   async getConsultantCompletedBookings(consultantId: string, trx?: any) {
     const Trx = trx || this.DbProvider;
 
