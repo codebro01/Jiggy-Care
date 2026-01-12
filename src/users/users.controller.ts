@@ -92,7 +92,7 @@ export class UserController {
   // ! update patient information
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
-  @Patch('/update/patient')
+  @Patch('update/patient')
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -124,7 +124,7 @@ export class UserController {
   // ! update consultant information
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('consultant')
-  @Patch('/update/consultant')
+  @Patch('update/consultant')
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -144,7 +144,7 @@ export class UserController {
     @Body() body: UpdateConsultantDto,
   ) {
     const { id: userId } = req.user;
-    const user = await this.userService.updatePatient(body, userId);
+    const user = await this.userService.updateConsultant(body, userId);
     console.log(user);
     const safeUser = omit(user, [
       'password',

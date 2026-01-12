@@ -9,8 +9,8 @@ import {
   MaxLength,
   Min,
   IsObject,
-  IsUUID,
-  IsNotEmpty,
+  // IsUUID,
+  // IsNotEmpty,
 } from 'class-validator';
 
 export type WorkingHoursType = {
@@ -32,14 +32,14 @@ export class UpdateConsultantDto {
   @IsBoolean()
   availability?: boolean;
 
-  @ApiPropertyOptional({
-    description: 'Consultant speciality',
-    example: 'Mental Health',
-    maxLength: 50,
-  })
-  @IsNotEmpty()
-  @IsUUID()
-  speciality: string;
+  // @ApiPropertyOptional({
+  //   description: 'Consultant speciality',
+  //   example: 'Mental Health',
+  //   maxLength: 50,
+  // })
+  // @IsNotEmpty()
+  // @IsUUID()
+  // speciality: string;
 
   @ApiPropertyOptional({
     description: 'Years of experience',

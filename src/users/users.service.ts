@@ -244,7 +244,7 @@ export class UserService {
     );
     return updatedPatient;
   }
-  async updateConsultant(userId: string, data: UpdateConsultantDto) {
+  async updateConsultant(data: UpdateConsultantDto, userId: string) {
     console.log('user', userId);
     if (!data) throw new BadRequestException('Data not provided for update!');
     const consultant =
@@ -268,7 +268,7 @@ export class UserService {
         const userConsultant = await this.userRepository.updateConsultantById(
           {
             availability: data.availability || consultant.availability,
-            speciality: data.speciality || consultant.speciality,
+            // speciality: data?.speciality || consultant.speciality,
             yrsOfExperience: data.yrsOfExperience || consultant.yrsOfExperience,
             about: data.about || consultant.about,
             languages: data.languages || consultant.languages,
