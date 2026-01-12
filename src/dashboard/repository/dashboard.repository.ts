@@ -37,6 +37,7 @@ export class DashboardRepository {
             and(
               eq(bookingTable.consultantId, consultantId),
               eq(bookingTable.status, 'upcoming'),
+              eq(bookingTable.paymentStatus, true)
             ),
           ),
         await this.DbProvider.select({
