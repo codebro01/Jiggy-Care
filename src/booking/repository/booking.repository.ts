@@ -224,6 +224,7 @@ export class BookingRepository {
 
     const bookings = await Trx.select({
       patientId: bookingTable.patientId, 
+      consultantId: bookingTable.consultantId, 
       bookingId: bookingTable.id, 
       patientName: userTable.fullName, 
       date: bookingTable.date, 
