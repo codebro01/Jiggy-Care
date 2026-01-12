@@ -17,7 +17,6 @@ import {
 } from '@src/db';
 import { SQL, count } from 'drizzle-orm';
 import { QueryBookingDto } from '@src/booking/dto/query-booking.dto';
-import { duration } from 'drizzle-orm/gel-core';
 
 @Injectable()
 export class BookingRepository {
@@ -203,6 +202,8 @@ export class BookingRepository {
     const Trx = trx || this.DbProvider;
 
     const bookings = await Trx.select({
+      patientId: bookingTable.patientId, 
+      bookingId: bookingTable.id, 
       patientName: userTable.fullName, 
       date: bookingTable.date, 
       duration: bookingTable.duration, 
