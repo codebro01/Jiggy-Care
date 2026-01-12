@@ -206,6 +206,7 @@ export class BookingRepository {
       bookingId: bookingTable.id, 
       patientName: userTable.fullName, 
       date: bookingTable.date, 
+      status: bookingTable.status, 
       duration: bookingTable.duration, 
     })
       .from(bookingTable)
