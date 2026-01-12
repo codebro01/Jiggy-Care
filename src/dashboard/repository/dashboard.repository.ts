@@ -42,7 +42,7 @@ export class DashboardRepository {
         await this.DbProvider.select({
           total: avg(ratingTable.rating),
         })
-          .from(bookingTable)
+          .from(ratingTable)
           .where(eq(ratingTable.consultantId, consultantId)),
       ]);
 
