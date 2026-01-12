@@ -17,6 +17,7 @@ import {
 } from '@src/db';
 import { SQL, count } from 'drizzle-orm';
 import { QueryBookingDto } from '@src/booking/dto/query-booking.dto';
+import { duration } from 'drizzle-orm/gel-core';
 
 @Injectable()
 export class BookingRepository {
@@ -201,7 +202,11 @@ export class BookingRepository {
   async getConsultantUpcomingBookings(consultantId: string, trx?: any) {
     const Trx = trx || this.DbProvider;
 
-    const bookings = await Trx.select()
+    const bookings = await Trx.select({
+      patientName: userTable.fullName, 
+      date: bookingTable.date, 
+      duration: bookingTable.duration, 
+    })
       .from(bookingTable)
       .where(
         and(
@@ -209,7 +214,7 @@ export class BookingRepository {
           eq(bookingTable.paymentStatus, true),
           eq(bookingTable.status, 'upcoming'),
         ),
-      );
+      ).leftJoin(userTable, eq(userTable.id, bookingTable.patientId));
     return bookings;
   }
   async getConsultantCompletedBookings(consultantId: string, trx?: any) {
