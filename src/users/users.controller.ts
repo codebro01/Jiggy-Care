@@ -123,7 +123,7 @@ export class UserController {
 
   // ! update consultant information
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('patient')
+  @Roles('consultant')
   @Patch('/update/consultant')
   @ApiHeader({
     name: 'x-client-type',
