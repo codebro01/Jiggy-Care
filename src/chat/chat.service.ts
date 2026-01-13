@@ -29,6 +29,7 @@ export class ChatService {
 
   async getOrCreateConversation(bookingId: string, consultantId: string, patientId: string) {
     let conversation = await this.conversationRepo.findByParticipants(
+      bookingId, 
       consultantId,
       patientId,
     );

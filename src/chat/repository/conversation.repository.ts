@@ -10,7 +10,7 @@ import { messagesTable } from '@src/db';
 export class ConversationRepository {
   constructor(@Inject("DB") private DbProvider: NodePgDatabase<typeof import('@src/db')>) {}
 
-  async findByParticipants(consultantId: string, patientId: string) {
+  async findByParticipants(bookingId: string, consultantId: string, patientId: string) {
     const result = await this.DbProvider
       .select()
       .from(conversationsTable)
@@ -18,6 +18,7 @@ export class ConversationRepository {
         and(
           eq(conversationsTable.consultantId, consultantId),
           eq(conversationsTable.patientId, patientId),
+          eq(conversationsTable.bookingId, bookingId),
         ),
       )
       .limit(1);
