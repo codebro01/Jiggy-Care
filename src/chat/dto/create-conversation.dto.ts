@@ -5,7 +5,7 @@ import { IsUUID } from 'class-validator';
 export class CreateConversationDto {
   @ApiProperty({
     description: 'UUID of the consultant initiating the conversation',
-    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    example: '02b7b3df-9ba3-4cd3-805f-1d0487e2fba1',
     format: 'uuid',
   })
   @IsUUID()
@@ -13,16 +13,15 @@ export class CreateConversationDto {
 
   @ApiProperty({
     description: 'UUID of the patient participating in the conversation',
-    example: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
+    example: '23d7a38f-f298-41ac-8ed5-f1c22cc75b61',
     format: 'uuid',
   })
   @IsUUID()
   patientId: string;
 
-
   @ApiProperty({
     description: 'UUID of the appointment or booking',
-    example: '5e4e6679-7425-40de-944b-e07fc1f90ae7',
+    example: '4e2e8be5-d7ab-4f36-9ed8-8ff78ba120e4',
     format: 'uuid',
   })
   @IsUUID()

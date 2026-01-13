@@ -7,16 +7,22 @@ import {
   Param,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { ChatService } from '@src/chat/chat.service';
 import { CreateConversationDto } from '@src/chat/dto/create-conversation.dto';
 import { CreateMessageDto } from '@src/chat/dto/create-messages.dto';
 import { ApiBearerAuth, ApiHeader, ApiCookieAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@src/auth/guards/roles.guard';
+import { Roles } from '@src/auth/decorators/roles.decorators';
 
 @Controller('chat')
 export class ChatController {
   constructor(private chatService: ChatService) {}
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('patient', 'consultant')
   @Get('conversations')
   @ApiHeader({
     name: 'x-client-type',
@@ -41,6 +47,8 @@ export class ChatController {
     });
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('patient', 'consultant')
   @Post('conversations')
   @HttpCode(HttpStatus.CREATED)
   @ApiHeader({
@@ -54,15 +62,18 @@ export class ChatController {
       example: 'mobile',
     },
   })
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   async createConversation(@Body() body: CreateConversationDto) {
     return await this.chatService.getOrCreateConversation(
-      body.bookingId, 
+      body.bookingId,
       body.consultantId,
       body.patientId,
     );
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('patient', 'consultant')
   @Get('conversations/:conversationId/messages')
   @ApiHeader({
     name: 'x-client-type',
@@ -75,7 +86,8 @@ export class ChatController {
       example: 'mobile',
     },
   })
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   async getMessages(
     @Param('conversationId') conversationId: string,
     @Query('limit') limit?: string,
@@ -88,6 +100,8 @@ export class ChatController {
     );
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('patient', 'consultant')
   @Post('messages')
   @HttpCode(HttpStatus.CREATED)
   @ApiHeader({
@@ -110,6 +124,8 @@ export class ChatController {
     return await this.chatService.sendMessage(body);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('patient', 'consultant')
   @Get('conversations/:conversationId/unread')
   @ApiHeader({
     name: 'x-client-type',
@@ -132,6 +148,8 @@ export class ChatController {
     return { conversationId, unreadCount: count };
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('patient', 'consultant')
   @Post('conversations/:conversationId/read')
   @HttpCode(HttpStatus.OK)
   @ApiHeader({
