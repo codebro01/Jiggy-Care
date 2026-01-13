@@ -27,16 +27,20 @@ export class ChatService {
     private messageRepo: MessageRepository,
   ) {}
 
-  async getOrCreateConversation(bookingId: string, consultantId: string, patientId: string) {
+  async getOrCreateConversation(
+    bookingId: string,
+    consultantId: string,
+    patientId: string,
+  ) {
     let conversation = await this.conversationRepo.findByParticipants(
-      bookingId, 
+      bookingId,
       consultantId,
       patientId,
     );
 
     if (!conversation) {
       conversation = await this.conversationRepo.create(
-        bookingId, 
+        bookingId,
         consultantId,
         patientId,
       );
@@ -45,12 +49,12 @@ export class ChatService {
     return conversation;
   }
 
-   getConversationByConversationId(conversationId: string) {
-    return  this.conversationRepo.findById(conversationId)
-  } 
+  getConversationByConversationId(conversationId: string) {
+    return this.conversationRepo.findById(conversationId);
+  }
 
   async sendMessage(dto: SendMessageDto) {
-    const {bookingId,  consultantId, patientId, content, senderType } = dto;
+    const { bookingId, consultantId, patientId, content, senderType } = dto;
 
     if (!consultantId || !patientId || !bookingId) {
       throw new BadRequestException(
@@ -59,7 +63,7 @@ export class ChatService {
     }
 
     const conversation = await this.getOrCreateConversation(
-      bookingId, 
+      bookingId,
       consultantId,
       patientId,
     );
@@ -110,12 +114,19 @@ export class ChatService {
 
     return {
       conversation,
-      messages: messages.reverse(), 
+      messages: messages.reverse(),
     };
   }
 
   async markMessagesAsRead(conversationId: string, messageIds: string[]) {
-    return await this.messageRepo.markAsRead(messageIds);
+    // Validate conversation exists
+    const conversation = await this.conversationRepo.findById(conversationId);
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found');
+    }
+
+    // Pass conversationId to repository for validation
+    return await this.messageRepo.markAsRead(conversationId, messageIds);
   }
 
   async getUnreadCount(conversationId: string, userId: string) {

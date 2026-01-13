@@ -123,11 +123,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       };
     }
 
-    if (!conversationInfo.bookingId) throw new BadRequestException('Could not get booking Id');
+    if (!conversationInfo.bookingId)
+      throw new BadRequestException('Could not get booking Id');
 
     try {
       const result = await this.chatService.sendMessage({
-        bookingId: conversationInfo.bookingId, 
+        bookingId: conversationInfo.bookingId,
         consultantId: conversationInfo?.consultantId,
         patientId: conversationInfo?.patientId,
         content,
@@ -180,19 +181,45 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('mark_read')
   async handleMarkRead(
     @MessageBody() data: { conversationId: string; messageIds: string[] },
+    // @ConnectedSocket() client: Socket, // Add this to get client info
   ) {
-    await this.chatService.markMessagesAsRead(
-      data.conversationId,
-      data.messageIds,
-    );
+    try {
+      // Validate input
+      if (
+        !data.conversationId ||
+        !data.messageIds ||
+        data.messageIds.length === 0
+      ) {
+        return {
+          event: 'error',
+          data: { message: 'Invalid data provided' },
+        };
+      }
 
-    this.server.to(data.conversationId).emit('messages_read', {
-      messageIds: data.messageIds,
-    });
+       await this.chatService.markMessagesAsRead(
+        data.conversationId,
+        data.messageIds,
+      );
 
-    return {
-      event: 'marked_as_read',
-      data: { messageIds: data.messageIds },
-    };
+      this.server.to(data.conversationId).emit('messages_read', {
+        conversationId: data.conversationId, 
+        messageIds: data.messageIds,
+      });
+
+      return {
+        event: 'marked_as_read',
+        data: {
+          messageIds: data.messageIds,
+          success: true,
+        },
+      };
+    } catch (error) {
+      return {
+        event: 'error',
+        data: {
+          message: error.message || 'Failed to mark messages as read',
+        },
+      };
+    }
   }
 }

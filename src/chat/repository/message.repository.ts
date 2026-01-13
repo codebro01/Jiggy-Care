@@ -1,7 +1,7 @@
 // src/repositories/message.repository.ts
 import { Inject, Injectable } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import { messagesTable } from '@src/db';
 
 
@@ -35,17 +35,17 @@ export class MessageRepository {
       .offset(offset);
   }
 
-  async markAsRead(messageIds: string[]) {
+  async markAsRead(conversationId: string, messageIds: string[]) {
     if (messageIds.length === 0) return [];
 
     // Use IN clause for multiple IDs
-    return await this.DbProvider
-      .update(messagesTable)
+    return await this.DbProvider.update(messagesTable)
       .set({ isRead: true })
       .where(
-        messageIds.length === 1
-          ? eq(messagesTable.id, messageIds[0])
-          : sql`${messagesTable.id} = ANY(${messageIds})`,
+        and(
+          inArray(messagesTable.id, messageIds), 
+          eq(messagesTable.conversationId, conversationId),
+        ),
       )
       .returning();
   }
