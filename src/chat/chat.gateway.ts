@@ -181,7 +181,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('mark_read')
   async handleMarkRead(
     @MessageBody() data: { conversationId: string; messageIds: string[] },
-    // @ConnectedSocket() client: Socket, // Add this to get client info
+    @ConnectedSocket() client: Socket, // ✅ Uncomment this
   ) {
     try {
       // Validate input
@@ -196,16 +196,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         };
       }
 
-       await this.chatService.markMessagesAsRead(
+      await this.chatService.markMessagesAsRead(
         data.conversationId,
         data.messageIds,
       );
 
-      this.server.to(data.conversationId).emit('messages_read', {
-        conversationId: data.conversationId, 
+      // ✅ Use broadcast to send ONLY to other clients, not the sender
+      client.broadcast.to(data.conversationId).emit('messages_read', {
+        conversationId: data.conversationId,
         messageIds: data.messageIds,
       });
 
+      // This return only goes to the sender
       return {
         event: 'marked_as_read',
         data: {
