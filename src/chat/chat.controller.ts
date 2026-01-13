@@ -57,6 +57,7 @@ export class ChatController {
   @ApiBearerAuth()
   async createConversation(@Body() body: CreateConversationDto) {
     return await this.chatService.getOrCreateConversation(
+      body.bookingId, 
       body.consultantId,
       body.patientId,
     );

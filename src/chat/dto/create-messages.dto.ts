@@ -20,6 +20,15 @@ export class CreateMessageDto {
   @IsUUID()
   patientId: string;
 
+
+  @ApiProperty({
+    description: 'UUID of the appointment or booking',
+    example: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
+    format: 'uuid',
+  })
+  @IsUUID()
+  bookingId: string;
+
   @ApiProperty({
     description: 'Message content',
     example: 'Hello doctor, I have been experiencing headaches lately.',
