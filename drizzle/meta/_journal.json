@@ -218,6 +218,20 @@
       "when": 1767960242280,
       "tag": "0030_nasty_mongu",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1768278792623,
+      "tag": "0031_futuristic_namora",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1768279248526,
+      "tag": "0032_gigantic_nehzno",
+      "breakpoints": true
     }
   ]
 }

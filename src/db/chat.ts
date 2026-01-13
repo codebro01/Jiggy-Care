@@ -20,7 +20,7 @@ export const conversationsTable = pgTable(
     patientId: uuid('patient_id')
       .notNull()
       .references(() => patientTable.userId, { onDelete: 'cascade' }),
-    bookingId: uuid('booking_id').references(() => bookingTable.id, {onDelete: 'cascade'}),
+    bookingId: uuid('booking_id').references(() => bookingTable.id, {onDelete: 'cascade'}).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },

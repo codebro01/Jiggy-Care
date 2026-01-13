@@ -26,6 +26,7 @@ export class ConversationRepository {
   }
 
   async create(bookingId: string, consultantId: string, patientId: string) {
+    console.log(bookingId)
     const result = await this.DbProvider
       .insert(conversationsTable)
       .values({bookingId,  consultantId, patientId })
