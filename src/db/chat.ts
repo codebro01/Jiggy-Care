@@ -8,6 +8,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { consultantTable, patientTable } from '@src/db/users';
+import { bookingTable } from '@src/db/booking';
 
 export const conversationsTable = pgTable(
   'conversations',
@@ -15,10 +16,11 @@ export const conversationsTable = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     consultantId: uuid('consultant_id')
       .notNull()
-      .references(() => consultantTable.userId, { onDelete: 'cascade' }),
+      .references(() => consultantTable.userId, { onDelete: 'cascade' }).notNull(),
     patientId: uuid('patient_id')
       .notNull()
       .references(() => patientTable.userId, { onDelete: 'cascade' }),
+    bookingId: uuid('booking_id').references(() => bookingTable.id, {onDelete: 'cascade'}),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },

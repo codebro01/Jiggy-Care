@@ -25,10 +25,10 @@ export class ConversationRepository {
     return result[0] || null;
   }
 
-  async create(consultantId: string, patientId: string) {
+  async create(bookingId: string, consultantId: string, patientId: string) {
     const result = await this.DbProvider
       .insert(conversationsTable)
-      .values({ consultantId, patientId })
+      .values({bookingId,  consultantId, patientId })
       .returning();
 
     return result[0];

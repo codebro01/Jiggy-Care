@@ -10,6 +10,7 @@ export interface SendMessageDto {
   conversationId?:string, 
   consultantId?: string;
   patientId?: string;
+  bookingId:string;
   content: string;
   senderType: 'consultant' | 'patient';
 }
@@ -26,7 +27,7 @@ export class ChatService {
     private messageRepo: MessageRepository,
   ) {}
 
-  async getOrCreateConversation(consultantId: string, patientId: string) {
+  async getOrCreateConversation(bookingId: string, consultantId: string, patientId: string) {
     let conversation = await this.conversationRepo.findByParticipants(
       consultantId,
       patientId,
@@ -34,6 +35,7 @@ export class ChatService {
 
     if (!conversation) {
       conversation = await this.conversationRepo.create(
+        bookingId, 
         consultantId,
         patientId,
       );
@@ -47,15 +49,16 @@ export class ChatService {
   } 
 
   async sendMessage(dto: SendMessageDto) {
-    const { consultantId, patientId, content, senderType } = dto;
+    const {bookingId,  consultantId, patientId, content, senderType } = dto;
 
-    if (!consultantId || !patientId) {
+    if (!consultantId || !patientId || !bookingId) {
       throw new BadRequestException(
-        'Both consultantId and patientId are required',
+        'bookingId, consultantId and patientId are required',
       );
     }
 
     const conversation = await this.getOrCreateConversation(
+      bookingId, 
       consultantId,
       patientId,
     );

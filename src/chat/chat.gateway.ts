@@ -10,7 +10,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 // interface JoinRoomDto {
 //   conversationId: string;
@@ -123,8 +123,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       };
     }
 
+    if (!conversationInfo.bookingId) throw new BadRequestException('Could not get booking Id');
+
     try {
       const result = await this.chatService.sendMessage({
+        bookingId: conversationInfo.bookingId, 
         consultantId: conversationInfo?.consultantId,
         patientId: conversationInfo?.patientId,
         content,
