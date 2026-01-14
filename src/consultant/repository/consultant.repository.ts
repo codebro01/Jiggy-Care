@@ -87,13 +87,10 @@ export class ConsultantRepository {
   }
 
   async listAllApprovedConsultants() {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-
     const consultants = await this.DbProvider.select({
       id: consultantTable.id,
       userId: consultantTable.userId,
       availability: consultantTable.availability,
-      // Skip speciality
       yrsOfExperience: consultantTable.yrsOfExperience,
       about: consultantTable.about,
       languages: consultantTable.languages,
@@ -103,9 +100,11 @@ export class ConsultantRepository {
       approvedStatus: consultantTable.approvedStatus,
       createdAt: consultantTable.createdAt,
       updatedAt: consultantTable.updatedAt,
+
       speciality: specialityTable.name,
       pricePerSession: specialityTable.price,
       fullName: userTable.fullName,
+
       rating: avg(ratingTable.rating),
     })
       .from(consultantTable)
@@ -114,8 +113,29 @@ export class ConsultantRepository {
         specialityTable,
         eq(specialityTable.id, consultantTable.speciality),
       )
-      .leftJoin(ratingTable, eq(ratingTable.consultantId, consultantTable.userId))
-      .leftJoin(userTable, eq(userTable.id, consultantTable.userId));
+      .leftJoin(
+        ratingTable,
+        eq(ratingTable.consultantId, consultantTable.userId),
+      )
+      .leftJoin(userTable, eq(userTable.id, consultantTable.userId))
+      .groupBy(
+        consultantTable.id,
+        consultantTable.userId,
+        consultantTable.availability,
+        consultantTable.yrsOfExperience,
+        consultantTable.about,
+        consultantTable.languages,
+        consultantTable.education,
+        consultantTable.certification,
+        consultantTable.workingHours,
+        consultantTable.approvedStatus,
+        consultantTable.createdAt,
+        consultantTable.updatedAt,
+        specialityTable.name,
+        specialityTable.price,
+        userTable.fullName,
+      );
+
     return consultants;
   }
 

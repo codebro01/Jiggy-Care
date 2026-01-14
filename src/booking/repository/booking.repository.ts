@@ -187,11 +187,13 @@ export class BookingRepository {
         ratingTable,
         eq(ratingTable.consultantId, consultantTable.userId),
       )
+      .groupBy(consultantTable.userId, userTable.fullName, ratingTable.rating, specialityTable.name, bookingTable.date)
       .orderBy(desc(bookingTable.date));
     return bookings;
   }
   async getPatientCompletedBookings(patientId: string, trx?: any) {
     const Trx = trx || this.DbProvider;
+
 
     const bookings = await Trx.select()
       .from(bookingTable)
