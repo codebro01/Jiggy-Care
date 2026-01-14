@@ -21,31 +21,6 @@ import { Roles } from '@src/auth/decorators/roles.decorators';
 export class ChatController {
   constructor(private chatService: ChatService) {}
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('patient', 'consultant')
-  @Get('conversations')
-  @ApiHeader({
-    name: 'x-client-type',
-    description:
-      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
-    required: false,
-    schema: {
-      type: 'string',
-      enum: ['mobile', 'web'],
-      example: 'mobile',
-    },
-  })
-  @ApiBearerAuth('JWT-auth')
-  @ApiCookieAuth('access_token')
-  async getConversations(
-    @Query('consultantId') consultantId?: string,
-    @Query('patientId') patientId?: string,
-  ) {
-    return await this.chatService.getConversations({
-      consultantId,
-      patientId,
-    });
-  }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient', 'consultant')
