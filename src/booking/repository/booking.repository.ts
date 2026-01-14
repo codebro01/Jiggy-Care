@@ -161,6 +161,7 @@ export class BookingRepository {
 
     const bookings = await Trx.select({
       fullName: userTable.fullName,
+      bookingId: bookingTable.id, 
       speciality: specialityTable.name,
       date: bookingTable.date,
       consultantId: consultantTable.userId,
@@ -187,7 +188,7 @@ export class BookingRepository {
         ratingTable,
         eq(ratingTable.consultantId, consultantTable.userId),
       )
-      .groupBy(consultantTable.userId, userTable.fullName, ratingTable.rating, specialityTable.name, bookingTable.date)
+      .groupBy(consultantTable.userId, userTable.fullName, ratingTable.rating, specialityTable.name, bookingTable.date, bookingTable.id)
       .orderBy(desc(bookingTable.date));
     return bookings;
   }
