@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CreateBookingDto } from '../dto/createBooking.dto';
-import { or, eq, and, desc, lt } from 'drizzle-orm';
+import { or, eq, and, desc, lt, avg } from 'drizzle-orm';
 import { NotFoundError } from 'rxjs';
 import {
   bookingTable,
@@ -14,6 +14,7 @@ import {
   consultantTable,
   userTable,
   bookingTableInsertType,
+  ratingTable,
 } from '@src/db';
 import { SQL, count } from 'drizzle-orm';
 import { QueryBookingDto } from '@src/booking/dto/query-booking.dto';
@@ -163,6 +164,7 @@ export class BookingRepository {
       speciality: specialityTable.name,
       date: bookingTable.date,
       consultantId: consultantTable.userId,
+      rating: avg(ratingTable.rating),
     })
       .from(bookingTable)
       .where(
@@ -180,6 +182,10 @@ export class BookingRepository {
       .leftJoin(
         specialityTable,
         eq(specialityTable.id, consultantTable.speciality),
+      )
+      .leftJoin(
+        ratingTable,
+        eq(ratingTable.consultantId, consultantTable.userId),
       )
       .orderBy(desc(bookingTable.date));
     return bookings;

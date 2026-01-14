@@ -1,0 +1,1055 @@
+================================================================================
+                    JIGGY CARE CHAT SYSTEM DOCUMENTATION
+                          FOR FRONTEND DEVELOPERS
+================================================================================
+
+Last Updated: 2026-01-14
+Author: Backend Team
+Purpose: Comprehensive guide for integrating the Jiggy Care chat system
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+1. Overview
+2. Server Configuration & Endpoints
+3. WebSocket Implementation (Socket.IO)
+4. REST API Endpoints
+5. Data Models & DTOs
+6. Authentication & Authorization
+7. WebSocket Event Reference
+8. REST API Reference
+9. Integration Examples
+10. Error Handling
+11. Best Practices
+
+================================================================================
+1. OVERVIEW
+================================================================================
+
+The Jiggy Care chat system is built using NestJS with Socket.IO for real-time
+WebSocket communication and REST API endpoints for historical data retrieval.
+
+Key Features:
+- Real-time messaging between consultants and patients
+- Message read receipts
+- Typing indicators
+- Conversation management
+- Unread message counting
+- Persistent message storage
+
+Tech Stack (Backend):
+- NestJS (Node.js framework)
+- Socket.IO (WebSocket library)
+- PostgreSQL (via Drizzle ORM)
+- JWT Authentication
+
+================================================================================
+2. SERVER CONFIGURATION & ENDPOINTS
+================================================================================
+
+Production Server: https://jiggy-care.onrender.com
+Local Development: http://localhost:3000
+
+API Base Path: /api/v1
+WebSocket Namespace: /chat
+
+Full URLs:
+-----------
+REST API Base:
+  - Production: https://jiggy-care.onrender.com/api/v1
+  - Local: http://localhost:3000/api/v1
+
+WebSocket Connection:
+  - Production: https://jiggy-care.onrender.com/chat
+  - Local: http://localhost:3000/chat
+
+CORS Configuration:
+-------------------
+Allowed Origins:
+  - http://localhost:3000
+  - http://localhost:5173
+  - https://jiggy-care.onrender.com
+
+Credentials: Enabled
+Methods: GET, HEAD, PUT, PATCH, POST, DELETE
+Headers: Content-Type, Authorization, X-Access-Token, X-Refresh-Token, X-Client-Type
+
+================================================================================
+3. WEBSOCKET IMPLEMENTATION (Socket.IO)
+================================================================================
+
+CONNECTION DETAILS
+------------------
+WebSocket Gateway Configuration:
+  - Namespace: /chat
+  - CORS: Enabled (see above)
+  - Transports: websocket, polling (fallback)
+
+Connection URL Examples:
+  - Production: wss://jiggy-care.onrender.com/chat
+  - Local: ws://localhost:3000/chat
+
+FRONTEND CONNECTION EXAMPLE (JavaScript/TypeScript)
+---------------------------------------------------
+import { io } from 'socket.io-client';
+
+const socket = io('http://localhost:3000/chat', {
+  transports: ['websocket', 'polling'],
+  reconnection: true,
+  reconnectionDelay: 1000,
+  reconnectionAttempts: 5
+});
+
+socket.on('connect', () => {
+  console.log('Connected to chat server:', socket.id);
+});
+
+socket.on('disconnect', () => {
+  console.log('Disconnected from chat server');
+});
+
+socket.on('connect_error', (error) => {
+  console.error('Connection error:', error);
+});
+
+
+CONNECTION LIFECYCLE
+--------------------
+1. Client connects to /chat namespace
+2. Server logs connection with client socket ID
+3. Client can join conversation rooms
+4. Client sends/receives messages through rooms
+5. On disconnect, client is removed from active users map
+
+================================================================================
+4. WEBSOCKET EVENT REFERENCE
+================================================================================
+
+The WebSocket gateway supports the following real-time events:
+
+EVENT 1: JOIN CONVERSATION (join_conversation)
+-----------------------------------------------
+Purpose: Join a specific conversation room to receive messages
+
+Client Emits:
+  socket.emit('join_conversation', {
+    conversationId: 'uuid-of-conversation',
+    userId: 'uuid-of-user',
+    userType: 'consultant' | 'patient'
+  });
+
+Server Response:
+  {
+    event: 'joined_conversation',
+    data: {
+      conversationId: 'uuid-of-conversation'
+    }
+  }
+
+Error Response:
+  {
+    event: 'error',
+    data: {
+      message: 'Missing required fields: conversationId, userId, or userType'
+    }
+  }
+
+Notes:
+- MUST be called before sending/receiving messages
+- User is added to a Socket.IO room with the conversationId
+- Server tracks active users in this conversation
+
+
+EVENT 2: LEAVE CONVERSATION (leave_conversation)
+-------------------------------------------------
+Purpose: Leave a conversation room
+
+Client Emits:
+  socket.emit('leave_conversation', {
+    conversationId: 'uuid-of-conversation'
+  });
+
+Server Response:
+  {
+    event: 'left_conversation',
+    data: {
+      conversationId: 'uuid-of-conversation'
+    }
+  }
+
+
+EVENT 3: SEND MESSAGE (send_message)
+-------------------------------------
+Purpose: Send a new chat message
+
+Client Emits:
+  socket.emit('send_message', {
+    conversationId: 'uuid-of-conversation',
+    content: 'Hello, how are you?',
+    senderType: 'consultant' | 'patient'
+  });
+
+Server Response (to sender):
+  {
+    event: 'message_sent',
+    data: {
+      message: {
+        id: 'message-uuid',
+        conversationId: 'conversation-uuid',
+        senderId: 'sender-uuid',
+        senderType: 'consultant',
+        content: 'Hello, how are you?',
+        isRead: false,
+        createdAt: '2026-01-14T14:30:00Z',
+        updatedAt: '2026-01-14T14:30:00Z'
+      },
+      conversation: {
+        id: 'conversation-uuid',
+        consultantId: 'consultant-uuid',
+        patientId: 'patient-uuid',
+        bookingId: 'booking-uuid',
+        createdAt: '...',
+        updatedAt: '...'
+      }
+    }
+  }
+
+Server Broadcasts (to all users in conversation):
+  socket.on('new_message', (data) => {
+    // Same structure as message_sent response
+    console.log('New message received:', data);
+  });
+
+Error Response:
+  {
+    event: 'error',
+    data: {
+      message: 'Error description'
+    }
+  }
+
+Notes:
+- Message is saved to database
+- All participants in the room receive 'new_message' event
+- The conversationId must exist or will be auto-created based on booking
+
+
+EVENT 4: TYPING INDICATORS (typing_start)
+------------------------------------------
+Purpose: Notify other users that someone is typing
+
+Client Emits:
+  socket.emit('typing_start', {
+    conversationId: 'uuid-of-conversation',
+    userId: 'uuid-of-user',
+    userType: 'consultant' | 'patient'
+  });
+
+Other Clients Receive:
+  socket.on('user_typing', (data) => {
+    console.log(`${data.userId} is typing...`);
+    // data: { userId: 'uuid', userType: 'consultant' }
+  });
+
+Notes:
+- Does NOT broadcast to sender
+- Use for showing "Typing..." indicator in UI
+
+
+EVENT 5: TYPING STOP (typing_stop)
+-----------------------------------
+Purpose: Notify when user stops typing
+
+Client Emits:
+  socket.emit('typing_stop', {
+    conversationId: 'uuid-of-conversation',
+    userId: 'uuid-of-user'
+  });
+
+Other Clients Receive:
+  socket.on('user_stopped_typing', (data) => {
+    console.log(`${data.userId} stopped typing`);
+    // data: { userId: 'uuid' }
+  });
+
+
+EVENT 6: MARK MESSAGES AS READ (mark_read)
+-------------------------------------------
+Purpose: Mark specific messages as read
+
+Client Emits:
+  socket.emit('mark_read', {
+    conversationId: 'uuid-of-conversation',
+    messageIds: ['msg-uuid-1', 'msg-uuid-2', 'msg-uuid-3']
+  });
+
+Server Response (to sender):
+  {
+    event: 'marked_as_read',
+    data: {
+      messageIds: ['msg-uuid-1', 'msg-uuid-2', 'msg-uuid-3'],
+      success: true
+    }
+  }
+
+Other Clients Receive:
+  socket.on('messages_read', (data) => {
+    console.log('Messages marked as read:', data.messageIds);
+    // data: { conversationId: 'uuid', messageIds: [...] }
+  });
+
+Error Response:
+  {
+    event: 'error',
+    data: {
+      message: 'Invalid data provided'
+    }
+  }
+
+Notes:
+- Sender does NOT receive the 'messages_read' broadcast
+- Updates database to set isRead = true
+- Useful for read receipts/checkmarks in UI
+
+================================================================================
+5. REST API ENDPOINTS
+================================================================================
+
+All REST endpoints require JWT authentication.
+Base URL: /api/v1/chat
+
+Authentication Methods:
+  1. Bearer Token (Mobile): Authorization: Bearer <token>
+  2. Cookie (Web): access_token cookie
+  3. Header: X-Client-Type: mobile | web
+
+All endpoints require:
+  - JWT authentication (JwtAuthGuard)
+  - Role authorization (patient or consultant)
+
+
+ENDPOINT 1: GET CONVERSATIONS
+------------------------------
+GET /api/v1/chat/conversations
+
+Purpose: Retrieve all conversations for a user
+
+Query Parameters:
+  - consultantId (optional): UUID of consultant
+  - patientId (optional): UUID of patient
+
+Note: Must provide either consultantId OR patientId (not both)
+
+Request Example:
+  GET /api/v1/chat/conversations?patientId=abc-123-def
+
+Headers:
+  Authorization: Bearer <jwt-token>
+  X-Client-Type: mobile
+
+Response (200 OK):
+  [
+    {
+      id: 'conversation-uuid',
+      consultantId: 'consultant-uuid',
+      patientId: 'patient-uuid',
+      bookingId: 'booking-uuid',
+      createdAt: '2026-01-14T12:00:00Z',
+      updatedAt: '2026-01-14T14:30:00Z'
+    },
+    // ... more conversations
+  ]
+
+Error Responses:
+  400 Bad Request: Missing consultantId or patientId
+  401 Unauthorized: Invalid/missing JWT token
+  403 Forbidden: User doesn't have required role
+
+
+ENDPOINT 2: CREATE CONVERSATION
+--------------------------------
+POST /api/v1/chat/conversations
+
+Purpose: Create a new conversation or get existing one
+
+Request Body:
+  {
+    consultantId: 'consultant-uuid',
+    patientId: 'patient-uuid',
+    bookingId: 'booking-uuid'
+  }
+
+Headers:
+  Authorization: Bearer <jwt-token>
+  X-Client-Type: mobile
+  Content-Type: application/json
+
+Response (201 Created):
+  {
+    id: 'conversation-uuid',
+    consultantId: 'consultant-uuid',
+    patientId: 'patient-uuid',
+    bookingId: 'booking-uuid',
+    createdAt: '2026-01-14T12:00:00Z',
+    updatedAt: '2026-01-14T12:00:00Z'
+  }
+
+Error Responses:
+  400 Bad Request: Invalid UUID format or missing fields
+  401 Unauthorized: Invalid/missing JWT token
+  404 Not Found: Booking/consultant/patient not found
+
+
+ENDPOINT 3: GET MESSAGES
+-------------------------
+GET /api/v1/chat/conversations/:conversationId/messages
+
+Purpose: Retrieve message history for a conversation
+
+Path Parameters:
+  - conversationId: UUID of the conversation
+
+Query Parameters:
+  - limit (optional, default: 50): Number of messages to return
+  - offset (optional, default: 0): Number of messages to skip (for pagination)
+
+Request Example:
+  GET /api/v1/chat/conversations/abc-123/messages?limit=20&offset=0
+
+Headers:
+  Authorization: Bearer <jwt-token>
+  X-Client-Type: mobile
+
+Response (200 OK):
+  {
+    conversation: {
+      id: 'conversation-uuid',
+      consultantId: 'consultant-uuid',
+      patientId: 'patient-uuid',
+      bookingId: 'booking-uuid',
+      createdAt: '...',
+      updatedAt: '...'
+    },
+    messages: [
+      {
+        id: 'message-uuid',
+        conversationId: 'conversation-uuid',
+        senderId: 'user-uuid',
+        senderType: 'patient',
+        content: 'Hello doctor',
+        isRead: true,
+        createdAt: '2026-01-14T12:00:00Z',
+        updatedAt: '2026-01-14T12:00:00Z'
+      },
+      // ... more messages (newest first)
+    ]
+  }
+
+Error Responses:
+  404 Not Found: Conversation not found
+  401 Unauthorized: Invalid/missing JWT token
+
+
+ENDPOINT 4: SEND MESSAGE (REST)
+--------------------------------
+POST /api/v1/chat/messages
+
+Purpose: Send a message via REST API (alternative to WebSocket)
+
+Request Body:
+  {
+    consultantId: 'consultant-uuid',
+    patientId: 'patient-uuid',
+    bookingId: 'booking-uuid',
+    content: 'Hello, I need help',
+    senderType: 'patient' | 'consultant'
+  }
+
+Headers:
+  Authorization: Bearer <jwt-token>
+  X-Client-Type: mobile
+  Content-Type: application/json
+
+Response (201 Created):
+  {
+    message: {
+      id: 'message-uuid',
+      conversationId: 'conversation-uuid',
+      senderId: 'sender-uuid',
+      senderType: 'patient',
+      content: 'Hello, I need help',
+      isRead: false,
+      createdAt: '2026-01-14T14:30:00Z',
+      updatedAt: '2026-01-14T14:30:00Z'
+    },
+    conversation: {
+      id: 'conversation-uuid',
+      consultantId: 'consultant-uuid',
+      patientId: 'patient-uuid',
+      bookingId: 'booking-uuid',
+      createdAt: '...',
+      updatedAt: '...'
+    }
+  }
+
+Error Responses:
+  400 Bad Request: Missing required fields or invalid UUIDs
+  401 Unauthorized: Invalid/missing JWT token
+
+
+ENDPOINT 5: GET UNREAD COUNT
+-----------------------------
+GET /api/v1/chat/conversations/:conversationId/unread
+
+Purpose: Get count of unread messages for a user in a conversation
+
+Path Parameters:
+  - conversationId: UUID of the conversation
+
+Query Parameters:
+  - userId: UUID of the user (required)
+
+Request Example:
+  GET /api/v1/chat/conversations/abc-123/unread?userId=user-456
+
+Headers:
+  Authorization: Bearer <jwt-token>
+  X-Client-Type: mobile
+
+Response (200 OK):
+  {
+    conversationId: 'abc-123',
+    unreadCount: 5
+  }
+
+Error Responses:
+  400 Bad Request: Missing userId
+  401 Unauthorized: Invalid/missing JWT token
+
+
+ENDPOINT 6: MARK MESSAGES AS READ (REST)
+-----------------------------------------
+POST /api/v1/chat/conversations/:conversationId/read
+
+Purpose: Mark specific messages as read via REST API
+
+Path Parameters:
+  - conversationId: UUID of the conversation
+
+Request Body:
+  {
+    messageIds: ['msg-uuid-1', 'msg-uuid-2', 'msg-uuid-3']
+  }
+
+Headers:
+  Authorization: Bearer <jwt-token>
+  X-Client-Type: mobile
+  Content-Type: application/json
+
+Response (200 OK):
+  {
+    success: true,
+    updatedCount: 3
+  }
+
+Error Responses:
+  400 Bad Request: Invalid messageIds
+  404 Not Found: Conversation not found
+  401 Unauthorized: Invalid/missing JWT token
+
+================================================================================
+6. DATA MODELS & DTOs
+================================================================================
+
+CONVERSATION MODEL
+------------------
+{
+  id: string (UUID),
+  consultantId: string (UUID),
+  patientId: string (UUID),
+  bookingId: string (UUID),
+  createdAt: string (ISO 8601 datetime),
+  updatedAt: string (ISO 8601 datetime)
+}
+
+MESSAGE MODEL
+-------------
+{
+  id: string (UUID),
+  conversationId: string (UUID),
+  senderId: string (UUID),
+  senderType: 'consultant' | 'patient',
+  content: string,
+  isRead: boolean,
+  createdAt: string (ISO 8601 datetime),
+  updatedAt: string (ISO 8601 datetime)
+}
+
+CREATE CONVERSATION DTO
+-----------------------
+{
+  consultantId: string (UUID, required),
+  patientId: string (UUID, required),
+  bookingId: string (UUID, required)
+}
+
+CREATE MESSAGE DTO
+------------------
+{
+  consultantId: string (UUID, required),
+  patientId: string (UUID, required),
+  bookingId: string (UUID, required),
+  content: string (required, non-empty),
+  senderType: 'consultant' | 'patient' (required)
+}
+
+================================================================================
+7. AUTHENTICATION & AUTHORIZATION
+================================================================================
+
+AUTH REQUIREMENTS
+-----------------
+All REST endpoints require:
+  1. Valid JWT token (either in Authorization header or cookie)
+  2. User role must be 'patient' or 'consultant'
+
+WebSocket connections:
+  - Currently no authentication on connection
+  - Events validate conversationId and userId
+  - Future: Implement JWT handshake on connection
+
+HEADERS FOR MOBILE CLIENTS
+---------------------------
+Authorization: Bearer <your-jwt-token>
+X-Client-Type: mobile
+
+HEADERS FOR WEB CLIENTS
+-----------------------
+Cookie: access_token=<your-jwt-token>
+X-Client-Type: web
+
+OBTAINING JWT TOKEN
+-------------------
+Use the authentication endpoints (not covered in this doc):
+  POST /api/v1/auth/login
+  POST /api/v1/auth/register
+
+Store the token for subsequent requests.
+
+================================================================================
+8. INTEGRATION EXAMPLES
+================================================================================
+
+EXAMPLE 1: COMPLETE CHAT FLOW (React/TypeScript)
+-------------------------------------------------
+
+import { io, Socket } from 'socket.io-client';
+import axios from 'axios';
+
+const API_BASE = 'http://localhost:3000/api/v1';
+const SOCKET_URL = 'http://localhost:3000/chat';
+
+class ChatService {
+  private socket: Socket | null = null;
+  private token: string;
+
+  constructor(token: string) {
+    this.token = token;
+  }
+
+  // Initialize WebSocket connection
+  connect(userId: string, userType: 'patient' | 'consultant') {
+    this.socket = io(SOCKET_URL, {
+      transports: ['websocket', 'polling'],
+    });
+
+    this.socket.on('connect', () => {
+      console.log('Connected:', this.socket?.id);
+    });
+
+    this.socket.on('new_message', (data) => {
+      console.log('New message:', data);
+      // Update UI with new message
+    });
+
+    this.socket.on('messages_read', (data) => {
+      console.log('Messages read:', data);
+      // Update UI to show read receipts
+    });
+
+    this.socket.on('user_typing', (data) => {
+      console.log('User typing:', data);
+      // Show typing indicator
+    });
+
+    this.socket.on('user_stopped_typing', (data) => {
+      console.log('User stopped typing');
+      // Hide typing indicator
+    });
+  }
+
+  // Join a conversation
+  joinConversation(conversationId: string, userId: string, userType: string) {
+    this.socket?.emit('join_conversation', {
+      conversationId,
+      userId,
+      userType
+    });
+  }
+
+  // Send a message
+  sendMessage(conversationId: string, content: string, senderType: string) {
+    this.socket?.emit('send_message', {
+      conversationId,
+      content,
+      senderType
+    });
+  }
+
+  // Typing indicators
+  startTyping(conversationId: string, userId: string, userType: string) {
+    this.socket?.emit('typing_start', {
+      conversationId,
+      userId,
+      userType
+    });
+  }
+
+  stopTyping(conversationId: string, userId: string) {
+    this.socket?.emit('typing_stop', {
+      conversationId,
+      userId
+    });
+  }
+
+  // Mark messages as read
+  markAsRead(conversationId: string, messageIds: string[]) {
+    this.socket?.emit('mark_read', {
+      conversationId,
+      messageIds
+    });
+  }
+
+  // Fetch conversation history (REST)
+  async getMessages(conversationId: string, limit = 50, offset = 0) {
+    const response = await axios.get(
+      `${API_BASE}/chat/conversations/${conversationId}/messages`,
+      {
+        params: { limit, offset },
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          'X-Client-Type': 'mobile'
+        }
+      }
+    );
+    return response.data;
+  }
+
+  // Get all conversations (REST)
+  async getConversations(userId: string, userType: 'patient' | 'consultant') {
+    const queryParam = userType === 'patient' ? 'patientId' : 'consultantId';
+    const response = await axios.get(
+      `${API_BASE}/chat/conversations?${queryParam}=${userId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          'X-Client-Type': 'mobile'
+        }
+      }
+    );
+    return response.data;
+  }
+
+  // Create conversation (REST)
+  async createConversation(
+    consultantId: string,
+    patientId: string,
+    bookingId: string
+  ) {
+    const response = await axios.post(
+      `${API_BASE}/chat/conversations`,
+      { consultantId, patientId, bookingId },
+      {
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          'X-Client-Type': 'mobile'
+        }
+      }
+    );
+    return response.data;
+  }
+
+  // Disconnect
+  disconnect() {
+    this.socket?.disconnect();
+  }
+}
+
+// Usage:
+const chatService = new ChatService('your-jwt-token');
+chatService.connect('user-uuid', 'patient');
+chatService.joinConversation('conv-uuid', 'user-uuid', 'patient');
+chatService.sendMessage('conv-uuid', 'Hello!', 'patient');
+
+
+EXAMPLE 2: REACT NATIVE USAGE
+------------------------------
+
+import { io } from 'socket.io-client';
+
+const ChatScreen = ({ conversationId, userId, userType, token }) => {
+  const [messages, setMessages] = useState([]);
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    // Connect to WebSocket
+    const newSocket = io('http://localhost:3000/chat', {
+      transports: ['websocket', 'polling'],
+    });
+
+    newSocket.on('connect', () => {
+      // Join conversation
+      newSocket.emit('join_conversation', {
+        conversationId,
+        userId,
+        userType
+      });
+    });
+
+    newSocket.on('new_message', (data) => {
+      setMessages(prev => [...prev, data.message]);
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.emit('leave_conversation', { conversationId });
+      newSocket.disconnect();
+    };
+  }, [conversationId]);
+
+  const sendMessage = (content) => {
+    socket?.emit('send_message', {
+      conversationId,
+      content,
+      senderType: userType
+    });
+  };
+
+  // ... rest of component
+};
+
+
+EXAMPLE 3: PAGINATION FOR MESSAGE HISTORY
+------------------------------------------
+
+async function loadMessages(conversationId, page = 1, pageSize = 20) {
+  const offset = (page - 1) * pageSize;
+  
+  const response = await fetch(
+    `http://localhost:3000/api/v1/chat/conversations/${conversationId}/messages?limit=${pageSize}&offset=${offset}`,
+    {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'X-Client-Type': 'mobile'
+      }
+    }
+  );
+  
+  const data = await response.json();
+  return data.messages;
+}
+
+// Load first page
+const page1 = await loadMessages('conv-uuid', 1);
+
+// Load second page
+const page2 = await loadMessages('conv-uuid', 2);
+
+================================================================================
+9. ERROR HANDLING
+================================================================================
+
+COMMON ERROR SCENARIOS
+----------------------
+
+1. Connection Errors (WebSocket)
+   - Server down
+   - Network issues
+   - Invalid URL
+
+   Handle with:
+   socket.on('connect_error', (error) => {
+     console.error('Connection failed:', error);
+     // Show offline mode or retry
+   });
+
+2. Authentication Errors (REST)
+   - 401 Unauthorized: Invalid/expired token
+   - 403 Forbidden: User doesn't have permission
+
+   Handle with:
+   - Redirect to login
+   - Refresh token
+   - Show error message
+
+3. Validation Errors
+   - 400 Bad Request: Invalid data format
+   - Missing required fields
+   - Invalid UUIDs
+
+   Handle with:
+   - Validate data before sending
+   - Show user-friendly error messages
+
+4. Not Found Errors
+   - 404: Conversation/message doesn't exist
+
+   Handle with:
+   - Sync local state with server
+   - Create conversation if needed
+
+5. WebSocket Event Errors
+   - Server returns { event: 'error', data: { message: '...' } }
+
+   Handle with:
+   socket.on('error', (data) => {
+     console.error('Server error:', data.message);
+     // Show error to user
+   });
+
+ERROR RESPONSE FORMATS
+----------------------
+
+REST API Error:
+{
+  statusCode: 400,
+  message: 'Validation failed',
+  error: 'Bad Request'
+}
+
+WebSocket Error:
+{
+  event: 'error',
+  data: {
+    message: 'Error description'
+  }
+}
+
+================================================================================
+10. BEST PRACTICES
+================================================================================
+
+1. CONNECTION MANAGEMENT
+   - Connect once when user enters chat
+   - Disconnect when leaving chat screen
+   - Handle reconnection automatically
+   - Store socket instance in context/service
+
+2. ROOM MANAGEMENT
+   - Join conversation room before sending messages
+   - Leave room when exiting chat screen
+   - Join multiple rooms for multiple conversations
+
+3. MESSAGE SENDING
+   - Use WebSocket for real-time messages
+   - Use REST as fallback if WebSocket unavailable
+   - Show optimistic UI updates
+   - Handle message failures gracefully
+
+4. MESSAGE LOADING
+   - Load initial messages via REST API
+   - Use WebSocket for new messages
+   - Implement pagination for old messages
+   - Cache messages locally
+
+5. READ RECEIPTS
+   - Mark messages as read when user views them
+   - Use WebSocket for real-time read updates
+   - Debounce read status updates
+
+6. TYPING INDICATORS
+   - Send typing_start when user starts typing
+   - Send typing_stop after 2-3 seconds of inactivity
+   - Debounce typing events to avoid spam
+
+7. PERFORMANCE
+   - Limit message history loaded at once
+   - Implement virtual scrolling for long conversations
+   - Cleanup listeners on component unmount
+   - Throttle real-time events
+
+8. SECURITY
+   - Never expose JWT token in URLs
+   - Validate user permissions on client
+   - Sanitize message content (prevent XSS)
+   - Use HTTPS/WSS in production
+
+9. OFFLINE SUPPORT
+   - Queue messages when offline
+   - Sync when connection restored
+   - Show offline indicator
+   - Store messages locally
+
+10. USER EXPERIENCE
+    - Show loading states
+    - Display connection status
+    - Handle errors gracefully
+    - Provide retry mechanisms
+    - Show toast/notification for new messages
+
+================================================================================
+11. TROUBLESHOOTING
+================================================================================
+
+ISSUE: WebSocket won't connect
+SOLUTION:
+  - Check server is running
+  - Verify correct URL (include /chat namespace)
+  - Check CORS configuration
+  - Try polling transport first
+  - Check browser/app network logs
+
+ISSUE: Messages not appearing in real-time
+SOLUTION:
+  - Ensure you've joined the conversation room
+  - Check event listeners are registered
+  - Verify conversationId is correct
+  - Check server logs for errors
+
+ISSUE: Authentication failing
+SOLUTION:
+  - Verify JWT token is valid and not expired
+  - Check Authorization header format
+  - Include X-Client-Type header
+  - Check user has correct role (patient/consultant)
+
+ISSUE: Can't mark messages as read
+SOLUTION:
+  - Verify messageIds are valid UUIDs
+  - Ensure conversationId is correct
+  - Check user is participant in conversation
+  - Use REST endpoint as fallback
+
+ISSUE: Duplicate messages appearing
+SOLUTION:
+  - Deduplicate by message ID
+  - Don't add message if already in list
+  - Check for multiple WebSocket connections
+
+================================================================================
+SUPPORT & CONTACT
+================================================================================
+
+For questions or issues, contact:
+  Backend Team: [Your contact info]
+  
+API Documentation (Swagger):
+  http://localhost:3000/api/v1/api-docs
+  https://jiggy-care.onrender.com/api/v1/api-docs
+
+GitHub Repository: [Your repo]
+
+================================================================================
+END OF DOCUMENTATION
+================================================================================

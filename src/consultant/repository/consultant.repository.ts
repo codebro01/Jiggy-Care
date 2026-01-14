@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { consultantTable, userTable, specialityTable } from '@src/db';
-import { and, eq, ilike, or } from 'drizzle-orm';
+import { consultantTable, userTable, specialityTable, ratingTable } from '@src/db';
+import { and, avg, eq, ilike, or } from 'drizzle-orm';
 import { UpdateConsultantDto } from '@src/consultant/dto/updateConsultantDto';
 import { QueryPendingConsultantApprovalDto } from '@src/dashboard/dto/query-consultant-approval.dto';
 import { ToggleConsultantApprovalDto } from '@src/consultant/dto/toggle-consultant-approval.dto';
@@ -106,6 +106,7 @@ export class ConsultantRepository {
       speciality: specialityTable.name,
       pricePerSession: specialityTable.price,
       fullName: userTable.fullName,
+      rating: avg(ratingTable.rating),
     })
       .from(consultantTable)
       .where(eq(consultantTable.approvedStatus, true))
@@ -113,6 +114,7 @@ export class ConsultantRepository {
         specialityTable,
         eq(specialityTable.id, consultantTable.speciality),
       )
+      .leftJoin(ratingTable, eq(ratingTable.consultantId, consultantTable.userId))
       .leftJoin(userTable, eq(userTable.id, consultantTable.userId));
     return consultants;
   }
