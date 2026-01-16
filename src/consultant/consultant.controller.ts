@@ -83,7 +83,7 @@ export class ConsultantController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('consultant')
-  @Get('consultant-patients')
+  @Get('patients')
   @ApiHeader({
     name: 'x-client-type',
     description:
