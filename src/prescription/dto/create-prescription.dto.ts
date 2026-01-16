@@ -34,6 +34,15 @@ export class CreatePrescriptionDto {
   @IsString()
   patientId: string;
 
+
+  @ApiProperty({
+    example: '23d7a38f-f298-41ac-8ed5-f1c22cc75b61',
+    description: 'The id of the booking',
+  })
+  @IsNotEmpty()
+  @IsString()
+  bookingId: string;
+
   @ApiProperty({
     example: 'Diclofenac 500',
     description: 'name of the pill',

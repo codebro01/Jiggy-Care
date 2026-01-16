@@ -73,4 +73,9 @@ export class ConsultantService {
 
     return updateConsultant;
   }
+
+    async getConsultantPatients(consultantId: string) {
+
+      return await this.consultantRepository.getConsultantPatients(consultantId);
+    }
 }

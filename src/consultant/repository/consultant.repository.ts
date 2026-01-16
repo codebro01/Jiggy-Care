@@ -1,6 +1,12 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { consultantTable, userTable, specialityTable, ratingTable } from '@src/db';
+import {
+  consultantTable,
+  userTable,
+  specialityTable,
+  ratingTable,
+  bookingTable,
+} from '@src/db';
 import { and, avg, eq, ilike, or } from 'drizzle-orm';
 import { UpdateConsultantDto } from '@src/consultant/dto/updateConsultantDto';
 import { QueryPendingConsultantApprovalDto } from '@src/dashboard/dto/query-consultant-approval.dto';
@@ -162,5 +168,29 @@ export class ConsultantRepository {
       .returning();
 
     return consultant;
+  }
+
+  async getConsultantPatients(consultantId: string) {
+    const patients = await this.DbProvider.select({
+      patientId: userTable.id, 
+      fullName: userTable.fullName, 
+    })
+      .from(bookingTable)
+      .where(
+        and(
+          eq(bookingTable.consultantId, consultantId),
+          eq(bookingTable.paymentStatus, true),
+        ),
+      )
+      .leftJoin(userTable, eq(userTable.id, bookingTable.patientId))
+      .groupBy(
+        userTable.id,
+        userTable.fullName,
+        userTable.email,
+        userTable.phone,
+        bookingTable.createdAt,
+      ); 
+
+    return patients;
   }
 }

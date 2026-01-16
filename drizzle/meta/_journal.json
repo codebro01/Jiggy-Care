@@ -232,6 +232,20 @@
       "when": 1768279248526,
       "tag": "0032_gigantic_nehzno",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1768549642087,
+      "tag": "0033_secret_rockslide",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1768549948005,
+      "tag": "0034_bent_morlocks",
+      "breakpoints": true
     }
   ]
 }

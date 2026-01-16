@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   Query,
+  Req,
 } from '@nestjs/common';
 import { Roles } from '@src/auth/decorators/roles.decorators';
 import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
@@ -20,6 +21,7 @@ import {
 } from '@nestjs/swagger';
 import { QueryPendingConsultantApprovalDto } from '@src/dashboard/dto/query-consultant-approval.dto';
 import { ToggleConsultantApprovalDto } from '@src/consultant/dto/toggle-consultant-approval.dto';
+import type { Request } from '@src/types';
 
 @Controller('consultant')
 export class ConsultantController {
@@ -75,6 +77,32 @@ export class ConsultantController {
 
     const consultants =
       await this.consultantService.listAllApprovedConsultants();
+
+    return { success: true, data: consultants };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('consultant')
+  @Get('consultant-patients')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
+  async getConsultantPatients(@Req() req: Request) {
+    const { id: consultantId } = req.user;
+
+    const consultants =
+      await this.consultantService.getConsultantPatients(consultantId);
 
     return { success: true, data: consultants };
   }
