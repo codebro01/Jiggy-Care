@@ -21,6 +21,7 @@ import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { Roles } from '@src/auth/decorators/roles.decorators';
 import { ApiBearerAuth, ApiCookieAuth, ApiHeader } from '@nestjs/swagger';
+import { CreateManyPrescriptionsDto } from '@src/prescription/dto/create-many-prescriptions.dto';
 
 @Controller('prescription')
 export class PrescriptionController {
@@ -58,6 +59,37 @@ export class PrescriptionController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('consultant')
+  @Post('bulk')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.CREATED)
+  async createManyPrescriptions(
+    @Body() body: CreateManyPrescriptionsDto,
+    @Req() req: Request,
+  ) {
+    const { id: consultantId } = req.user;
+    const prescriptions = await this.prescriptionService.createMany(
+      body.prescriptions,
+      consultantId,
+      body.patientId,
+    );
+
+    return { success: true, data: prescriptions };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('consultant', 'patient')
   @Get()
   @ApiHeader({
@@ -74,7 +106,10 @@ export class PrescriptionController {
   @ApiBearerAuth('JWT-auth')
   @ApiCookieAuth('access_token')
   @HttpCode(HttpStatus.OK)
-  async findAll(@Res({passthrough: true}) res: Response, @Req() req: Request) {
+  async findAll(
+    @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
+  ) {
     const { id: userId } = req.user;
     const prescription = await this.prescriptionService.findAll(userId, userId);
     return { success: true, data: prescription };

@@ -40,6 +40,42 @@ export class PrescriptionService {
     );
   }
 
+  async createMany(
+    data: CreatePrescriptionDto[],
+    consultantId: string,
+    patientId: string,
+  ) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Validate all start dates
+    for (const prescription of data) {
+      const startDate = new Date(prescription.startDate);
+      startDate.setHours(0, 0, 0, 0);
+
+      if (startDate < today) {
+        throw new BadRequestException(
+          `Start date for ${prescription.name} cannot be in the past`,
+        );
+      }
+    }
+
+    const prescribedBy = await this.userRepository.findUserById(consultantId);
+
+    if (!prescribedBy) throw new BadRequestException('Invalid consultant');
+
+    const prescriptionsWithConsultant = data.map((prescription) => ({
+      ...prescription,
+      prescribedBy: prescribedBy.fullName,
+    }));
+
+    return await this.prescriptionRepository.createMany(
+      prescriptionsWithConsultant,
+      consultantId,
+      patientId,
+    );
+  }
+
   async findAll(consultantId?: string, patientId?: string) {
     const prescriptions = await this.prescriptionRepository.findAll(
       consultantId,

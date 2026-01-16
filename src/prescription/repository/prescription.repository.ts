@@ -30,6 +30,26 @@ export class PrescriptionRepository {
     return prescription;
   }
 
+  async createMany(
+    data: Array<CreatePrescriptionDto & { prescribedBy: string }>,
+    consultantId: string,
+    patientId: string,
+  ) {
+    const prescriptions = await this.DbProvider.insert(prescriptionTable)
+      .values(
+        data.map((item) => ({
+          ...item,
+          patientId,
+          consultantId,
+          pillsRemaining: item.totalPills,
+          status: item.status || 'active',
+        })),
+      )
+      .returning();
+
+    return prescriptions;
+  }
+
   async findAll(consultantId?: string, patientId?: string) {
     if (!consultantId && !patientId)
       throw new BadRequestException(
@@ -43,24 +63,25 @@ export class PrescriptionRepository {
       condition.push(eq(prescriptionTable.consultantId, consultantId));
 
     const query = this.DbProvider.select({
-      id: prescriptionTable.id, 
-      patientId: prescriptionTable.patientId, 
-      consultantId: prescriptionTable.consultantId, 
-      patientName: userTable.fullName, 
-      name: prescriptionTable.name, 
-      dosage: prescriptionTable.dosage, 
-      mg: prescriptionTable.mg, 
-      frequency: prescriptionTable.frequency, 
-      pillsRemaining: prescriptionTable.pillsRemaining, 
-      prescribedBy: prescriptionTable.prescribedBy, 
-      totalPills: prescriptionTable.totalPills, 
-      startDate: prescriptionTable.startDate, 
-      status: prescriptionTable.status, 
-      createdAt: prescriptionTable.createdAt, 
-      updatedAt: prescriptionTable.updatedAt, 
+      id: prescriptionTable.id,
+      patientId: prescriptionTable.patientId,
+      consultantId: prescriptionTable.consultantId,
+      patientName: userTable.fullName,
+      name: prescriptionTable.name,
+      dosage: prescriptionTable.dosage,
+      mg: prescriptionTable.mg,
+      frequency: prescriptionTable.frequency,
+      pillsRemaining: prescriptionTable.pillsRemaining,
+      prescribedBy: prescriptionTable.prescribedBy,
+      totalPills: prescriptionTable.totalPills,
+      startDate: prescriptionTable.startDate,
+      status: prescriptionTable.status,
+      createdAt: prescriptionTable.createdAt,
+      updatedAt: prescriptionTable.updatedAt,
     })
       .from(prescriptionTable)
-      .where(or(...condition)).leftJoin(userTable, eq(userTable.id, prescriptionTable.patientId));
+      .where(or(...condition))
+      .leftJoin(userTable, eq(userTable.id, prescriptionTable.patientId));
 
     // if(consultantId) query.leftJoin(consultantTable, eq(consultantTable.userId, consultantId))
     // if(patientId) query.leftJoin(patientTable, eq(patientTable.userId, patientId))
@@ -159,6 +180,4 @@ export class PrescriptionRepository {
       );
     return activePrescriptions.total;
   }
-
-
 }
