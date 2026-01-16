@@ -1,9 +1,7 @@
 import {
   IsString,
-  IsInt,
   IsDateString,
   IsOptional,
-  Min,
   IsNotEmpty,
   IsEnum,
   IsNumber,
@@ -50,6 +48,15 @@ export class CreatePrescriptionDto {
   @IsNumber()
   dosage: number;
 
+
+  @ApiProperty({
+    example: 2,
+    description: 'Duration in days',
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  duration: number;
+
   @ApiProperty({
     example: 700,
     description: 'The milligram of each tablet of the drug',
@@ -69,13 +76,6 @@ export class CreatePrescriptionDto {
   })
   frequency: FrequencyType;
 
-  @ApiProperty({
-    example: 10,
-    description: 'This is the total number of pills',
-  })
-  @IsInt()
-  @Min(1)
-  totalPills: number;
 
   @ApiProperty({
     example: '2025-10-19T10:50:43Z',

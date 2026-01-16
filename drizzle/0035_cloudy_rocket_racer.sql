@@ -1,0 +1,1 @@
+ALTER TABLE "prescriptions" ADD COLUMN "duration" integer NOT NULL;

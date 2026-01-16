@@ -246,6 +246,13 @@
       "when": 1768549948005,
       "tag": "0034_bent_morlocks",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1768573446235,
+      "tag": "0035_cloudy_rocket_racer",
+      "breakpoints": true
     }
   ]
 }

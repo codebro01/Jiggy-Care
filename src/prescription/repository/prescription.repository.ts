@@ -13,7 +13,7 @@ export class PrescriptionRepository {
   ) {}
 
   async create(
-    data: CreatePrescriptionDto & { prescribedBy: string },
+    data: CreatePrescriptionDto & { prescribedBy: string, totalPills: number },
     consultantId: string,
     patientId: string,
   ) {
@@ -31,7 +31,7 @@ export class PrescriptionRepository {
   }
 
   async createMany(
-    data: Array<CreatePrescriptionDto & { prescribedBy: string }>,
+    data: Array<CreatePrescriptionDto & { prescribedBy: string, totalPills: number } >,
     consultantId: string,
     patientId: string,
   ) {
@@ -121,7 +121,6 @@ export class PrescriptionRepository {
         dosage: data.dosage || prevPrescription.dosage,
         frequency: data.frequency || prevPrescription.frequency,
         pillsRemaining: data.pillsRemaining || prevPrescription.pillsRemaining,
-        totalPills: data.totalPills || prevPrescription.totalPills,
         startDate: data.startDate || prevPrescription.startDate,
         mg: data.mg || prevPrescription.mg,
         updatedAt: new Date(),

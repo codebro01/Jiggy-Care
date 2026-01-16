@@ -8,6 +8,14 @@ import { CreatePrescriptionDto } from './dto/create-prescription.dto';
 import { UpdatePrescriptionDto } from './dto/update-prescription.dto';
 import { UserRepository } from '@src/users/repository/user.repository';
 
+const daysToFrequency = {
+  once_daily: 1,
+  twice_daily: 2,
+  thrice_daily: 3,
+  four_times_daily: 4,
+  five_times_daily: 5,
+  often: 6,
+};
 @Injectable()
 export class PrescriptionService {
   constructor(
@@ -33,8 +41,10 @@ export class PrescriptionService {
 
     if (!prescribedBy) throw new BadRequestException('Invalid consultant');
 
+    const totalPills = daysToFrequency[data.frequency] * data.dosage * data.duration;
+
     return await this.prescriptionRepository.create(
-      { ...data, prescribedBy: prescribedBy.fullName },
+      { ...data, prescribedBy: prescribedBy.fullName, totalPills },
       consultantId,
       patientId,
     );
@@ -66,6 +76,7 @@ export class PrescriptionService {
 
     const prescriptionsWithConsultant = data.map((prescription) => ({
       ...prescription,
+      totalPills: daysToFrequency[prescription.frequency] * prescription.dosage * prescription.duration, 
       prescribedBy: prescribedBy.fullName,
     }));
 
@@ -81,15 +92,6 @@ export class PrescriptionService {
       consultantId,
       patientId,
     );
-
-    const daysToFrequency = {
-      once_daily: 1,
-      twice_daily: 2,
-      thrice_daily: 3,
-      four_times_daily: 4,
-      five_times_daily: 5,
-      often: 6,
-    };
 
     const calculate = prescriptions.map((prescription) => {
       const dosage = prescription.dosage;

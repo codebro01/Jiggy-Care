@@ -29,6 +29,7 @@ export const prescriptionTable = pgTable('prescriptions', {
   name: varchar('name', { length: 255 }).notNull(),
   dosage: integer('dosage').notNull(),
   mg: integer('mg').notNull(),
+  duration: integer('duration').notNull(),
   frequency: frequencyType('frequency').notNull(),
   pillsRemaining: integer('pills_remaining').notNull(),
   prescribedBy: varchar('prescribed_by',{length: 255}),
