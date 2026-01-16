@@ -3,7 +3,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, or, and, count } from 'drizzle-orm';
 import { CreatePrescriptionDto } from '@src/prescription/dto/create-prescription.dto';
 import { UpdatePrescriptionDto } from '@src/prescription/dto/update-prescription.dto';
-import { prescriptionTable } from '@src/db';
+import { prescriptionTable, userTable } from '@src/db';
 
 @Injectable()
 export class PrescriptionRepository {
@@ -42,9 +42,25 @@ export class PrescriptionRepository {
     if (consultantId)
       condition.push(eq(prescriptionTable.consultantId, consultantId));
 
-    const query = this.DbProvider.select()
+    const query = this.DbProvider.select({
+      id: prescriptionTable.id, 
+      patientId: prescriptionTable.patientId, 
+      consultantId: prescriptionTable.consultantId, 
+      patientName: userTable.fullName, 
+      name: prescriptionTable.name, 
+      dosage: prescriptionTable.dosage, 
+      mg: prescriptionTable.mg, 
+      frequency: prescriptionTable.frequency, 
+      pillsRemaining: prescriptionTable.pillsRemaining, 
+      prescribedBy: prescriptionTable.prescribedBy, 
+      totalPills: prescriptionTable.totalPills, 
+      startDate: prescriptionTable.startDate, 
+      status: prescriptionTable.status, 
+      createdAt: prescriptionTable.createdAt, 
+      updatedAt: prescriptionTable.updatedAt, 
+    })
       .from(prescriptionTable)
-      .where(or(...condition));
+      .where(or(...condition)).leftJoin(userTable, eq(userTable.id, prescriptionTable.patientId));
 
     // if(consultantId) query.leftJoin(consultantTable, eq(consultantTable.userId, consultantId))
     // if(patientId) query.leftJoin(patientTable, eq(patientTable.userId, patientId))

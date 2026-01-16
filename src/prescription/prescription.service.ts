@@ -56,10 +56,10 @@ export class PrescriptionService {
     };
 
     const calculate = prescriptions.map((prescription) => {
-      const dosage = prescription.dosage;
-      const totalPills = prescription.totalPills;
-      const startDate = new Date(prescription.startDate);
-      const frequency = prescription.frequency;
+      const dosage = prescription.prescriptions.dosage;
+      const totalPills = prescription.prescriptions.totalPills;
+      const startDate = new Date(prescription.prescriptions.startDate);
+      const frequency = prescription.prescriptions.frequency;
       const today = new Date();
 
       const totalPillsDaily = dosage * daysToFrequency[frequency];
