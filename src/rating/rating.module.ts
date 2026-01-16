@@ -8,6 +8,6 @@ import { RatingRepository } from './repository/rating.repository';
   imports: [DbModule],
   controllers: [RatingController],
   providers: [RatingService, RatingRepository],
-  exports: [RatingService, RatingModule]
+  exports: [RatingService, RatingRepository]
 })
 export class RatingModule {}

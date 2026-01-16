@@ -99,7 +99,7 @@ export class UserRepository {
       role: userTable.role,
       emailVerified: userTable.emailVerified,
       availability: consultantTable.availability,
-      speciality: consultantTable.speciality,
+      speciality: specialityTable.name,
       yrsOfExperience: consultantTable.yrsOfExperience,
       about: consultantTable.about,
       languages: consultantTable.languages,
