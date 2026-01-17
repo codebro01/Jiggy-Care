@@ -15,7 +15,6 @@ export class DrizzleExceptionFilter implements ExceptionFilter {
 
     console.log(exception);
 
-
     if (exception?.status === 401) {
       return response.status(HttpStatus.UNAUTHORIZED).json({
         statusCode: 401,
@@ -120,8 +119,7 @@ export class DrizzleExceptionFilter implements ExceptionFilter {
     if (
       exception?.response?.statusCode === 422 ||
       exception?.status === 422 ||
-      exception.data?.status === 422 ||
-      exception?.status
+      exception.data?.status === 422
     ) {
       return response.status(HttpStatus.BAD_REQUEST).json({
         statusCode: HttpStatus.BAD_REQUEST,
@@ -163,7 +161,8 @@ export class DrizzleExceptionFilter implements ExceptionFilter {
     //! Default fallback (true 500s only) - sanitized
     return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      message: exception?.response?.message || 'Unexpected internal server error',
+      message:
+        exception?.response?.message || 'Unexpected internal server error',
       error: exception?.response?.error || 'Unexpected internal server error',
       timestamp: new Date().toISOString(),
       path: request.url,
