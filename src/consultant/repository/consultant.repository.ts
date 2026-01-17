@@ -109,7 +109,7 @@ export class ConsultantRepository {
       pricePerSession: specialityTable.price,
       fullName: userTable.fullName,
 
-      rating: sql<number>`ROUND(AVG(${ratingTable.rating}), 2)`,
+      rating: sql<number>`ROUND(CAST(AVG(${ratingTable.rating}) AS numeric), 2)`,
     })
       .from(consultantTable)
       .where(eq(consultantTable.approvedStatus, true))
