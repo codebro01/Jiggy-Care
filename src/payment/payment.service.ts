@@ -451,7 +451,8 @@ export class PaymentService {
               );
             });
 
-            await this.notificationService.createNotification(
+            await Promise.all([
+              this.notificationService.createNotification(
               {
                 title: `Your deposit of ${amountInNaira} is successfull`,
                 message: `You have successfully deposited ${amountInNaira} through ${channel} `,
@@ -461,18 +462,20 @@ export class PaymentService {
                 status: StatusType.UNREAD,
               },
               patientId,
-            );
-            await this.notificationService.createNotification(
+            ), 
+            this.notificationService.createNotification(
               {
                 title: `NEW BOOKINNG`,
-                message: `You now have a new booking. Booking  information can be found in the  booking appointment screen.`,
+                message: `You have a new booking. Booking  information can be found in the  booking appointment screen.`,
                 variant: VariantType.SUCCESS,
                 category: CategoryType.BOOKING,
                 priority: '',
                 status: StatusType.UNREAD,
               },
               consultantId,
-            );
+            ),
+            ])
+
 
             break;
           }
