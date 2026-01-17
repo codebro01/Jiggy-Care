@@ -77,14 +77,12 @@ export class ConsultantRepository {
         specialityTable,
         eq(specialityTable.id, consultantTable.speciality),
       )
-      .leftJoin(userTable, eq(userTable.id, consultantTable.userId))
-
       .where(
         and(
           eq(consultantTable.approvedStatus, true),
           or(
             ilike(userTable.fullName, `%${searchTerm}%`),
-            ilike(consultantTable.speciality, `%${searchTerm}%`),
+            ilike(specialityTable.name, `%${searchTerm}%`),
           ),
         ),
       );
