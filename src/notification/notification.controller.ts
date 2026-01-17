@@ -81,7 +81,7 @@ export class NotificationController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient', 'consultant', 'admin')
-  @Post('all')
+  @Get('all')
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -433,7 +433,7 @@ export class NotificationController {
     res.status(HttpStatus.OK).json({ message: 'success', data: notification });
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin', 'businessOwner', 'driver')
+  @Roles('admin', 'consultant', 'patient')
   @Get('filter')
   async notificationFilters(
     @Req() req: Request,
