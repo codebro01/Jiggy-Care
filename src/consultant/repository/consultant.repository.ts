@@ -7,7 +7,7 @@ import {
   ratingTable,
   bookingTable,
 } from '@src/db';
-import { and, avg, eq, ilike, or } from 'drizzle-orm';
+import { and, sql, eq, ilike, or } from 'drizzle-orm';
 import { UpdateConsultantDto } from '@src/consultant/dto/updateConsultantDto';
 import { QueryPendingConsultantApprovalDto } from '@src/dashboard/dto/query-consultant-approval.dto';
 import { ToggleConsultantApprovalDto } from '@src/consultant/dto/toggle-consultant-approval.dto';
@@ -109,7 +109,7 @@ export class ConsultantRepository {
       pricePerSession: specialityTable.price,
       fullName: userTable.fullName,
 
-      rating: avg(ratingTable.rating),
+      rating: sql<number>`ROUND(AVG(${ratingTable.rating}), 2)`,
     })
       .from(consultantTable)
       .where(eq(consultantTable.approvedStatus, true))
