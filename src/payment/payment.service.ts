@@ -117,6 +117,7 @@ export class PaymentService {
               invoiceId: generateSecureInvoiceId(),
               dateInitiated: new Date().toISOString(),
               paymentFor: PaymentForType.BOOKINGS,
+              consultantId: booking.consultantId, 
             },
           },
           { headers: this.getHeaders() },
@@ -460,6 +461,17 @@ export class PaymentService {
                 status: StatusType.UNREAD,
               },
               patientId,
+            );
+            await this.notificationService.createNotification(
+              {
+                title: `NEW BOOKINNG`,
+                message: `You now have a new booking. Booking  information can be found in the  booking appointment screen.`,
+                variant: VariantType.SUCCESS,
+                category: CategoryType.BOOKING,
+                priority: '',
+                status: StatusType.UNREAD,
+              },
+              consultantId,
             );
 
             break;

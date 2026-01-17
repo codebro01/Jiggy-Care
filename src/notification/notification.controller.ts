@@ -63,39 +63,6 @@ export class NotificationController {
       'Establishes a Server-Sent Events (SSE) connection to receive real-time notification updates every 5 seconds. Only accessible by business owners and drivers.',
   })
   @ApiProduces('text/event-stream')
-  @ApiResponse({
-    status: 200,
-    description: 'SSE stream established successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        data: {
-          type: 'object',
-          properties: {
-            notifications: {
-              type: 'array',
-              items: {
-                type: 'object',
-                description: 'Notification object',
-              },
-            },
-            count: {
-              type: 'number',
-              description: 'Total number of notifications',
-            },
-          },
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing JWT token',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - User does not have required role',
-  })
   streamNotifications(@Req() req: Request) {
     const userId = req.user.id; // Get from auth
 
