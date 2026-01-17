@@ -217,12 +217,12 @@ export class BookingRepository {
     const Trx = trx || this.DbProvider;
 
     const bookings = await Trx.select({
-      patientId: bookingTable.patientId, 
-      bookingId: bookingTable.id, 
-      patientName: userTable.fullName, 
-      date: bookingTable.date, 
-      status: bookingTable.status, 
-      duration: bookingTable.duration, 
+      patientId: bookingTable.patientId,
+      bookingId: bookingTable.id,
+      patientName: userTable.fullName,
+      date: bookingTable.date,
+      status: bookingTable.status,
+      duration: bookingTable.duration,
     })
       .from(bookingTable)
       .where(
@@ -231,20 +231,23 @@ export class BookingRepository {
           eq(bookingTable.paymentStatus, true),
           eq(bookingTable.status, 'upcoming'),
         ),
-      ).leftJoin(userTable, eq(userTable.id, bookingTable.patientId));
+      )
+      .leftJoin(userTable, eq(userTable.id, bookingTable.patientId))
+      .orderBy(desc(bookingTable.date));
+;
     return bookings;
   }
   async getConsultantAllBookings(consultantId: string, trx?: any) {
     const Trx = trx || this.DbProvider;
 
     const bookings = await Trx.select({
-      patientId: bookingTable.patientId, 
-      consultantId: bookingTable.consultantId, 
-      bookingId: bookingTable.id, 
-      patientName: userTable.fullName, 
-      date: bookingTable.date, 
-      status: bookingTable.status, 
-      duration: bookingTable.duration, 
+      patientId: bookingTable.patientId,
+      consultantId: bookingTable.consultantId,
+      bookingId: bookingTable.id,
+      patientName: userTable.fullName,
+      date: bookingTable.date,
+      status: bookingTable.status,
+      duration: bookingTable.duration,
     })
       .from(bookingTable)
       .where(
@@ -252,7 +255,10 @@ export class BookingRepository {
           eq(bookingTable.consultantId, consultantId),
           eq(bookingTable.paymentStatus, true),
         ),
-      ).leftJoin(userTable, eq(userTable.id, bookingTable.patientId));
+      )
+      .leftJoin(userTable, eq(userTable.id, bookingTable.patientId))
+      .orderBy(desc(bookingTable.date));
+;
     return bookings;
   }
   async getConsultantCompletedBookings(consultantId: string, trx?: any) {
