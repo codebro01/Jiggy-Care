@@ -188,7 +188,7 @@ export class BookingRepository {
         ratingTable,
         eq(ratingTable.consultantId, consultantTable.userId),
       )
-      .groupBy(consultantTable.userId, userTable.fullName, ratingTable.rating, specialityTable.name, bookingTable.date, bookingTable.id)
+      .groupBy(consultantTable.userId, userTable.fullName, specialityTable.name, bookingTable.date, bookingTable.id)
       .orderBy(desc(bookingTable.date));
     return bookings;
   }
