@@ -471,7 +471,7 @@ export class PaymentService {
              this.notificationService.createNotification(
                {
                  title: `NEW BOOKING`,
-                 message: `You have a new booking. Booking information can be found in the booking appointment screen.`,
+                 message: `You have a new booking. Please check the booking information on your mobile application.`,
                  variant: VariantType.SUCCESS,
                  category: CategoryType.BOOKING,
                  priority: '',

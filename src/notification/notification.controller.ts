@@ -66,7 +66,7 @@ export class NotificationController {
   streamNotifications(@Req() req: Request) {
     const userId = req.user.id; // Get from auth
 
-    return interval(5000).pipe(
+    return interval(15000).pipe(
       switchMap(() => this.notificationService.getNotifications(userId)),
       map((notifications: any) => {
         return {
