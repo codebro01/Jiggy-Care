@@ -195,7 +195,7 @@ export class UploadController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'consultant', 'patient')
-  @Post('delete')
+  @Delete('delete')
   @ApiHeader({
     name: 'x-client-type',
     description:
