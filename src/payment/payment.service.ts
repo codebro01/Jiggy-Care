@@ -98,6 +98,8 @@ export class PaymentService {
       data.metadata.userId,
     );
 
+    // console.log(booking)
+
     if (!booking) throw new NotFoundException('could not find bookings');
 
     if (booking.paymentStatus === true)
@@ -117,7 +119,7 @@ export class PaymentService {
               invoiceId: generateSecureInvoiceId(),
               dateInitiated: new Date().toISOString(),
               paymentFor: PaymentForType.BOOKINGS,
-              consultantId: booking.consultantId, 
+              consultantId: data.metadata.consultantId,
             },
           },
           { headers: this.getHeaders() },
@@ -143,17 +145,18 @@ export class PaymentService {
 
     // ! check is cartID valid for user
 
-    const isValidCartId = await this.cartRepository.findCartByUserId(data.metadata.cartId, data.metadata.patientId);
+    const isValidCartId = await this.cartRepository.findCartByUserId(
+      data.metadata.cartId,
+      data.metadata.patientId,
+    );
 
-    if(!isValidCartId) throw new BadRequestException('Invalid cart id')
-    if(!isValidCartId.items) throw new NotFoundException('No item in cart')
+    if (!isValidCartId) throw new BadRequestException('Invalid cart id');
+    if (!isValidCartId.items) throw new NotFoundException('No item in cart');
 
-      console.log(data.metadata.cartId, isValidCartId)
+    console.log(data.metadata.cartId, isValidCartId);
 
     const medicationsAvailable = await this.medicationRepository.findByIds(
-      isValidCartId.items.map(
-        (medication) => medication.medicationId,
-      ),
+      isValidCartId.items.map((medication) => medication.medicationId),
     );
 
     if (medicationsAvailable.length < 1)
@@ -172,7 +175,7 @@ export class PaymentService {
         const unitPrice = medication.price;
         const subtotal = unitPrice * item.quantity;
 
-        console.log(unitPrice, item.quantity)
+        console.log(unitPrice, item.quantity);
 
         return {
           medicationId: medication.id,
@@ -207,7 +210,7 @@ export class PaymentService {
               paymentFor: PaymentForType.MEDICATIONS,
               items: orderItems,
               dateInitiated: new Date().toISOString(),
-              cartId:  isValidCartId.id, 
+              cartId: isValidCartId.id,
             },
           },
           { headers: this.getHeaders() },
@@ -402,7 +405,7 @@ export class PaymentService {
         patientId,
         amountInNaira,
         orderId,
-        cartId, 
+        cartId,
         dateInitiated,
         items,
         deliveryAddress,
@@ -427,54 +430,62 @@ export class PaymentService {
               );
             }
 
-            await this.paymentRepository.executeInTransaction(async (trx) => {
-              await this.paymentRepository.savePayment(
-                {
-                  bookingId,
-                  consultantId,
-                  amount: amountInNaira,
-                  invoiceId,
-                  dateInitiated,
-                  paymentStatus: 'success',
-                  paymentMethod: channel,
-                  reference,
-                  transactionType: 'deposit',
-                },
-                patientId,
-                trx,
-              );
+            const acidOperation =
+              await this.paymentRepository.executeInTransaction(async (trx) => {
+                await this.paymentRepository.savePayment(
+                  {
+                    bookingId,
+                    consultantId,
+                    amount: amountInNaira,
+                    invoiceId,
+                    dateInitiated,
+                    paymentStatus: 'success',
+                    paymentMethod: channel,
+                    reference,
+                    transactionType: 'deposit',
+                  },
+                  patientId,
+                  trx,
+                );
 
-              await this.bookingRepository.updateBookingPaymentStatus(
-                { paymentStatus: true, bookingId },
-                patientId,
-                trx,
-              );
-            });
+                await this.bookingRepository.updateBookingPaymentStatus(
+                  { paymentStatus: true, bookingId },
+                  patientId,
+                  trx,
+                );
+              });
 
-            await Promise.all([
-              this.notificationService.createNotification(
-              {
-                title: `Your deposit of ${amountInNaira} is successfull`,
-                message: `You have successfully deposited ${amountInNaira} through ${channel} `,
-                variant: VariantType.SUCCESS,
-                category: CategoryType.BOOKING,
-                priority: '',
-                status: StatusType.UNREAD,
-              },
-              patientId,
-            ), 
-            this.notificationService.createNotification(
-              {
-                title: `NEW BOOKINNG`,
-                message: `You have a new booking. Booking  information can be found in the  booking appointment screen.`,
-                variant: VariantType.SUCCESS,
-                category: CategoryType.BOOKING,
-                priority: '',
-                status: StatusType.UNREAD,
-              },
-              consultantId,
-            ),
-            ])
+         try {
+           const promiseOperation = await Promise.all([
+             this.notificationService.createNotification(
+               {
+                 title: `Your deposit of ${amountInNaira} is successful`,
+                 message: `You have successfully deposited ${amountInNaira} through ${channel}`,
+                 variant: VariantType.SUCCESS,
+                 category: CategoryType.BOOKING,
+                 priority: '',
+                 status: StatusType.UNREAD,
+               },
+               patientId,
+             ),
+             this.notificationService.createNotification(
+               {
+                 title: `NEW BOOKING`,
+                 message: `You have a new booking. Booking information can be found in the booking appointment screen.`,
+                 variant: VariantType.SUCCESS,
+                 category: CategoryType.BOOKING,
+                 priority: '',
+                 status: StatusType.UNREAD,
+               },
+               consultantId,
+             ),
+           ]);
+
+           console.log('Both notifications created:', promiseOperation);
+           console.log(acidOperation, promiseOperation);
+         } catch (error) {
+           console.error('Error creating notifications:', error);
+         }
 
 
             break;
@@ -601,7 +612,7 @@ export class PaymentService {
                   reference,
                   transactionType: 'deposit',
                   amount: amountInNaira,
-                  cartId, 
+                  cartId,
                 },
                 patientId,
                 trx,
@@ -668,7 +679,7 @@ export class PaymentService {
                   reference,
                   transactionType: 'deposit',
                   amount: amountInNaira,
-                  cartId, 
+                  cartId,
                 },
                 patientId,
                 trx,

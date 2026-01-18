@@ -21,7 +21,7 @@ export class CreateBookingDto {
 
 
     @ApiProperty({
-        example: ['headache', 'sore throat', 'tiredness'], 
+        example: 'headache, tiredness, sore throat', 
         description: "This is the array of symptoms"
     })
     @IsNotEmpty()
