@@ -31,10 +31,13 @@ export class EmailService {
       throw new Error('RESEND_API_KEY is not defined');
     }
     this.resend = new Resend(apiKey);
-    this.fromEmail = this.configService.get<string>(
-      'FROM_EMAIL',
-      'onboarding@resend.dev',
-    );
+
+    const fromEmail = this.configService.get<string>('FROM_EMAIL');
+    if (!fromEmail) {
+      throw new Error('FROM_EMAIL environment variable is not set');
+    }
+    this.fromEmail = fromEmail;
+
   }
 
   async queueEmail(data: EmailJobData, priority: number = 0): Promise<string> {
@@ -52,20 +55,21 @@ export class EmailService {
     }
   }
 
-
   async queueTemplatedEmail(
     template: EmailTemplateType,
     to: string | string[],
     data: Record<string, any>,
   ): Promise<string> {
-            console.log('got into queue');
+    console.log('got into queue');
 
     const emailData = this.buildTemplateEmail(template, to, data);
-    const queueEmail =  await this.queueEmail(emailData, this.getTemplatePriority(template));
-    console.log(queueEmail)
-    return queueEmail
+    const queueEmail = await this.queueEmail(
+      emailData,
+      this.getTemplatePriority(template),
+    );
+    console.log(queueEmail);
+    return queueEmail;
   }
-
 
   private buildTemplateEmail(
     template: EmailTemplateType,

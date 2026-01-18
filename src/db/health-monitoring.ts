@@ -13,7 +13,7 @@ export enum readingStatusType {
 export const healthMonitoringTable = pgTable('health_monitoring', {
   id: uuid('id').defaultRandom().primaryKey().notNull(),
   patientId: uuid('patientId')
-    .references(() => userTable.id)
+    .references(() => userTable.id, {onDelete: 'cascade'})
     .notNull().unique(),
   temperature: jsonb('temperature').$type<{
     value: number;
