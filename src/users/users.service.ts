@@ -274,6 +274,7 @@ export class UserService {
             languages: data.languages || consultant.languages,
             certification: data.certification || consultant.certification,
             workingHours: data.workingHours || consultant.workingHours,
+            speciality: data.speciality || consultant.speciality, 
           },
           userId,
           trx,

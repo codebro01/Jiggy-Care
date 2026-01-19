@@ -9,6 +9,7 @@ import {
   MaxLength,
   Min,
   IsObject,
+  IsUUID,
   // IsUUID,
   // IsNotEmpty,
 } from 'class-validator';
@@ -177,4 +178,12 @@ export class UpdateConsultantDto {
   @IsString()
   @MaxLength(50)
   phone?: string;
+
+  @ApiPropertyOptional({
+    description: 'speciality uuid',
+    example: '1de96dbe-2e2b-4736-be6a-6519ed5148bd',
+  })
+  @IsOptional()
+  @IsUUID()
+  speciality?: string;
 }

@@ -18,6 +18,7 @@ export class SpecialityRepository{
         
           async findAll() {
             const speciality = await this.DbProvider.select({
+                id: specialityTable.id, 
                 name: specialityTable.name, 
                 price: specialityTable.price, 
                 description: specialityTable.description
