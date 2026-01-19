@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { SpecialityService } from './speciality.service';
 import { CreateSpecialityDto } from './dto/create-speciality.dto';
 import { UpdateSpecialityDto } from './dto/update-speciality.dto';
@@ -7,7 +17,6 @@ import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { Roles } from '@src/auth/decorators/roles.decorators';
 import type { Request } from '@src/types';
 import { ApiBearerAuth, ApiCookieAuth, ApiHeader } from '@nestjs/swagger';
-
 
 @Controller('speciality')
 export class SpecialityController {
@@ -53,8 +62,10 @@ export class SpecialityController {
       example: 'mobile',
     },
   })
-  findAll() {
-    return this.specialityService.findAll();
+  async findAll() {
+    const specialities = await this.specialityService.findAll();
+
+    return { success: true, data: specialities };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
