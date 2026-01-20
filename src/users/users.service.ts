@@ -302,16 +302,16 @@ export class UserService {
   }
 
   async profileCards(patientId: string) {
-    const [completedAppointments, totalReports, activeMeds] = await Promise.all(
+    const [totalBookings, totalReports, activeMeds] = await Promise.all(
       [
-        this.bookingRepository.totalCompletedBookings(patientId),
+        this.bookingRepository.totalBookings(patientId),
         this.testResultRepository.totalTests(patientId),
         this.prescriptionRepository.totalActivePresciptions(patientId),
       ],
     );
 
     return {
-      appointments: completedAppointments,
+      appointments: totalBookings,
       reports: totalReports,
       activeMeds,
     };

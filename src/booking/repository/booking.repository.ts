@@ -295,19 +295,18 @@ export class BookingRepository {
     return booking;
   }
 
-  async totalCompletedBookings(patientId: string) {
-    const [totalCompletedBookings] = await this.DbProvider.select({
-      totalCompletedAppointments: count(),
+  async totalBookings(patientId: string) {
+    const [totalBookings] = await this.DbProvider.select({
+      total: count(),
     })
       .from(bookingTable)
       .where(
         and(
           eq(bookingTable.patientId, patientId),
-          eq(bookingTable.status, 'completed'),
         ),
       );
 
-    return totalCompletedBookings.totalCompletedAppointments;
+    return totalBookings.total;
   }
 
   // Patient confirms booking (step 2 of 2)
