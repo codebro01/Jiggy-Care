@@ -259,7 +259,7 @@ export class BookingService {
   }
 
   async totalCompletedBookings(patientId: string) {
-    return await this.bookingRepository.totalCompletedBookings(patientId);
+    return await this.bookingRepository.totalBookings(patientId);
   }
 
   // !consultant starts appointment
