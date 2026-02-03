@@ -5,6 +5,7 @@ import { userTable } from "@src/db/users";
 export const specialityTable = pgTable('speciality', {
     id: uuid().defaultRandom().primaryKey().notNull(), 
     userId: uuid('userId').references(() => userTable.id, {onDelete: 'cascade'}).notNull(), 
+    prefix: varchar('prefix', {length: 10}).notNull().default('Dr.'), 
     name: varchar('name', {length: 255}).notNull(),
     description: text('description'),
     price: doublePrecision('price').notNull(), 

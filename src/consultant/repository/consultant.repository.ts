@@ -63,6 +63,7 @@ export class ConsultantRepository {
       certification: consultantTable.certification,
       workingHours: consultantTable.workingHours,
       speciality: specialityTable.name,
+      specialityPrefix: specialityTable.prefix, 
       pricePerSession: specialityTable.price,
       // User details
       userName: userTable.fullName,
