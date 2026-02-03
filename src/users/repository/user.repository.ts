@@ -100,6 +100,7 @@ export class UserRepository {
       emailVerified: userTable.emailVerified,
       availability: consultantTable.availability,
       speciality: specialityTable.name,
+      specialityPrefix: specialityTable.prefix,
       yrsOfExperience: consultantTable.yrsOfExperience,
       about: consultantTable.about,
       languages: consultantTable.languages,
