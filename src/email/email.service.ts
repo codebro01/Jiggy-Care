@@ -13,6 +13,8 @@ import {
   PasswordResetTemplateData,
   EmailVerificationTemplateData,
   EmailResponse,
+  appointmentSummaryTemplateData,
+  consultantAppointmentSummaryTemplateData,
 } from '@src/email/types/types';
 
 @Injectable()
@@ -103,6 +105,22 @@ export class EmailService {
             data as CampaignApprovedTemplateData,
           ),
         };
+      case EmailTemplateType.APPOINTMENT_SUMMARY:
+        return {
+          to,
+          subject: `Appointment Summary`,
+          html: this.emailTemplate.getAppointmentSummaryTemplate(
+            data as appointmentSummaryTemplateData,
+          ),
+        };
+      case EmailTemplateType.CONSULTANT_APPOINTMENT_SUMMARY:
+        return {
+          to,
+          subject: `Appointment Summary`,
+          html: this.emailTemplate.getConsultantAppointmentSummaryTemplate(
+            data as consultantAppointmentSummaryTemplateData,
+          ),
+        };
 
       case EmailTemplateType.PASSWORD_RESET:
         return {
@@ -166,6 +184,8 @@ export class EmailService {
     const priorities = {
       [EmailTemplateType.PASSWORD_RESET]: 1, // Highest priority
       [EmailTemplateType.EMAIL_VERIFICATION]: 1,
+      [EmailTemplateType.APPOINTMENT_SUMMARY]: 2,
+      [EmailTemplateType.CONSULTANT_APPOINTMENT_SUMMARY]: 2,
       [EmailTemplateType.CAMPAIGN_APPROVED]: 2,
       [EmailTemplateType.CAMPAIGN_REJECTED]: 2,
       [EmailTemplateType.WELCOME]: 3,

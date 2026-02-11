@@ -9,6 +9,7 @@ import { BadRequestException } from '@nestjs/common';
 import { bookingTableSelectType } from '@src/db';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { QueryBookingDto } from '@src/booking/dto/query-booking.dto';
+import { OneSignalService } from '@src/one-signal/one-signal.service';
 
 type DayName =
   | 'sunday'
@@ -24,6 +25,7 @@ export class BookingService {
   constructor(
     private readonly bookingRepository: BookingRepository,
     private readonly consultantRepository: ConsultantRepository,
+    private readonly oneSignalService: OneSignalService,
   ) {}
 
   async createBooking(

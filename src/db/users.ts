@@ -86,4 +86,5 @@ export const consultantTable = pgTable('consultants', {
 export type UserType = InferSelectModel<typeof userTable>;
 export type userTableInsertType = typeof userTable.$inferInsert;
 export type consultantInsertType = typeof consultantTable.$inferInsert;
+export type consultantSelectType = typeof consultantTable.$inferSelect;
 export type patientInsertType = typeof patientTable.$inferInsert;

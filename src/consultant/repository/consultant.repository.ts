@@ -39,14 +39,34 @@ export class ConsultantRepository {
   }
 
   async findApprovedConsultantById(userId: string) {
-    const [consultant] = await this.DbProvider.select()
+    const [consultant] = await this.DbProvider.select({
+      id: consultantTable.id,
+      userId: consultantTable.userId,
+      availability: consultantTable.availability,
+      workingHours: consultantTable.workingHours, 
+      yrsOfExperience: consultantTable.yrsOfExperience,
+      about: consultantTable.about,
+      languages: consultantTable.languages,
+      education: consultantTable.education,
+      certification: consultantTable.certification,
+      approvedStatus: consultantTable.approvedStatus,
+      speciality: specialityTable.id,
+      fullName: userTable.fullName, 
+      email: userTable.email, 
+    })
       .from(consultantTable)
       .where(
         and(
           eq(consultantTable.userId, userId),
           eq(consultantTable.approvedStatus, true),
         ),
-      );
+      )
+      .leftJoin(
+        specialityTable,
+        eq(specialityTable.id, consultantTable.speciality),
+      ).leftJoin(
+        userTable, eq(userTable.id, userId)
+      )
 
     return consultant;
   }

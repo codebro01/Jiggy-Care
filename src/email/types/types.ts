@@ -22,6 +22,8 @@ export enum EmailTemplateType {
   CAMPAIGN_REJECTED = 'campaign-rejected',
   PASSWORD_RESET = 'password-reset',
   EMAIL_VERIFICATION = 'email-verification',
+  APPOINTMENT_SUMMARY = 'appointment-summary',
+  CONSULTANT_APPOINTMENT_SUMMARY = 'consultant-appointment-summary',
 }
 
 export interface EmailResponse {
@@ -51,6 +53,22 @@ export interface CampaignApprovedTemplateData {
   campaignName: string;
   campaignId: string;
 }
+export interface appointmentSummaryTemplateData {
+  invoiceNo: string;
+  appointmentDate: Date;
+  amountPaid: number;
+  consultantName: string; 
+  invoiceStatus: string;
+}
+export interface consultantAppointmentSummaryTemplateData {
+  consultantName: string;
+  patientName: string;
+  appointmentDate: Date;
+  appointmentId: string; 
+  notes?: string;
+}
+
+
 
 export interface PasswordResetTemplateData {
   resetCode: string;

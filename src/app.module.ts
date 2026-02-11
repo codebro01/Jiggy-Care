@@ -42,6 +42,7 @@ import { CartModule } from './cart/cart.module';
 import { SupportModule } from './support/support.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { OneSignalModule } from './one-signal/one-signal.module';
 @Module({
   imports: [
     ScheduleModule.forRoot(), 
@@ -107,6 +108,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     CartModule,
     SupportModule,
     DashboardModule,
+    OneSignalModule,
   ],
   controllers: [AppController],
   providers: [AppService, NeonProvider, MulterService],

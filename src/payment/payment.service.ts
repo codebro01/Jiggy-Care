@@ -36,6 +36,11 @@ import { TestRepository } from '@src/test/repository/test.repository';
 import { InitializeTestBookingPayment } from '@src/payment/dto/initializeTestBookingPayment.dto';
 import { TestBookingPaymentRepository } from '@src/test-booking-payment/repository/test-booking-payment.repository';
 import { CartRepository } from '@src/cart/repository/cart.repository';
+import { OneSignalService } from '@src/one-signal/one-signal.service';
+import { EmailService } from '@src/email/email.service';
+import { EmailTemplateType } from '@src/email/types/types';
+import { SpecialityRepository } from '@src/speciality/repository/speciality.repository';
+import { ConsultantRepository } from '@src/consultant/repository/consultant.repository';
 
 interface VerifyPaymentResponse {
   status: boolean;
@@ -63,6 +68,9 @@ export class PaymentService {
     private userRepository: UserRepository,
     private paymentRepository: PaymentRepository,
     private readonly notificationService: NotificationService,
+    private readonly emailService: EmailService,
+    private readonly consultantRepository: ConsultantRepository,
+    private readonly oneSignalService: OneSignalService,
     private readonly bookingRepository: BookingRepository,
     private readonly orderRepository: OrdersRepository,
     private readonly medicationRepository: MedicationRepository,
@@ -71,6 +79,7 @@ export class PaymentService {
     private readonly testRepository: TestRepository,
     private readonly testBookingPaymentRepository: TestBookingPaymentRepository,
     private readonly cartRepository: CartRepository,
+    private readonly specialityRepository: SpecialityRepository,
   ) {
     const key = this.configService.get<string>('PAYSTACK_SECRET_KEY');
     if (!key) {
@@ -454,39 +463,70 @@ export class PaymentService {
                   trx,
                 );
               });
+            const [consultant, booking] = await Promise.all([
+              this.consultantRepository.findApprovedConsultantById(consultantId),
+              this.bookingRepository.getBooking(
+                bookingId,
+                consultantId,
+                patientId,
+              ),
+            ]);
 
-         try {
-           const promiseOperation = await Promise.all([
-             this.notificationService.createNotification(
-               {
-                 title: `Your deposit of ${amountInNaira} is successful`,
-                 message: `You have successfully deposited ${amountInNaira} through ${channel}`,
-                 variant: VariantType.SUCCESS,
-                 category: CategoryType.BOOKING,
-                 priority: '',
-                 status: StatusType.UNREAD,
-               },
-               patientId,
-             ),
-             this.notificationService.createNotification(
-               {
-                 title: `NEW BOOKING`,
-                 message: `You have a new booking. Please check the booking information on your mobile application.`,
-                 variant: VariantType.SUCCESS,
-                 category: CategoryType.BOOKING,
-                 priority: '',
-                 status: StatusType.UNREAD,
-               },
-               consultantId,
-             ),
-           ]);
 
-           console.log('Both notifications created:', promiseOperation);
-           console.log(acidOperation, promiseOperation);
-         } catch (error) {
-           console.error('Error creating notifications:', error);
-         }
+            if(consultant.speciality === null || consultant.speciality === undefined) throw new NotFoundException('Could not get consultant speciality');
+            if(!consultant.email) throw new NotFoundException('Could not get consultant email')
+            const speciality = await this.specialityRepository.findOne(consultant.speciality);
 
+            try {
+              const promiseOperation = await Promise.all([
+                this.notificationService.createNotification(
+                  {
+                    title: `Your deposit of ${amountInNaira} is successful`,
+                    message: `You have successfully deposited ${amountInNaira} through ${channel}`,
+                    variant: VariantType.SUCCESS,
+                    category: CategoryType.BOOKING,
+                    priority: '',
+                    status: StatusType.UNREAD,
+                  },
+                  patientId,
+                ),
+                this.notificationService.createNotification(
+                  {
+                    title: `NEW BOOKING`,
+                    message: `You have a new booking. Please check the booking information on your mobile application.`,
+                    variant: VariantType.SUCCESS,
+                    category: CategoryType.BOOKING,
+                    priority: '',
+                    status: StatusType.UNREAD,
+                  },
+                  consultantId,
+                ),
+                // send push notification to consultant for booking
+
+                this.oneSignalService.sendNotificationToUser(
+                  consultantId,
+                  'New Appointment',
+                  'You have a new appointment on ',
+                ),
+
+                this.emailService.queueTemplatedEmail(
+                  EmailTemplateType.APPOINTMENT_SUMMARY,
+                  consultant.email,
+                  {
+                    invoiceNo: invoiceId,
+                    appointmentDate: booking.appointmentDate,
+                    amountPaid: amountInNaira,
+                    invoiceStatus: 'Paid',
+                    consultantName: `${speciality.prefix} ${consultant.fullName}`,
+                  },
+                ),
+              ]);
+
+              console.log('Both notifications created:', promiseOperation);
+              console.log(acidOperation, promiseOperation);
+            } catch (error) {
+              console.error('Error creating notifications:', error);
+            }
 
             break;
           }

@@ -73,6 +73,8 @@ export class BookingRepository {
     let query = Trx.select({
       pricePerSession: specialityTable.price,
       paymentStatus: bookingTable.paymentStatus,
+      appointmentDate: bookingTable.date,
+      
     })
       .from(bookingTable)
       .where(and(eq(bookingTable.id, bookingId), or(...conditions)));
