@@ -439,7 +439,6 @@ export class PaymentService {
               );
             }
 
-            const acidOperation =
               await this.paymentRepository.executeInTransaction(async (trx) => {
                 await this.paymentRepository.savePayment(
                   {
@@ -464,21 +463,36 @@ export class PaymentService {
                 );
               });
             const [consultant, booking] = await Promise.all([
-              this.consultantRepository.findApprovedConsultantById(consultantId),
+              this.consultantRepository.findApprovedConsultantById(
+                consultantId,
+              ),
               this.bookingRepository.getBooking(
                 bookingId,
                 consultantId,
                 patientId,
               ),
             ]);
+            console.log('fetched consultant detials and campaign here')
+            if (
+              consultant.speciality === null ||
+              consultant.speciality === undefined
+            )
+              throw new NotFoundException(
+                'Could not get consultant speciality',
+              );
+            if (!consultant.email)
+              throw new NotFoundException('Could not get consultant email');
+            const speciality = await this.specialityRepository.findOne(
+              consultant.speciality,
+            );
 
+                        console.log(
+                          'Entered Notiifcation creatings',
+                        );
 
-            if(consultant.speciality === null || consultant.speciality === undefined) throw new NotFoundException('Could not get consultant speciality');
-            if(!consultant.email) throw new NotFoundException('Could not get consultant email')
-            const speciality = await this.specialityRepository.findOne(consultant.speciality);
 
             try {
-              const promiseOperation = await Promise.all([
+              const [PatientNotification, consultantNotification, consultantPushNotification, patientInvoice] = await Promise.all([
                 this.notificationService.createNotification(
                   {
                     title: `Your deposit of ${amountInNaira} is successful`,
@@ -503,6 +517,8 @@ export class PaymentService {
                 ),
                 // send push notification to consultant for booking
 
+
+
                 this.oneSignalService.sendNotificationToUser(
                   consultantId,
                   'New Appointment',
@@ -522,12 +538,16 @@ export class PaymentService {
                 ),
               ]);
 
-              console.log('Both notifications created:', promiseOperation);
-              console.log(acidOperation, promiseOperation);
+              console.log(
+                'Alls notifications created:',
+                PatientNotification,
+                consultantNotification,
+                consultantPushNotification,
+                patientInvoice,
+              );
             } catch (error) {
               console.error('Error creating notifications:', error);
             }
-
             break;
           }
           case 'charge.failed': {

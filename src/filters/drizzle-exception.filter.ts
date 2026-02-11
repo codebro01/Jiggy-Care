@@ -35,6 +35,19 @@ export class DrizzleExceptionFilter implements ExceptionFilter {
       });
     }
 
+      if (exception?.response?.statusCode === 409 || exception.status === 409) {
+        return response.status(HttpStatus.CONFLICT).json({
+          statusCode: HttpStatus.CONFLICT,
+          message:
+            exception?.response?.message ||
+            exception?.response?.data?.message ||
+            'Conflict',
+          error: exception?.response?.error || 'Conflict',
+          timestamp: new Date().toISOString(),
+          path: request.url,
+        });
+      }
+
     //! Handle Postgres duplicate key (wrapped in cause)
     if (exception.cause?.code === '23505') {
       return response.status(HttpStatus.BAD_REQUEST).json({
