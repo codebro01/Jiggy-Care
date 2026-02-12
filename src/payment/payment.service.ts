@@ -439,29 +439,29 @@ export class PaymentService {
               );
             }
 
-              await this.paymentRepository.executeInTransaction(async (trx) => {
-                await this.paymentRepository.savePayment(
-                  {
-                    bookingId,
-                    consultantId,
-                    amount: amountInNaira,
-                    invoiceId,
-                    dateInitiated,
-                    paymentStatus: 'success',
-                    paymentMethod: channel,
-                    reference,
-                    transactionType: 'deposit',
-                  },
-                  patientId,
-                  trx,
-                );
+            await this.paymentRepository.executeInTransaction(async (trx) => {
+              await this.paymentRepository.savePayment(
+                {
+                  bookingId,
+                  consultantId,
+                  amount: amountInNaira,
+                  invoiceId,
+                  dateInitiated,
+                  paymentStatus: 'success',
+                  paymentMethod: channel,
+                  reference,
+                  transactionType: 'deposit',
+                },
+                patientId,
+                trx,
+              );
 
-                await this.bookingRepository.updateBookingPaymentStatus(
-                  { paymentStatus: true, bookingId },
-                  patientId,
-                  trx,
-                );
-              });
+              await this.bookingRepository.updateBookingPaymentStatus(
+                { paymentStatus: true, bookingId },
+                patientId,
+                trx,
+              );
+            });
             const [consultant, booking] = await Promise.all([
               this.consultantRepository.findApprovedConsultantById(
                 consultantId,
@@ -472,7 +472,7 @@ export class PaymentService {
                 patientId,
               ),
             ]);
-            console.log('fetched consultant detials and campaign here')
+            console.log('fetched consultant detials and campaign here');
             if (
               consultant.speciality === null ||
               consultant.speciality === undefined
@@ -486,17 +486,33 @@ export class PaymentService {
               consultant.speciality,
             );
 
-                        console.log(
-                          'Entered Notiifcation creatings',
-                        );
+            const dayName = booking.appointmentDate.toLocaleDateString(
+              'en-US',
+              {
+                weekday: 'long',
+                timeZone: 'UTC',
+              },
+            );
+            const time = booking.appointmentDate.toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true,
+              timeZone: 'UTC',
+            });
 
+            const formattedDate = `${dayName} at ${time}`;
 
             try {
-              const [PatientNotification, consultantNotification, consultantPushNotification, patientInvoice] = await Promise.all([
+              const [
+                PatientNotification,
+                consultantNotification,
+                consultantPushNotification,
+                patientInvoice,
+              ] = await Promise.all([
                 this.notificationService.createNotification(
                   {
-                    title: `Your deposit of ${amountInNaira} is successful`,
-                    message: `You have successfully deposited ${amountInNaira} through ${channel}`,
+                    title: `Appointment Booking is Successful`,
+                    message: `You have successfully paid the sum of ${amountInNaira} through ${channel} to book an appointment with a Medical Consultant that is scheduled to hold on ${formattedDate}`,
                     variant: VariantType.SUCCESS,
                     category: CategoryType.BOOKING,
                     priority: '',
@@ -507,7 +523,7 @@ export class PaymentService {
                 this.notificationService.createNotification(
                   {
                     title: `NEW BOOKING`,
-                    message: `You have a new booking. Please check the booking information on your mobile application.`,
+                    message: `You have a new appointment on ${formattedDate}`,
                     variant: VariantType.SUCCESS,
                     category: CategoryType.BOOKING,
                     priority: '',
@@ -517,12 +533,14 @@ export class PaymentService {
                 ),
                 // send push notification to consultant for booking
 
-
-
                 this.oneSignalService.sendNotificationToUser(
                   consultantId,
                   'New Appointment',
-                  'You have a new appointment on ',
+                  `You have a new appointment on ${formattedDate}`,
+                  {
+                    category: 'BOOKING',
+                    action: 'view_booking',
+                  },
                 ),
 
                 this.emailService.queueTemplatedEmail(

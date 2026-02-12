@@ -41,6 +41,7 @@
     "cloudflared": "^0.7.1",
     "cloudinary": "^2.7.0",
     "cookie-parser": "^1.4.7",
+    "date-fns": "^4.1.0",
     "dotenv": "^17.2.1",
     "drizzle-orm": "^0.44.4",
     "google-auth-library": "^10.5.0",

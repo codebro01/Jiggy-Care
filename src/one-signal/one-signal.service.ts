@@ -34,10 +34,10 @@ export class OneSignalService {
     notification.app_id = this.appId;
     notification.include_aliases = { external_id: [userId] };
     notification.target_channel = 'push';
-
+  notification.priority = 10;
     notification.headings = { en: heading };
     notification.contents = { en: content };
-
+    
     if (data) {
       notification.data = data;
     }
