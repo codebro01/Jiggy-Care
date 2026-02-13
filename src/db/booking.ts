@@ -37,10 +37,14 @@ export const bookingTable = pgTable(
     status: bookingStatusType('status').default('upcoming').notNull(),
     paymentStatus: boolean('payment_status').default(false),
 
-    actualStart: timestamp('actual_start'),
-    actualEnd: timestamp('actual_end'),
-    consultantCompletedAt: timestamp('consultant_completed_at'),
-    patientCompletedAt: timestamp('patient_completed_at'),
+    actualStart: timestamp('actual_start', { withTimezone: true }),
+    actualEnd: timestamp('actual_end', { withTimezone: true }),
+    consultantCompletedAt: timestamp('consultant_completed_at', {
+      withTimezone: true,
+    }),
+    patientCompletedAt: timestamp('patient_completed_at', {
+      withTimezone: true,
+    }),
 
     consultantMarkedNoShow: boolean('consultant_marked_no_show').default(false),
     consultantConfirmed: boolean('consultant_confirmed').default(false),

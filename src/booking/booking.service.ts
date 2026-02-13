@@ -266,24 +266,20 @@ export class BookingService {
 
   // !consultant starts appointment
 
-  async startAppointment(bookingId: string, consultantId: string) {
+  async consultantStartAppointment(bookingId: string, consultantId: string) {
     const booking = await this.bookingRepository.getBooking(
       bookingId,
       consultantId,
     );
-    if (!booking[0] || booking[0].consultantId !== consultantId) {
+    if (!booking || booking.consultantId !== consultantId) {
       throw new ForbiddenException('Not authorized');
     }
 
-    if (booking[0].status !== 'upcoming') {
+    if (booking.status !== 'upcoming') {
       throw new BadRequestException('Appointment already started or completed');
     }
 
-    return await this.bookingRepository.updateBooking(
-      {
-        status: 'in_progress',
-        actualStart: new Date(),
-      },
+    return await this.bookingRepository.consultantStartAppointment(
       bookingId,
       consultantId,
     );
@@ -298,22 +294,17 @@ export class BookingService {
       bookingId,
       consultantId,
     );
-    if (!booking[0] || booking[0].consultantId !== consultantId) {
+    if (!booking || booking.consultantId !== consultantId) {
       throw new ForbiddenException('Not authorized');
     }
 
-    if (booking[0].status !== 'in_progress') {
+    if (booking.status !== 'in_progress') {
       throw new BadRequestException('Appointment not in progress');
     }
 
-    return await this.bookingRepository.updateBooking(
+    return await this.bookingRepository.consultantCompleteAppointment(
       {
-        status: 'pending_confirmation',
-        actualEnd: new Date(),
-        consultantCompletedAt: new Date(),
-        consultantConfirmed: true,
         consultationNotes: notes,
-        updatedAt: new Date(),
       },
       bookingId,
       consultantId,
@@ -323,7 +314,7 @@ export class BookingService {
   }
 
   // ! patient confirms consultant completion
-  async patientConfirmAppointment(
+  async patientCompleteAppointment(
     bookingId: string,
     patientId: string,
     confirmed: boolean,
@@ -331,26 +322,26 @@ export class BookingService {
   ) {
     const booking = await this.bookingRepository.getBooking(
       bookingId,
+      undefined, 
       patientId,
     );
 
-    if (!booking[0] || booking[0].patientId !== patientId) {
+    console.log(patientId, bookingId, booking)
+    if (!booking || booking.patientId !== patientId) {
       throw new ForbiddenException('Not authorized');
     }
 
-    if (booking[0].status !== 'pending_confirmation') {
-      throw new BadRequestException('Appointment not pending confirmation');
+    if (booking.status !== 'pending_confirmation') {
+      throw new BadRequestException('Appointment not pending confirmation, the consultant first has to comfirm the completion of the appointment ');
     }
 
     const newStatus = confirmed ? 'completed' : 'disputed';
 
-    return await this.bookingRepository.updateBooking(
+    return await this.bookingRepository.patientCompleteAppointment(
       {
         status: newStatus,
-        patientCompletedAt: new Date(),
         patientConfirmed: confirmed,
         disputeReason: confirmed ? null : reason,
-        updatedAt: new Date(),
       },
       bookingId,
       patientId,
@@ -360,29 +351,45 @@ export class BookingService {
   }
 
   //! Consultant marks patient as no-show
-  async markNoShow(bookingId: string, consultantId: string) {
+  async consultantMarkNoShow(bookingId: string, consultantId: string) {
     const booking = await this.bookingRepository.getBooking(
       bookingId,
       consultantId,
     );
+    if (!booking || booking.consultantId !== consultantId) {
+      throw new ForbiddenException('Not authorized');
+    }
 
-    if (!booking[0] || booking[0].consultantId !== consultantId) {
+    console.log(booking)
+
+    if (booking.status !== 'in_progress' && booking.status !== 'upcoming') {
+      throw new BadRequestException('Can only mark no show if appointment is upcoming or in progress');
+    }
+
+    return await this.bookingRepository.consultantMarkNoShow(
+      bookingId,
+      consultantId,
+    );
+  }
+  async patientMarkNoShow(bookingId: string, patientId: string) {
+    const booking = await this.bookingRepository.getBooking(
+      bookingId,
+      undefined,
+      patientId,
+    );
+
+    if (!booking || booking.patientId !== patientId) {
       throw new ForbiddenException('Not authorized');
     }
 
     //! consultant Can only mark no-show if  in_progress
-    if (!['in_progress'].includes(booking[0].status)) {
-      throw new BadRequestException('Cannot mark as no-show');
+    if (!['upcoming'].includes(booking.status)) {
+      throw new BadRequestException('Can only mark as no show if the appointment is upcoming!');
     }
 
-    return await this.bookingRepository.updateBooking(
-      {
-        status: 'no_show',
-        consultantMarkedNoShow: true,
-        updatedAt: new Date(),
-      },
+    return await this.bookingRepository.patientMarkNoShow(
       bookingId,
-      consultantId,
+      patientId,
     );
   }
 

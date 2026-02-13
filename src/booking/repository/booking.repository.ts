@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Inject,
-  BadRequestException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CreateBookingDto } from '../dto/createBooking.dto';
 import { or, eq, and, desc, lt, sql } from 'drizzle-orm';
@@ -70,28 +65,31 @@ export class BookingRepository {
 
     if (patientId) conditions.push(eq(bookingTable.patientId, patientId));
 
-    let query = Trx.select({
+    const query = Trx.select({
       pricePerSession: specialityTable.price,
       paymentStatus: bookingTable.paymentStatus,
+      patientId: bookingTable.patientId,
+      consultantId: bookingTable.consultantId,
       appointmentDate: bookingTable.date,
-      
+      status: bookingTable.status,
+
     })
       .from(bookingTable)
-      .where(and(eq(bookingTable.id, bookingId), or(...conditions)));
-    if (consultantId) {
-      query.leftJoin(consultantTable, eq(consultantTable.userId, consultantId));
-    }
+      .leftJoin(
+        consultantTable,
+        eq(consultantTable.userId, bookingTable.consultantId),
+      )
+      .leftJoin(
+        specialityTable,
+        eq(specialityTable.id, consultantTable.speciality),
+      )
+      .where(and(eq(bookingTable.id, bookingId), or(...conditions)))
+      .limit(1);
 
-    query = query.leftJoin(
-      specialityTable,
-      eq(specialityTable.id, consultantTable.speciality),
-    );
-
-    const [result] = await query.limit(1);
+    const [result] = await query;
 
     return result;
   }
-
   async updateBooking(
     data: Partial<bookingTableInsertType>,
     bookingId: string,
@@ -203,7 +201,6 @@ export class BookingRepository {
   async getPatientCompletedBookings(patientId: string, trx?: any) {
     const Trx = trx || this.DbProvider;
 
-
     const bookings = await Trx.select()
       .from(bookingTable)
       .where(
@@ -236,7 +233,6 @@ export class BookingRepository {
       )
       .leftJoin(userTable, eq(userTable.id, bookingTable.patientId))
       .orderBy(desc(bookingTable.date));
-;
     return bookings;
   }
   async getConsultantAllBookings(consultantId: string, trx?: any) {
@@ -260,7 +256,6 @@ export class BookingRepository {
       )
       .leftJoin(userTable, eq(userTable.id, bookingTable.patientId))
       .orderBy(desc(bookingTable.date));
-;
     return bookings;
   }
   async getConsultantCompletedBookings(consultantId: string, trx?: any) {
@@ -302,11 +297,7 @@ export class BookingRepository {
       total: count(),
     })
       .from(bookingTable)
-      .where(
-        and(
-          eq(bookingTable.patientId, patientId),
-        ),
-      );
+      .where(and(eq(bookingTable.patientId, patientId)));
 
     return totalBookings.total;
   }
@@ -314,28 +305,34 @@ export class BookingRepository {
   // Patient confirms booking (step 2 of 2)
 
   // Consultant marks patient as no-show
-  async markNoShow(bookingId: string, consultantId: string) {
-    const booking = await this.DbProvider.select()
-      .from(bookingTable)
-      .where(eq(bookingTable.id, bookingId))
-      .limit(1);
-
-    if (!booking[0] || booking[0].consultantId !== consultantId) {
-      throw new ForbiddenException('Not authorized');
-    }
-
-    // Can only mark no-show if  in_progress
-    if (!['in_progress'].includes(booking[0].status)) {
-      throw new BadRequestException('Cannot mark as no-show');
-    }
-
+  async consultantMarkNoShow(bookingId: string, consultantId: string) {
     return await this.DbProvider.update(bookingTable)
       .set({
         status: 'no_show',
         consultantMarkedNoShow: true,
         updatedAt: new Date(),
       })
-      .where(eq(bookingTable.id, bookingId))
+      .where(
+        and(
+          eq(bookingTable.id, bookingId),
+          eq(bookingTable.consultantId, consultantId),
+        ),
+      )
+      .returning();
+  }
+  async patientMarkNoShow(bookingId: string, patientId: string) {
+    return await this.DbProvider.update(bookingTable)
+      .set({
+        status: 'no_show',
+        patientMarkedNoShow: true,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(bookingTable.id, bookingId),
+          eq(bookingTable.patientId, patientId),
+        ),
+      )
       .returning();
   }
 
@@ -357,16 +354,84 @@ export class BookingRepository {
       .returning();
   }
 
+  async consultantStartAppointment(bookingId: string, consultantId: string) {
+    return await this.DbProvider.update(bookingTable)
+      .set({
+        status: 'in_progress',
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(bookingTable.id, bookingId),
+          eq(bookingTable.consultantId, consultantId),
+        ),
+      )
+      .returning();
+  }
+
+  async consultantCompleteAppointment(
+    data: Pick<bookingTableInsertType, 'consultationNotes'>,
+    bookingId: string,
+    consultantId: string,
+  ) {
+    const [booking] = await this.DbProvider.update(bookingTable)
+      .set({
+        consultationNotes: data.consultationNotes,
+        actualEnd: new Date(),
+        consultantCompletedAt: new Date(),
+        consultantConfirmed: true,
+        status: 'pending_confirmation',
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(bookingTable.id, bookingId),
+          eq(bookingTable.consultantId, consultantId),
+        ),
+      )
+      .returning();
+
+    return booking;
+  }
+
+  async patientCompleteAppointment(
+    data: Pick<
+      bookingTableInsertType,
+      'patientConfirmed' | 'disputeReason' | 'status'
+    >,
+    bookingId: string,
+    patientId: string,
+  ) {
+    const [booking] = await this.DbProvider.update(bookingTable)
+      .set({
+        status: data.status,
+        patientCompletedAt: new Date(),
+        patientConfirmed: data.patientConfirmed,
+        disputeReason: data.disputeReason,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(bookingTable.id, bookingId),
+          eq(bookingTable.patientId, patientId),
+        ),
+      )
+      .returning();
+
+    return booking;
+  }
 
   async listBookingsByFilter(query: QueryBookingDto) {
     const limit = query.limit || 10;
-    const page =  query.page || 1;
+    const page = query.page || 1;
 
-    const offset = (page - 1) * limit
-      const bookings = await this.DbProvider.select().from(bookingTable).where(eq(bookingTable.status, query.status)).limit(limit).offset(offset)
+    const offset = (page - 1) * limit;
+    const bookings = await this.DbProvider.select()
+      .from(bookingTable)
+      .where(eq(bookingTable.status, query.status))
+      .limit(limit)
+      .offset(offset);
 
-      return bookings;
+    return bookings;
   }
-
-    
 }
