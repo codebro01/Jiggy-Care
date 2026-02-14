@@ -164,6 +164,7 @@ export class BookingRepository {
       bookingId: bookingTable.id,
       speciality: specialityTable.name,
       date: bookingTable.date,
+      status: bookingTable.status, 
       consultantId: consultantTable.userId,
       rating: sql<number>`ROUND(CAST(AVG(${ratingTable.rating}) AS numeric), 2)`,
     })
