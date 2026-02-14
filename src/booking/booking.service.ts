@@ -277,7 +277,7 @@ export class BookingService {
 
     if (booking.status !== 'upcoming') {
       return;
-      // throw new BadRequestException('Appointment already started or completed');
+      throw new BadRequestException('Appointment already started or completed');
     }
 
     return await this.bookingRepository.consultantStartAppointment(

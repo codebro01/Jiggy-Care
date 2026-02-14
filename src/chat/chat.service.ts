@@ -52,7 +52,7 @@ export class ChatService {
       appointmentTime.getTime() - 30 * 60 * 1000,
     );
     const thirtyMinutesAfter = new Date(
-      appointmentTime.getTime() + 10 * 60 * 1000,
+      appointmentTime.getTime() + 60 * 60 * 1000,
     );
 
     // Check if current time is within the allowed window
@@ -67,7 +67,7 @@ export class ChatService {
 
     if (currentTime > thirtyMinutesAfter) {
       throw new BadRequestException(
-        'The conversation window has expired. It must be started within 30 minutes after the appointment time.',
+        'The conversation window has expired. You can only initiate a conversation with a patient within the appointment timeframe.',
       );
     }
     
