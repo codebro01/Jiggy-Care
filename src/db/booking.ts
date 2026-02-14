@@ -68,4 +68,4 @@ export const bookingTable = pgTable(
 );
 
 export type bookingTableSelectType = InferSelectModel<typeof bookingTable>;
-export type  bookingTableInsertType = typeof bookingTable.$inferInsert;
+export type bookingTableInsertType = typeof bookingTable.$inferInsert;

@@ -40,7 +40,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private activeUsers = new Map<string, { userId: string; userType: string }>();
 
-  constructor(private chatService: ChatService) {}
+  constructor(
+    private chatService: ChatService,
+  ) {}
 
   handleConnection(client: Socket) {
     console.log(`Client connected: ${client.id}`);

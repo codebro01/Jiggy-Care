@@ -5,12 +5,14 @@ import {
 } from '@nestjs/common';
 import { ConversationRepository } from '@src/chat/repository/conversation.repository';
 import { MessageRepository } from '@src/chat/repository/message.repository';
+import { BookingRepository } from '@src/booking/repository/booking.repository';
+import { BookingService } from '@src/booking/booking.service';
 
 export interface SendMessageDto {
-  conversationId?:string, 
+  conversationId?: string;
   consultantId?: string;
   patientId?: string;
-  bookingId:string;
+  bookingId: string;
   content: string;
   senderType: 'consultant' | 'patient';
 }
@@ -25,6 +27,8 @@ export class ChatService {
   constructor(
     private conversationRepo: ConversationRepository,
     private messageRepo: MessageRepository,
+    private readonly bookingRepository: BookingRepository,
+    private readonly bookingService: BookingService,
   ) {}
 
   async getOrCreateConversation(
@@ -32,11 +36,48 @@ export class ChatService {
     consultantId: string,
     patientId: string,
   ) {
+    const booking = await this.bookingRepository.getBooking(
+      bookingId,
+      consultantId,
+      patientId,
+    );
+
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    const appointmentTime = new Date(booking.appointmentDate);
+    const currentTime = new Date();
+    const thirtyMinutesBefore = new Date(
+      appointmentTime.getTime() - 30 * 60 * 1000,
+    );
+    const thirtyMinutesAfter = new Date(
+      appointmentTime.getTime() + 10 * 60 * 1000,
+    );
+
+    // Check if current time is within the allowed window
+    if (currentTime < thirtyMinutesBefore) {
+      const minutesUntilAllowed = Math.ceil(
+        (thirtyMinutesBefore.getTime() - currentTime.getTime()) / (60 * 1000),
+      );
+      throw new BadRequestException(
+        `Conversation can only be started 30 minutes before the appointment. Please wait ${minutesUntilAllowed} more minute(s).`,
+      );
+    }
+
+    if (currentTime > thirtyMinutesAfter) {
+      throw new BadRequestException(
+        'The conversation window has expired. It must be started within 30 minutes after the appointment time.',
+      );
+    }
+    
+
     let conversation = await this.conversationRepo.findByParticipants(
       bookingId,
       consultantId,
       patientId,
     );
+
 
     if (!conversation) {
       conversation = await this.conversationRepo.create(
@@ -46,6 +87,7 @@ export class ChatService {
       );
     }
 
+    await this.bookingService.consultantStartAppointment(bookingId, consultantId)
     return conversation;
   }
 
