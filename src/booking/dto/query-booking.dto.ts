@@ -14,9 +14,9 @@ export enum AppointmentStatus {
 
 export class QueryBookingDto {
   @ApiProperty({
-    description: 'Search by medication name',
+    description: 'query appointment by status',
     required: false,
-    example: 'Blood count',
+    example: 'pending_confirmation',
   })
   @IsEnum(AppointmentStatus)
   status: AppointmentStatus

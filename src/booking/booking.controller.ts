@@ -400,7 +400,7 @@ export class BookingController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles('patient')
   @Get('patient/:patientId/list')
   @ApiOperation({
     summary: 'This endpoint lists all patient bookings filter',
