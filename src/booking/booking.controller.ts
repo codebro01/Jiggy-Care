@@ -401,6 +401,34 @@ export class BookingController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @Get('patient/:patientId/list')
+  @ApiOperation({
+    summary: 'This endpoint lists all patient bookings filter',
+    description:
+      'This endpoints list all patient bookings by filter such as completed, upcoming, etc. It is only accessible to admins',
+  })
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth') // For mobile clients
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
+  async getPatientAllBookings(@Query() query: QueryBookingDto, @Param('patientId', ParseUUIDPipe) patientId: string) {
+    const bookings = await this.bookingService.getPatientAllBookings(query, patientId);
+
+    return { success: true, data: bookings };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @Get('admin/list')
   @ApiOperation({
     summary: 'This endpoint lists all bookings by filter',

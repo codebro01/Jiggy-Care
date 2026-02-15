@@ -72,7 +72,6 @@ export class BookingRepository {
       consultantId: bookingTable.consultantId,
       appointmentDate: bookingTable.date,
       status: bookingTable.status,
-
     })
       .from(bookingTable)
       .leftJoin(
@@ -164,7 +163,7 @@ export class BookingRepository {
       bookingId: bookingTable.id,
       speciality: specialityTable.name,
       date: bookingTable.date,
-      status: bookingTable.status, 
+      status: bookingTable.status,
       consultantId: consultantTable.userId,
       rating: sql<number>`ROUND(CAST(AVG(${ratingTable.rating}) AS numeric), 2)`,
     })
@@ -259,6 +258,7 @@ export class BookingRepository {
       .orderBy(desc(bookingTable.date));
     return bookings;
   }
+
   async getConsultantCompletedBookings(consultantId: string, trx?: any) {
     const Trx = trx || this.DbProvider;
 
@@ -422,6 +422,24 @@ export class BookingRepository {
     return booking;
   }
 
+  async getPatientAllBookings(query: QueryBookingDto, patientId: string) {
+    const limit = query.limit || 10;
+    const page = query.page || 1;
+
+    const offset = (page - 1) * limit;
+    const bookings = await this.DbProvider.select()
+      .from(bookingTable)
+      .where(
+        and(
+          eq(bookingTable.status, query.status),
+          eq(bookingTable.patientId, patientId),
+        ),
+      )
+      .limit(limit)
+      .offset(offset);
+
+    return bookings;
+  }
   async listBookingsByFilter(query: QueryBookingDto) {
     const limit = query.limit || 10;
     const page = query.page || 1;

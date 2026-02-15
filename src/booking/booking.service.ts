@@ -394,6 +394,11 @@ export class BookingService {
     );
   }
 
+    async getPatientAllBookings(query: QueryBookingDto, patientId: string) {
+      return await this.bookingRepository.getPatientAllBookings(query, patientId)
+    }
+  
+
   //! Cron job: Auto-complete if patient doesn't respond within 24hrs
   @Cron(CronExpression.EVERY_HOUR)
   async autoCompleteStaleAppointments() {
