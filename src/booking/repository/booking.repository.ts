@@ -426,13 +426,16 @@ export class BookingRepository {
     const limit = query.limit || 10;
     const page = query.page || 1;
 
+    const condition = [eq(bookingTable.patientId, patientId)];
+
+    if(query.status) condition.push(eq(bookingTable.status, query.status))
+
     const offset = (page - 1) * limit;
     const bookings = await this.DbProvider.select()
       .from(bookingTable)
       .where(
         and(
-          eq(bookingTable.status, query.status),
-          eq(bookingTable.patientId, patientId),
+          ...condition
         ),
       )
       .limit(limit)
@@ -444,10 +447,15 @@ export class BookingRepository {
     const limit = query.limit || 10;
     const page = query.page || 1;
 
+
+        const condition = [];
+
+        if (query.status) condition.push(eq(bookingTable.status, query.status));
+
     const offset = (page - 1) * limit;
     const bookings = await this.DbProvider.select()
       .from(bookingTable)
-      .where(eq(bookingTable.status, query.status))
+      .where(and(...condition))
       .limit(limit)
       .offset(offset);
 

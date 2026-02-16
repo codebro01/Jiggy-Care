@@ -18,8 +18,9 @@ export class QueryBookingDto {
     required: false,
     example: 'pending_confirmation',
   })
+  @IsOptional()
   @IsEnum(AppointmentStatus)
-  status: AppointmentStatus
+  status?: AppointmentStatus
 
 
 

@@ -12,20 +12,6 @@ import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
-// interface JoinRoomDto {
-//   conversationId: string;
-//   userId: string;
-//   userType: 'consultant' | 'patient';
-// }
-
-// interface SendMessagePayload {
-//   conversationId: string;
-//   consultantId: string;
-//   patientId: string;
-//   content: string;
-//   senderType: 'consultant' | 'patient';
-// }
-
 @WebSocketGateway({
   cors: {
     origin: '*',
@@ -39,16 +25,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   private activeUsers = new Map<string, { userId: string; userType: string }>();
+  private userSockets = new Map<string, string>();
 
-  constructor(
-    private chatService: ChatService,
-  ) {}
+  constructor(private chatService: ChatService) {}
 
   handleConnection(client: Socket) {
     console.log(`Client connected: ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {
+      const user = this.activeUsers.get(client.id);
+
+       if (user) {
+         this.userSockets.delete(user.userId);
+       }
+
     console.log(`Client disconnected: ${client.id}`);
     this.activeUsers.delete(client.id);
   }
@@ -77,6 +68,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     client.join(conversationId);
     this.activeUsers.set(client.id, { userId, userType });
+    this.userSockets.set(userId, client.id);
 
     console.log(`User ${userId} joined conversation ${conversationId}`);
 
@@ -225,5 +217,98 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         },
       };
     }
+  }
+
+  @SubscribeMessage('call:initiate')
+  handleCallInitiate(
+    @MessageBody()
+    data: { toUserId: string; conversationId: string; callType: 'video' | 'audio' },
+    @ConnectedSocket() client: Socket,
+  ) {
+
+      const targetSocketId = this.userSockets.get(data.toUserId);
+  if (!targetSocketId) return;
+
+    // Notify the recipient about incoming call
+    this.server.to(targetSocketId).emit('call:incoming', {
+      fromUserId: this.activeUsers.get(client.id)?.userId,
+      conversationId: data.conversationId,
+      callType: data.callType,
+    });
+  }
+
+  @SubscribeMessage('call:accept')
+  handleCallAccept(
+    @MessageBody() data: { toUserId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+
+          const targetSocketId = this.userSockets.get(data.toUserId);
+
+            if (!targetSocketId) return;
+
+
+    this.server.to(targetSocketId).emit('call:accepted', {
+      fromUserId: client.id,
+    });
+  }
+
+  @SubscribeMessage('call:reject')
+  handleCallReject(
+    @MessageBody() data: { toUserId: string; reason?: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+              const targetSocketId = this.userSockets.get(data.toUserId);
+                          if (!targetSocketId) return;
+
+
+    this.server.to(targetSocketId).emit('call:rejected', {
+      from: client.id,
+      reason: data.reason,
+    });
+  }
+
+  // WebRTC signaling
+  @SubscribeMessage('webrtc:offer')
+  handleOffer(
+    @MessageBody() data: { to: string; offer: RTCSessionDescriptionInit },
+    @ConnectedSocket() client: Socket,
+  ) {
+    this.server.to(data.to).emit('webrtc:offer', {
+      from: client.id,
+      offer: data.offer,
+    });
+  }
+
+  @SubscribeMessage('webrtc:answer')
+  handleAnswer(
+    @MessageBody() data: { to: string; answer: RTCSessionDescriptionInit },
+    @ConnectedSocket() client: Socket,
+  ) {
+    this.server.to(data.to).emit('webrtc:answer', {
+      from: client.id,
+      answer: data.answer,
+    });
+  }
+
+  @SubscribeMessage('webrtc:ice-candidate')
+  handleIceCandidate(
+    @MessageBody() data: { to: string; candidate: RTCIceCandidateInit },
+    @ConnectedSocket() client: Socket,
+  ) {
+    this.server.to(data.to).emit('webrtc:ice-candidate', {
+      from: client.id,
+      candidate: data.candidate,
+    });
+  }
+
+  @SubscribeMessage('call:end')
+  handleCallEnd(
+    @MessageBody() data: { to: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    this.server.to(data.to).emit('call:ended', {
+      from: client.id,
+    });
   }
 }
