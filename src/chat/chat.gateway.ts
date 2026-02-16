@@ -34,11 +34,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleDisconnect(client: Socket) {
-      const user = this.activeUsers.get(client.id);
+    const user = this.activeUsers.get(client.id);
 
-       if (user) {
-         this.userSockets.delete(user.userId);
-       }
+    if (user) {
+      this.userSockets.delete(user.userId);
+    }
 
     console.log(`Client disconnected: ${client.id}`);
     this.activeUsers.delete(client.id);
@@ -222,12 +222,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('call:initiate')
   handleCallInitiate(
     @MessageBody()
-    data: { toUserId: string; conversationId: string; callType: 'video' | 'audio' },
+    data: {
+      toUserId: string;
+      conversationId: string;
+      callType: 'video' | 'audio';
+    },
     @ConnectedSocket() client: Socket,
   ) {
-
-      const targetSocketId = this.userSockets.get(data.toUserId);
-  if (!targetSocketId) return;
+    const targetSocketId = this.userSockets.get(data.toUserId);
+    if (!targetSocketId) return;
 
     // Notify the recipient about incoming call
     this.server.to(targetSocketId).emit('call:incoming', {
@@ -242,11 +245,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { toUserId: string },
     @ConnectedSocket() client: Socket,
   ) {
+    const targetSocketId = this.userSockets.get(data.toUserId);
 
-          const targetSocketId = this.userSockets.get(data.toUserId);
-
-            if (!targetSocketId) return;
-
+    if (!targetSocketId) return;
 
     this.server.to(targetSocketId).emit('call:accepted', {
       fromUserId: client.id,
@@ -258,12 +259,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { toUserId: string; reason?: string },
     @ConnectedSocket() client: Socket,
   ) {
-              const targetSocketId = this.userSockets.get(data.toUserId);
-                          if (!targetSocketId) return;
-
+    const targetSocketId = this.userSockets.get(data.toUserId);
+    if (!targetSocketId) return;
 
     this.server.to(targetSocketId).emit('call:rejected', {
-      from: client.id,
+      fromUserId: client.id,
       reason: data.reason,
     });
   }
@@ -271,44 +271,55 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // WebRTC signaling
   @SubscribeMessage('webrtc:offer')
   handleOffer(
-    @MessageBody() data: { to: string; offer: RTCSessionDescriptionInit },
+    @MessageBody() data: { toUserId: string; offer: RTCSessionDescriptionInit },
     @ConnectedSocket() client: Socket,
   ) {
-    this.server.to(data.to).emit('webrtc:offer', {
-      from: client.id,
+
+     const targetSocketId = this.userSockets.get(data.toUserId);
+     if (!targetSocketId) return;
+    this.server.to(targetSocketId).emit('webrtc:offer', {
+      fromUserId: client.id,
       offer: data.offer,
     });
   }
 
   @SubscribeMessage('webrtc:answer')
   handleAnswer(
-    @MessageBody() data: { to: string; answer: RTCSessionDescriptionInit },
+    @MessageBody() data: { toUserId: string; answer: RTCSessionDescriptionInit },
     @ConnectedSocket() client: Socket,
   ) {
-    this.server.to(data.to).emit('webrtc:answer', {
-      from: client.id,
+
+     const targetSocketId = this.userSockets.get(data.toUserId);
+     if (!targetSocketId) return;
+    this.server.to(targetSocketId).emit('webrtc:answer', {
+      fromUserId: client.id,
       answer: data.answer,
     });
   }
 
   @SubscribeMessage('webrtc:ice-candidate')
   handleIceCandidate(
-    @MessageBody() data: { to: string; candidate: RTCIceCandidateInit },
+    @MessageBody() data: { toUserId: string; candidate: RTCIceCandidateInit },
     @ConnectedSocket() client: Socket,
   ) {
-    this.server.to(data.to).emit('webrtc:ice-candidate', {
-      from: client.id,
+     const targetSocketId = this.userSockets.get(data.toUserId);
+    if (!targetSocketId) return;
+    this.server.to(targetSocketId).emit('webrtc:ice-candidate', {
+      fromUserId: client.id,
       candidate: data.candidate,
     });
   }
 
   @SubscribeMessage('call:end')
   handleCallEnd(
-    @MessageBody() data: { to: string },
+    @MessageBody() data: { toUserId: string },
     @ConnectedSocket() client: Socket,
   ) {
-    this.server.to(data.to).emit('call:ended', {
-      from: client.id,
+
+     const targetSocketId = this.userSockets.get(data.toUserId);
+     if (!targetSocketId) return;
+    this.server.to(targetSocketId).emit('call:ended', {
+      fromUserId: client.id,
     });
   }
 }
