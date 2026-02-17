@@ -431,15 +431,41 @@ export class BookingRepository {
     if(query.status) condition.push(eq(bookingTable.status, query.status))
 
     const offset = (page - 1) * limit;
-    const bookings = await this.DbProvider.select()
+    const bookings = await this.DbProvider.select({
+      fullName: userTable.fullName,
+      bookingId: bookingTable.id,
+      speciality: specialityTable.name,
+      date: bookingTable.date,
+      status: bookingTable.status,
+      consultantId: consultantTable.userId,
+      consultantName: userTable.fullName, 
+      rating: sql<number>`ROUND(CAST(AVG(${ratingTable.rating}) AS numeric), 2)`,
+    })
       .from(bookingTable)
-      .where(
-        and(
-          ...condition
-        ),
+      .where(and(...condition))
+      .innerJoin(
+        consultantTable,
+        eq(consultantTable.userId, bookingTable.consultantId),
+      )
+      .innerJoin(userTable, eq(userTable.id, consultantTable.userId))
+      .leftJoin(
+        specialityTable,
+        eq(specialityTable.id, consultantTable.speciality),
+      )
+      .leftJoin(
+        ratingTable,
+        eq(ratingTable.consultantId, consultantTable.userId),
+      )
+      .groupBy(
+        consultantTable.userId,
+        userTable.fullName,
+        specialityTable.name,
+        bookingTable.date,
+        bookingTable.id,
       )
       .limit(limit)
-      .offset(offset);
+      .offset(offset)
+      .orderBy(desc(bookingTable.date))
 
     return bookings;
   }

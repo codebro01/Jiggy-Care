@@ -3,7 +3,7 @@
                           FOR FRONTEND DEVELOPERS
 ================================================================================
 
-Last Updated: 2026-01-14
+Last Updated: 2026-02-16
 Author: Backend Team
 Purpose: Comprehensive guide for integrating the Jiggy Care chat system
 
@@ -16,11 +16,13 @@ TABLE OF CONTENTS
 4. REST API Endpoints
 5. Data Models & DTOs
 6. Authentication & Authorization
-7. WebSocket Event Reference
-8. REST API Reference
-9. Integration Examples
-10. Error Handling
-11. Best Practices
+7. WebSocket Event Reference - Chat
+8. WebSocket Event Reference - Video/Audio Calls
+9. REST API Reference
+10. Integration Examples
+11. Error Handling
+12. Best Practices
+13. Troubleshooting
 
 ================================================================================
 1. OVERVIEW
@@ -36,12 +38,16 @@ Key Features:
 - Conversation management
 - Unread message counting
 - Persistent message storage
+- Video and audio calling with WebRTC
+- Call signaling (initiate, accept, reject, end)
+- Ringing notifications and auto-timeout
 
 Tech Stack (Backend):
 - NestJS (Node.js framework)
 - Socket.IO (WebSocket library)
 - PostgreSQL (via Drizzle ORM)
 - JWT Authentication
+- WebRTC Signaling
 
 ================================================================================
 2. SERVER CONFIGURATION & ENDPOINTS
@@ -119,10 +125,11 @@ CONNECTION LIFECYCLE
 2. Server logs connection with client socket ID
 3. Client can join conversation rooms
 4. Client sends/receives messages through rooms
-5. On disconnect, client is removed from active users map
+5. Client can initiate/receive video and audio calls
+6. On disconnect, client is removed from active users map
 
 ================================================================================
-4. WEBSOCKET EVENT REFERENCE
+4. WEBSOCKET EVENT REFERENCE - CHAT
 ================================================================================
 
 The WebSocket gateway supports the following real-time events:
@@ -155,7 +162,7 @@ Error Response:
   }
 
 Notes:
-- MUST be called before sending/receiving messages
+- MUST be called before sending/receiving messages or initiating calls
 - User is added to a Socket.IO room with the conversationId
 - Server tracks active users in this conversation
 
@@ -312,7 +319,304 @@ Notes:
 - Useful for read receipts/checkmarks in UI
 
 ================================================================================
-5. REST API ENDPOINTS
+5. WEBSOCKET EVENT REFERENCE - VIDEO/AUDIO CALLS
+================================================================================
+
+The chat system includes full support for video and audio calling using WebRTC.
+The server handles call signaling, ringing notifications, and peer connection setup.
+
+CALL LIFECYCLE OVERVIEW
+------------------------
+1. Caller initiates call → Server notifies recipient
+2. Server starts ringing for both parties
+3. Recipient accepts/rejects → Server notifies caller
+4. WebRTC peer connection established (offer/answer/ICE)
+5. Call in progress
+6. Either party ends call → Server notifies other party
+
+AUTO-TIMEOUT FEATURE
+--------------------
+- If recipient doesn't answer within 45 seconds:
+  - Caller receives 'call:no-answer' event
+  - Recipient receives 'call:missed' event
+  - Ringing stops automatically
+
+
+EVENT 1: INITIATE CALL (call:initiate)
+---------------------------------------
+Purpose: Start a video or audio call with another user
+
+Client Emits:
+  socket.emit('call:initiate', {
+    toUserId: 'recipient-user-uuid',
+    conversationId: 'conversation-uuid',
+    callType: 'video' | 'audio'
+  });
+
+Server Responses:
+
+1. To Caller (immediate):
+  socket.on('call:ringing', (data) => {
+    // data: { toUserId, conversationId, callType }
+    // Play ringback tone for caller
+  });
+
+2. To Recipient:
+  socket.on('call:incoming', (data) => {
+    // data: { fromUserId, conversationId, callType }
+    // Play incoming ringtone, show answer/decline UI
+  });
+
+3. If no answer after 45 seconds:
+   - To Caller: socket.on('call:no-answer', { toUserId })
+   - To Recipient: socket.on('call:missed', { fromUserId, conversationId })
+
+Notes:
+- Must join conversation first with join_conversation
+- toUserId must be an active user in the system
+- Auto-timeout is 45 seconds (configurable)
+
+
+EVENT 2: RINGING NOTIFICATION (call:ringing)
+---------------------------------------------
+Purpose: Notify caller that ringing has started
+
+Server Emits (to caller only):
+  socket.on('call:ringing', (data) => {
+    console.log('Call is ringing...');
+    // data: { toUserId, conversationId, callType }
+  });
+
+Client Action:
+  - Start playing ringback tone (for caller)
+  - Show "Calling..." UI
+  - Display cancel button
+
+Audio Needed:
+  - Ringback tone (different from incoming ringtone)
+
+
+EVENT 3: INCOMING CALL (call:incoming)
+---------------------------------------
+Purpose: Notify recipient of an incoming call
+
+Server Emits (to recipient only):
+  socket.on('call:incoming', (data) => {
+    console.log('Incoming call from:', data.fromUserId);
+    // data: { fromUserId, conversationId, callType }
+  });
+
+Client Action:
+  - Play incoming ringtone
+  - Show full-screen call UI with:
+    * Caller information
+    * Accept button (green)
+    * Decline button (red)
+    * Call type indicator (video/audio)
+
+
+EVENT 4: ACCEPT CALL (call:accept)
+-----------------------------------
+Purpose: Accept an incoming call
+
+Client Emits:
+  socket.emit('call:accept', {
+    toUserId: 'caller-user-uuid'
+  });
+
+Server Responses:
+
+1. To Recipient (who accepted):
+  socket.on('call:connected', () => {
+    // Stop incoming ringtone
+    // Initialize WebRTC connection
+  });
+
+2. To Caller:
+  socket.on('call:stop-ringing', () => {
+    // Stop ringback tone
+  });
+
+  socket.on('call:accepted', (data) => {
+    // data: { fromUserId }
+    // Start WebRTC connection
+  });
+
+Notes:
+- Automatically clears the 45-second timeout
+- Both parties should now exchange WebRTC signals
+
+
+EVENT 5: REJECT CALL (call:reject)
+-----------------------------------
+Purpose: Decline an incoming call
+
+Client Emits:
+  socket.emit('call:reject', {
+    toUserId: 'caller-user-uuid',
+    reason: 'Busy' // Optional, can be 'Busy', 'Declined', etc.
+  });
+
+Server Response (to caller):
+  socket.on('call:rejected', (data) => {
+    console.log('Call rejected:', data.reason);
+    // data: { fromUserId, reason }
+    // Stop ringing, show rejection message
+  });
+
+Notes:
+- Automatically clears the 45-second timeout
+- Caller sees rejection reason in UI
+
+
+EVENT 6: NO ANSWER TIMEOUT (call:no-answer)
+--------------------------------------------
+Purpose: Notify caller that recipient didn't answer
+
+Server Emits (to caller, after 45 seconds):
+  socket.on('call:no-answer', (data) => {
+    console.log('No answer from:', data.toUserId);
+    // data: { toUserId }
+  });
+
+Client Action:
+  - Stop ringback tone
+  - Show "No answer" or "Unavailable" message
+  - Close calling UI
+  - Optionally log as missed call attempt
+
+
+EVENT 7: MISSED CALL (call:missed)
+-----------------------------------
+Purpose: Notify recipient they missed a call
+
+Server Emits (to recipient, after 45 seconds):
+  socket.on('call:missed', (data) => {
+    console.log('Missed call from:', data.fromUserId);
+    // data: { fromUserId, conversationId }
+  });
+
+Client Action:
+  - Stop incoming ringtone
+  - Show missed call notification
+  - Save to missed calls history/log
+  - Show notification badge
+
+
+EVENT 8: STOP RINGING (call:stop-ringing)
+------------------------------------------
+Purpose: Stop ringing tone when call is accepted
+
+Server Emits (to caller when recipient accepts):
+  socket.on('call:stop-ringing', () => {
+    // Stop playing ringback tone
+  });
+
+Client Action:
+  - Stop ringback audio
+  - Prepare for call connection
+
+
+EVENT 9: CALL CONNECTED (call:connected)
+-----------------------------------------
+Purpose: Confirm call connection to recipient
+
+Server Emits (to recipient after accepting):
+  socket.on('call:connected', () => {
+    // Call is now connected
+  });
+
+Client Action:
+  - Stop incoming ringtone
+  - Show connected call UI
+  - Start media streams
+
+
+EVENT 10: END CALL (call:end)
+------------------------------
+Purpose: End an active call
+
+Client Emits:
+  socket.emit('call:end', {
+    toUserId: 'other-user-uuid'
+  });
+
+Server Response (to other user):
+  socket.on('call:ended', (data) => {
+    console.log('Call ended by:', data.fromUserId);
+    // data: { fromUserId }
+  });
+
+Client Action:
+  - Close peer connection
+  - Stop all media tracks
+  - Clear call UI
+  - Return to chat screen
+
+Notes:
+- Can be called by either party at any time
+- Clears any active ringing timeouts
+
+
+WEBRTC SIGNALING EVENTS
+------------------------
+
+EVENT 11: SEND WEBRTC OFFER (webrtc:offer)
+-------------------------------------------
+Purpose: Send WebRTC offer to establish peer connection
+
+Client Emits (typically by caller):
+  socket.emit('webrtc:offer', {
+    toUserId: 'recipient-uuid',
+    offer: RTCSessionDescription // SDP offer
+  });
+
+Server Forwards (to recipient):
+  socket.on('webrtc:offer', (data) => {
+    // data: { fromUserId, offer }
+    // Use offer to create peer connection answer
+  });
+
+
+EVENT 12: SEND WEBRTC ANSWER (webrtc:answer)
+---------------------------------------------
+Purpose: Send WebRTC answer in response to offer
+
+Client Emits (typically by recipient):
+  socket.emit('webrtc:answer', {
+    toUserId: 'caller-uuid',
+    answer: RTCSessionDescription // SDP answer
+  });
+
+Server Forwards (to caller):
+  socket.on('webrtc:answer', (data) => {
+    // data: { fromUserId, answer }
+    // Set remote description with answer
+  });
+
+
+EVENT 13: SEND ICE CANDIDATE (webrtc:ice-candidate)
+----------------------------------------------------
+Purpose: Exchange ICE candidates for NAT traversal
+
+Client Emits (by both parties):
+  socket.emit('webrtc:ice-candidate', {
+    toUserId: 'other-user-uuid',
+    candidate: RTCIceCandidateInit
+  });
+
+Server Forwards (to other party):
+  socket.on('webrtc:ice-candidate', (data) => {
+    // data: { fromUserId, candidate }
+    // Add ICE candidate to peer connection
+  });
+
+Notes:
+- Multiple ICE candidates may be exchanged
+- Required for establishing connection through firewalls/NAT
+
+================================================================================
+6. REST API ENDPOINTS
 ================================================================================
 
 All REST endpoints require JWT authentication.
@@ -558,7 +862,7 @@ Error Responses:
   401 Unauthorized: Invalid/missing JWT token
 
 ================================================================================
-6. DATA MODELS & DTOs
+7. DATA MODELS & DTOs
 ================================================================================
 
 CONVERSATION MODEL
@@ -603,8 +907,30 @@ CREATE MESSAGE DTO
   senderType: 'consultant' | 'patient' (required)
 }
 
+CALL INITIATE DTO
+-----------------
+{
+  toUserId: string (UUID, required),
+  conversationId: string (UUID, required),
+  callType: 'video' | 'audio' (required)
+}
+
+WEBRTC SIGNAL DTOs
+------------------
+Offer/Answer:
+{
+  toUserId: string (UUID, required),
+  offer/answer: RTCSessionDescriptionInit
+}
+
+ICE Candidate:
+{
+  toUserId: string (UUID, required),
+  candidate: RTCIceCandidateInit
+}
+
 ================================================================================
-7. AUTHENTICATION & AUTHORIZATION
+8. AUTHENTICATION & AUTHORIZATION
 ================================================================================
 
 AUTH REQUIREMENTS
@@ -637,11 +963,11 @@ Use the authentication endpoints (not covered in this doc):
 Store the token for subsequent requests.
 
 ================================================================================
-8. INTEGRATION EXAMPLES
+9. INTEGRATION EXAMPLES
 ================================================================================
 
-EXAMPLE 1: COMPLETE CHAT FLOW (React/TypeScript)
--------------------------------------------------
+EXAMPLE 1: COMPLETE CHAT FLOW WITH VIDEO CALLING (React/TypeScript)
+--------------------------------------------------------------------
 
 import { io, Socket } from 'socket.io-client';
 import axios from 'axios';
@@ -652,6 +978,9 @@ const SOCKET_URL = 'http://localhost:3000/chat';
 class ChatService {
   private socket: Socket | null = null;
   private token: string;
+  private peerConnection: RTCPeerConnection | null = null;
+  private localStream: MediaStream | null = null;
+  private remoteStream: MediaStream | null = null;
 
   constructor(token: string) {
     this.token = token;
@@ -667,6 +996,7 @@ class ChatService {
       console.log('Connected:', this.socket?.id);
     });
 
+    // Chat event listeners
     this.socket.on('new_message', (data) => {
       console.log('New message:', data);
       // Update UI with new message
@@ -685,6 +1015,95 @@ class ChatService {
     this.socket.on('user_stopped_typing', (data) => {
       console.log('User stopped typing');
       // Hide typing indicator
+    });
+
+    // Call event listeners
+    this.setupCallListeners();
+  }
+
+  // Setup all call-related event listeners
+  private setupCallListeners() {
+    // Ringing started (caller side)
+    this.socket?.on('call:ringing', (data) => {
+      console.log('Call is ringing...');
+      this.playRingbackTone();
+      // Show "Calling..." UI
+    });
+
+    // Incoming call (recipient side)
+    this.socket?.on('call:incoming', (data) => {
+      console.log('Incoming call from:', data.fromUserId);
+      this.playIncomingRingtone();
+      // Show answer/decline UI
+    });
+
+    // Call accepted
+    this.socket?.on('call:accepted', (data) => {
+      console.log('Call accepted');
+      this.stopRingbackTone();
+      // Start WebRTC connection as caller
+    });
+
+    // Stop ringing
+    this.socket?.on('call:stop-ringing', () => {
+      this.stopRingbackTone();
+    });
+
+    // Call connected (recipient confirmation)
+    this.socket?.on('call:connected', () => {
+      console.log('Call connected');
+      this.stopIncomingRingtone();
+      // Start WebRTC connection as recipient
+    });
+
+    // Call rejected
+    this.socket?.on('call:rejected', (data) => {
+      console.log('Call rejected:', data.reason);
+      this.stopRingbackTone();
+      this.cleanup();
+      // Show rejection message
+    });
+
+    // No answer timeout
+    this.socket?.on('call:no-answer', (data) => {
+      console.log('No answer');
+      this.stopRingbackTone();
+      this.cleanup();
+      // Show "No answer" message
+    });
+
+    // Missed call notification
+    this.socket?.on('call:missed', (data) => {
+      console.log('Missed call from:', data.fromUserId);
+      this.stopIncomingRingtone();
+      // Show missed call notification
+    });
+
+    // Call ended
+    this.socket?.on('call:ended', (data) => {
+      console.log('Call ended by:', data.fromUserId);
+      this.endCall();
+    });
+
+    // WebRTC signaling
+    this.setupWebRTCListeners();
+  }
+
+  // WebRTC signaling listeners
+  private setupWebRTCListeners() {
+    this.socket?.on('webrtc:offer', async (data) => {
+      console.log('Received offer');
+      await this.handleOffer(data.offer, data.fromUserId);
+    });
+
+    this.socket?.on('webrtc:answer', async (data) => {
+      console.log('Received answer');
+      await this.handleAnswer(data.answer);
+    });
+
+    this.socket?.on('webrtc:ice-candidate', async (data) => {
+      console.log('Received ICE candidate');
+      await this.handleIceCandidate(data.candidate);
     });
   }
 
@@ -729,6 +1148,198 @@ class ChatService {
       messageIds
     });
   }
+
+  // CALL FUNCTIONS
+
+  // Initiate a call
+  async initiateCall(
+    toUserId: string,
+    conversationId: string,
+    callType: 'video' | 'audio'
+  ) {
+    // Get local media stream
+    await this.setupLocalMedia(callType);
+
+    // Emit call initiation
+    this.socket?.emit('call:initiate', {
+      toUserId,
+      conversationId,
+      callType
+    });
+
+    // Create peer connection and send offer
+    await this.createPeerConnection(toUserId);
+    await this.createAndSendOffer(toUserId);
+  }
+
+  // Accept incoming call
+  async acceptCall(callerId: string, callType: 'video' | 'audio') {
+    // Get local media stream
+    await this.setupLocalMedia(callType);
+
+    // Emit call acceptance
+    this.socket?.emit('call:accept', {
+      toUserId: callerId
+    });
+
+    // Peer connection will be created when offer is received
+  }
+
+  // Reject incoming call
+  rejectCall(callerId: string, reason: string = 'Busy') {
+    this.socket?.emit('call:reject', {
+      toUserId: callerId,
+      reason
+    });
+    this.stopIncomingRingtone();
+  }
+
+  // End active call
+  endCall() {
+    if (this.peerConnection) {
+      this.peerConnection.close();
+      this.peerConnection = null;
+    }
+
+    if (this.localStream) {
+      this.localStream.getTracks().forEach(track => track.stop());
+      this.localStream = null;
+    }
+
+    this.remoteStream = null;
+    // Notify UI to close call screen
+  }
+
+  // WEBRTC FUNCTIONS
+
+  private async setupLocalMedia(callType: 'video' | 'audio') {
+    try {
+      this.localStream = await navigator.mediaDevices.getUserMedia({
+        video: callType === 'video',
+        audio: true
+      });
+      // Attach to UI video element
+      console.log('Local media setup complete');
+    } catch (error) {
+      console.error('Failed to get media:', error);
+      throw error;
+    }
+  }
+
+  private async createPeerConnection(remoteUserId: string) {
+    const config: RTCConfiguration = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    };
+
+    this.peerConnection = new RTCPeerConnection(config);
+
+    // Add local tracks
+    this.localStream?.getTracks().forEach(track => {
+      this.peerConnection?.addTrack(track, this.localStream!);
+    });
+
+    // Handle remote stream
+    this.peerConnection.ontrack = (event) => {
+      this.remoteStream = event.streams[0];
+      // Attach to UI video element
+      console.log('Remote stream received');
+    };
+
+    // Handle ICE candidates
+    this.peerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        this.socket?.emit('webrtc:ice-candidate', {
+          toUserId: remoteUserId,
+          candidate: event.candidate
+        });
+      }
+    };
+  }
+
+  private async createAndSendOffer(remoteUserId: string) {
+    if (!this.peerConnection) return;
+
+    const offer = await this.peerConnection.createOffer();
+    await this.peerConnection.setLocalDescription(offer);
+
+    this.socket?.emit('webrtc:offer', {
+      toUserId: remoteUserId,
+      offer
+    });
+  }
+
+  private async handleOffer(offer: RTCSessionDescriptionInit, fromUserId: string) {
+    await this.createPeerConnection(fromUserId);
+    
+    if (!this.peerConnection) return;
+
+    await this.peerConnection.setRemoteDescription(offer);
+    const answer = await this.peerConnection.createAnswer();
+    await this.peerConnection.setLocalDescription(answer);
+
+    this.socket?.emit('webrtc:answer', {
+      toUserId: fromUserId,
+      answer
+    });
+  }
+
+  private async handleAnswer(answer: RTCSessionDescriptionInit) {
+    if (!this.peerConnection) return;
+    await this.peerConnection.setRemoteDescription(answer);
+  }
+
+  private async handleIceCandidate(candidate: RTCIceCandidateInit) {
+    if (!this.peerConnection) return;
+    await this.peerConnection.addIceCandidate(candidate);
+  }
+
+  // AUDIO MANAGEMENT
+
+  private ringbackAudio: HTMLAudioElement | null = null;
+  private incomingAudio: HTMLAudioElement | null = null;
+
+  private playRingbackTone() {
+    this.ringbackAudio = new Audio('/sounds/ringback.mp3');
+    this.ringbackAudio.loop = true;
+    this.ringbackAudio.play().catch(err => {
+      console.error('Failed to play ringback:', err);
+    });
+  }
+
+  private stopRingbackTone() {
+    if (this.ringbackAudio) {
+      this.ringbackAudio.pause();
+      this.ringbackAudio.currentTime = 0;
+      this.ringbackAudio = null;
+    }
+  }
+
+  private playIncomingRingtone() {
+    this.incomingAudio = new Audio('/sounds/incoming.mp3');
+    this.incomingAudio.loop = true;
+    this.incomingAudio.play().catch(err => {
+      console.error('Failed to play incoming ringtone:', err);
+    });
+  }
+
+  private stopIncomingRingtone() {
+    if (this.incomingAudio) {
+      this.incomingAudio.pause();
+      this.incomingAudio.currentTime = 0;
+      this.incomingAudio = null;
+    }
+  }
+
+  private cleanup() {
+    this.stopRingbackTone();
+    this.stopIncomingRingtone();
+    this.endCall();
+  }
+
+  // REST API METHODS
 
   // Fetch conversation history (REST)
   async getMessages(conversationId: string, limit = 50, offset = 0) {
@@ -781,6 +1392,7 @@ class ChatService {
 
   // Disconnect
   disconnect() {
+    this.cleanup();
     this.socket?.disconnect();
   }
 }
@@ -789,17 +1401,25 @@ class ChatService {
 const chatService = new ChatService('your-jwt-token');
 chatService.connect('user-uuid', 'patient');
 chatService.joinConversation('conv-uuid', 'user-uuid', 'patient');
+
+// Send message
 chatService.sendMessage('conv-uuid', 'Hello!', 'patient');
 
+// Start video call
+chatService.initiateCall('recipient-uuid', 'conv-uuid', 'video');
 
-EXAMPLE 2: REACT NATIVE USAGE
-------------------------------
+
+EXAMPLE 2: REACT NATIVE USAGE WITH CALLS
+-----------------------------------------
 
 import { io } from 'socket.io-client';
+import { RTCPeerConnection, mediaDevices } from 'react-native-webrtc';
 
 const ChatScreen = ({ conversationId, userId, userType, token }) => {
   const [messages, setMessages] = useState([]);
   const [socket, setSocket] = useState(null);
+  const [incomingCall, setIncomingCall] = useState(null);
+  const [activeCall, setActiveCall] = useState(null);
 
   useEffect(() => {
     // Connect to WebSocket
@@ -820,6 +1440,27 @@ const ChatScreen = ({ conversationId, userId, userType, token }) => {
       setMessages(prev => [...prev, data.message]);
     });
 
+    // Call events
+    newSocket.on('call:incoming', (data) => {
+      setIncomingCall(data);
+      // Play ringtone
+    });
+
+    newSocket.on('call:accepted', () => {
+      // Start WebRTC connection
+      setActiveCall({ status: 'connecting' });
+    });
+
+    newSocket.on('call:rejected', (data) => {
+      Alert.alert('Call Rejected', data.reason);
+      setActiveCall(null);
+    });
+
+    newSocket.on('call:ended', () => {
+      setActiveCall(null);
+      // Clean up peer connection
+    });
+
     setSocket(newSocket);
 
     return () => {
@@ -828,12 +1469,37 @@ const ChatScreen = ({ conversationId, userId, userType, token }) => {
     };
   }, [conversationId]);
 
-  const sendMessage = (content) => {
-    socket?.emit('send_message', {
+  const startVideoCall = (recipientId) => {
+    socket?.emit('call:initiate', {
+      toUserId: recipientId,
       conversationId,
-      content,
-      senderType: userType
+      callType: 'video'
     });
+    setActiveCall({ status: 'calling', recipientId });
+  };
+
+  const acceptCall = () => {
+    socket?.emit('call:accept', {
+      toUserId: incomingCall.fromUserId
+    });
+    setIncomingCall(null);
+    setActiveCall({ status: 'connecting' });
+  };
+
+  const rejectCall = () => {
+    socket?.emit('call:reject', {
+      toUserId: incomingCall.fromUserId,
+      reason: 'Declined'
+    });
+    setIncomingCall(null);
+  };
+
+  const endCall = () => {
+    socket?.emit('call:end', {
+      toUserId: activeCall.recipientId
+    });
+    setActiveCall(null);
+    // Clean up media
   };
 
   // ... rest of component
@@ -867,7 +1533,7 @@ const page1 = await loadMessages('conv-uuid', 1);
 const page2 = await loadMessages('conv-uuid', 2);
 
 ================================================================================
-9. ERROR HANDLING
+10. ERROR HANDLING
 ================================================================================
 
 COMMON ERROR SCENARIOS
@@ -918,6 +1584,27 @@ COMMON ERROR SCENARIOS
      // Show error to user
    });
 
+6. WebRTC Errors
+   - Media permission denied
+   - Peer connection failed
+   - ICE connection failure
+
+   Handle with:
+   - Check browser permissions
+   - Show user-friendly error
+   - Provide fallback to audio-only
+   - Retry connection
+
+7. Call Errors
+   - User not found/offline
+   - No answer timeout
+   - Connection quality issues
+
+   Handle with:
+   - Show appropriate UI message
+   - Cleanup resources
+   - Log for debugging
+
 ERROR RESPONSE FORMATS
 ----------------------
 
@@ -937,8 +1624,11 @@ WebSocket Error:
 }
 
 ================================================================================
-10. BEST PRACTICES
+11. BEST PRACTICES
 ================================================================================
+
+CHAT BEST PRACTICES
+-------------------
 
 1. CONNECTION MANAGEMENT
    - Connect once when user enters chat
@@ -947,7 +1637,7 @@ WebSocket Error:
    - Store socket instance in context/service
 
 2. ROOM MANAGEMENT
-   - Join conversation room before sending messages
+   - Join conversation room before sending messages or calls
    - Leave room when exiting chat screen
    - Join multiple rooms for multiple conversations
 
@@ -973,23 +1663,68 @@ WebSocket Error:
    - Send typing_stop after 2-3 seconds of inactivity
    - Debounce typing events to avoid spam
 
+VIDEO CALL BEST PRACTICES
+--------------------------
+
+1. CALL INITIATION
+   - Check media permissions before initiating call
+   - Show clear UI feedback (calling, ringing, connecting)
+   - Provide cancel option during ringing
+   - Handle rejection gracefully
+
+2. CALL ACCEPTANCE
+   - Show full-screen incoming call UI
+   - Play appropriate ringtone
+   - Provide accept/decline buttons
+   - Show caller information
+
+3. WEBRTC CONNECTION
+   - Use STUN/TURN servers for NAT traversal
+   - Handle ICE connection states
+   - Implement reconnection logic
+   - Monitor connection quality
+
+4. MEDIA MANAGEMENT
+   - Request permissions early
+   - Handle denied permissions gracefully
+   - Provide mute/unmute controls
+   - Stop tracks on call end
+
+5. CALL QUALITY
+   - Monitor network conditions
+   - Show connection quality indicator
+   - Provide audio-only fallback
+   - Handle bandwidth constraints
+
+6. CLEANUP
+   - Always stop media tracks on call end
+   - Close peer connections properly
+   - Clear timers and listeners
+   - Reset UI state
+
+GENERAL BEST PRACTICES
+-----------------------
+
 7. PERFORMANCE
    - Limit message history loaded at once
    - Implement virtual scrolling for long conversations
    - Cleanup listeners on component unmount
    - Throttle real-time events
+   - Reuse peer connections when possible
 
 8. SECURITY
    - Never expose JWT token in URLs
    - Validate user permissions on client
    - Sanitize message content (prevent XSS)
    - Use HTTPS/WSS in production
+   - Encrypt media streams
 
 9. OFFLINE SUPPORT
    - Queue messages when offline
    - Sync when connection restored
    - Show offline indicator
    - Store messages locally
+   - Handle call failures due to network
 
 10. USER EXPERIENCE
     - Show loading states
@@ -997,10 +1732,29 @@ WebSocket Error:
     - Handle errors gracefully
     - Provide retry mechanisms
     - Show toast/notification for new messages
+    - Provide call history
+    - Show missed call badges
+
+11. AUDIO/RINGTONES
+    - Use distinct tones for caller vs recipient
+    - Support volume control
+    - Handle audio focus properly
+    - Stop all audio on cleanup
+    - Test on actual devices (not just emulator)
+
+12. TESTING
+    - Test on real devices with various networks
+    - Test peer-to-peer scenarios
+    - Test network interruptions
+    - Test permission denial scenarios
+    - Test multiple simultaneous calls
 
 ================================================================================
-11. TROUBLESHOOTING
+12. TROUBLESHOOTING
 ================================================================================
+
+CHAT ISSUES
+-----------
 
 ISSUE: WebSocket won't connect
 SOLUTION:
@@ -1037,6 +1791,129 @@ SOLUTION:
   - Don't add message if already in list
   - Check for multiple WebSocket connections
 
+CALL ISSUES
+-----------
+
+ISSUE: Call not connecting
+SOLUTION:
+  - Check both users are online and connected
+  - Verify userId mapping is correct
+  - Check WebRTC peer connection state
+  - Verify STUN servers are reachable
+  - Check browser WebRTC support
+
+ISSUE: No audio/video
+SOLUTION:
+  - Check media permissions granted
+  - Verify correct media constraints
+  - Check microphone/camera hardware
+  - Test with browser DevTools
+  - Check if tracks are added to peer connection
+
+ISSUE: Ringing not heard
+SOLUTION:
+  - Check audio files exist and are accessible
+  - Verify audio element creation
+  - Check browser autoplay policy
+  - Test with user interaction first
+  - Check volume settings
+
+ISSUE: Call drops immediately
+SOLUTION:
+  - Check ICE connection state
+  - Verify STUN/TURN configuration
+  - Check firewall/NAT settings
+  - Monitor peer connection events
+  - Check network stability
+
+ISSUE: One-way audio/video
+SOLUTION:
+  - Verify both users added tracks
+  - Check remote stream handling
+  - Verify track directions (sendrecv)
+  - Check ICE candidates exchange
+  - Test with simpler network setup
+
+ISSUE: Call timeout not working
+SOLUTION:
+  - Check server logs for timeout events
+  - Verify 45-second timer is running
+  - Check event listeners are registered
+  - Verify userId is correct in events
+
+ISSUE: Can't initiate call
+SOLUTION:
+  - Ensure user joined conversation first
+  - Check toUserId exists and is online
+  - Verify conversationId is valid
+  - Check for active ringing timeout from previous call
+
+DEBUGGING TIPS
+--------------
+
+1. WebSocket Debugging:
+   - Use browser DevTools Network tab (WS filter)
+   - Log all socket events with timestamps
+   - Monitor socket.connected state
+   - Check for event name typos
+
+2. WebRTC Debugging:
+   - Use chrome://webrtc-internals (Chrome)
+   - Monitor peer connection state changes
+   - Log ICE connection states
+   - Check candidate gathering
+   - Verify SDP offer/answer exchange
+
+3. Audio Debugging:
+   - Check browser console for audio errors
+   - Verify file paths are correct
+   - Test audio play with user interaction
+   - Check audio element state
+   - Test on actual device (not just emulator)
+
+4. General Debugging:
+   - Enable verbose logging
+   - Use unique IDs for tracking
+   - Test with two separate browsers/devices
+   - Check server logs concurrently
+   - Use network throttling to test edge cases
+
+================================================================================
+CONFIGURATION NOTES
+================================================================================
+
+TIMEOUT CONFIGURATION
+---------------------
+The call ringing timeout is set to 45 seconds. To modify:
+
+// In backend chat.gateway.ts
+const ringingTimeout = setTimeout(() => {
+  // ... timeout logic
+}, 45000); // Change this value (milliseconds)
+
+WEBRTC CONFIGURATION
+--------------------
+ICE Servers (modify in your client code):
+
+const config: RTCConfiguration = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    // Add TURN servers for production:
+    // {
+    //   urls: 'turn:your-turn-server.com:3478',
+    //   username: 'username',
+    //   credential: 'password'
+    // }
+  ]
+};
+
+AUDIO FILES
+-----------
+Place these audio files in your public assets:
+- /sounds/ringback.mp3 - Caller ringing tone
+- /sounds/incoming.mp3 - Recipient incoming call tone
+
 ================================================================================
 SUPPORT & CONTACT
 ================================================================================
@@ -1049,6 +1926,31 @@ API Documentation (Swagger):
   https://jiggy-care.onrender.com/api/v1/api-docs
 
 GitHub Repository: [Your repo]
+
+================================================================================
+QUICK REFERENCE - CALL EVENTS SUMMARY
+================================================================================
+
+CALLER EVENTS (Outgoing Call):
+1. Emit: call:initiate
+2. Listen: call:ringing (start ringback tone)
+3. Listen: call:accepted OR call:rejected OR call:no-answer
+4. Listen: call:stop-ringing (stop ringback)
+5. Listen: webrtc:answer (complete connection)
+6. Emit: call:end (to end call)
+
+RECIPIENT EVENTS (Incoming Call):
+1. Listen: call:incoming (play incoming ringtone)
+2. Emit: call:accept OR call:reject
+3. Listen: call:connected (stop ringtone)
+4. Listen: webrtc:offer (start connection)
+5. Emit: webrtc:answer (respond to offer)
+6. Listen: call:ended (other party hung up)
+
+WEBRTC SIGNAL FLOW:
+Caller → offer → Recipient
+Recipient → answer → Caller
+Both ↔ ice-candidate ↔ Both (multiple times)
 
 ================================================================================
 END OF DOCUMENTATION
