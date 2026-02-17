@@ -365,7 +365,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     if (user) {
       this.userSockets.delete(user.userId);
-      
+
       // Clear any active ringing timeout for this user
       const ringingTimeout = this.activeRingingCalls.get(user.userId);
       if (ringingTimeout) {
@@ -565,7 +565,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const targetSocketId = this.userSockets.get(data.toUserId);
     const fromUserId = this.activeUsers.get(client.id)?.userId;
-    
+
     if (!targetSocketId || !fromUserId) return;
 
     // Start ringing on the caller's side
@@ -658,27 +658,46 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { toUserId: string; offer: RTCSessionDescriptionInit },
     @ConnectedSocket() client: Socket,
   ) {
+    console.log(
+      '📨 Received webrtc:offer from:',
+      client.id,
+      '→ to:',
+      data.toUserId,
+    );
     const targetSocketId = this.userSockets.get(data.toUserId);
+    console.log('🎯 Target socket found:', targetSocketId ?? 'NOT FOUND');
+
     if (!targetSocketId) return;
-    
+
     this.server.to(targetSocketId).emit('webrtc:offer', {
       fromUserId: client.id,
       offer: data.offer,
     });
+    console.log('✅ Offer forwarded to:', targetSocketId);
   }
 
   @SubscribeMessage('webrtc:answer')
   handleAnswer(
-    @MessageBody() data: { toUserId: string; answer: RTCSessionDescriptionInit },
+    @MessageBody()
+    data: { toUserId: string; answer: RTCSessionDescriptionInit },
     @ConnectedSocket() client: Socket,
   ) {
+    console.log(
+      '📨 Received webrtc:answer from:',
+      client.id,
+      '→ to:',
+      data.toUserId,
+    );
     const targetSocketId = this.userSockets.get(data.toUserId);
+    console.log('🎯 Target socket found:', targetSocketId ?? 'NOT FOUND');
+
     if (!targetSocketId) return;
-    
+
     this.server.to(targetSocketId).emit('webrtc:answer', {
       fromUserId: client.id,
       answer: data.answer,
     });
+    console.log('✅ Answer forwarded to:', targetSocketId);
   }
 
   @SubscribeMessage('webrtc:ice-candidate')
@@ -686,13 +705,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { toUserId: string; candidate: RTCIceCandidateInit },
     @ConnectedSocket() client: Socket,
   ) {
+    console.log(
+      '🧊 Received ICE candidate from:',
+      client.id,
+      '→ to:',
+      data.toUserId,
+    );
     const targetSocketId = this.userSockets.get(data.toUserId);
+    console.log('🎯 Target socket found:', targetSocketId ?? 'NOT FOUND');
+
     if (!targetSocketId) return;
-    
+
     this.server.to(targetSocketId).emit('webrtc:ice-candidate', {
       fromUserId: client.id,
       candidate: data.candidate,
     });
+    console.log('✅ ICE candidate forwarded');
   }
 
   @SubscribeMessage('call:end')
@@ -702,7 +730,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const targetSocketId = this.userSockets.get(data.toUserId);
     const endingUserId = this.activeUsers.get(client.id)?.userId;
-    
+
     if (!targetSocketId) return;
 
     // Clear any ringing timeout
