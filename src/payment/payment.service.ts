@@ -490,14 +490,14 @@ export class PaymentService {
               'en-US',
               {
                 weekday: 'long',
-                timeZone: 'UTC',
+                timeZone: 'Africa/Lagos',
               },
             );
             const time = booking.appointmentDate.toLocaleTimeString('en-US', {
               hour: 'numeric',
               minute: '2-digit',
               hour12: true,
-              timeZone: 'UTC',
+              timeZone: 'Africa/Lagos',
             });
 
             const formattedDate = `${dayName} at ${time}`;

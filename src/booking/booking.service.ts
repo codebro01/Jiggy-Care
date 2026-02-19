@@ -408,6 +408,7 @@ export class BookingService {
       twentyFourHoursAgo,
     );
   }
+  
 
   async listBookingsByFilter(query: QueryBookingDto) {
     const bookings = await this.bookingRepository.listBookingsByFilter(query);
