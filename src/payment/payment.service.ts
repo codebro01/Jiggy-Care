@@ -500,6 +500,8 @@ export class PaymentService {
               timeZone: 'Africa/Lagos',
             });
 
+             console.log('appointment date', booking.appointmentDate)
+
             const formattedDate = `${dayName} at ${time}`;
 
             try {
