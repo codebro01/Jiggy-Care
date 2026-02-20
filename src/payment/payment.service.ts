@@ -486,23 +486,19 @@ export class PaymentService {
               consultant.speciality,
             );
 
-            const adjustedDate = new Date(
-              booking.appointmentDate.getTime() + 60 * 60 * 1000,
-            );
+           const dayName = booking.appointmentDate.toLocaleDateString('en-US', {
+             weekday: 'long',
+             timeZone: 'Africa/Lagos',
+           });
 
-            const dayName = adjustedDate.toLocaleDateString('en-US', {
-              weekday: 'long',
-              timeZone: 'Africa/Lagos',
-            });
+           const time = booking.appointmentDate.toLocaleTimeString('en-US', {
+             hour: 'numeric',
+             minute: '2-digit',
+             hour12: true,
+             timeZone: 'Africa/Lagos',
+           });
 
-            const time = adjustedDate.toLocaleTimeString('en-US', {
-              hour: 'numeric',
-              minute: '2-digit',
-              hour12: true,
-              timeZone: 'Africa/Lagos',
-            });
-
-            const formattedDate = `${dayName} at ${time}`;
+           const formattedDate = `${dayName} at ${time}`;
 
             console.log('appointment date', booking.appointmentDate);
 
