@@ -405,7 +405,7 @@ export class PaymentService {
 
   async processWebhookEvent(event: any) {
     try {
-      const { reference } = event.data;
+      const { reference, email} = event.data;
       const { channel } = event.data.authorization || {};
       const {
         paymentFor,
@@ -486,23 +486,25 @@ export class PaymentService {
               consultant.speciality,
             );
 
-            const dayName = booking.appointmentDate.toLocaleDateString(
-              'en-US',
-              {
-                weekday: 'long',
-                timeZone: 'Africa/Lagos',
-              },
+            const adjustedDate = new Date(
+              booking.appointmentDate.getTime() + 60 * 60 * 1000,
             );
-            const time = booking.appointmentDate.toLocaleTimeString('en-US', {
+
+            const dayName = adjustedDate.toLocaleDateString('en-US', {
+              weekday: 'long',
+              timeZone: 'Africa/Lagos',
+            });
+
+            const time = adjustedDate.toLocaleTimeString('en-US', {
               hour: 'numeric',
               minute: '2-digit',
               hour12: true,
               timeZone: 'Africa/Lagos',
             });
 
-             console.log('appointment date', booking.appointmentDate)
-
             const formattedDate = `${dayName} at ${time}`;
+
+            console.log('appointment date', booking.appointmentDate);
 
             try {
               const [
@@ -547,7 +549,7 @@ export class PaymentService {
 
                 this.emailService.queueTemplatedEmail(
                   EmailTemplateType.APPOINTMENT_SUMMARY,
-                  consultant.email,
+                  email,
                   {
                     invoiceNo: invoiceId,
                     appointmentDate: booking.appointmentDate,
