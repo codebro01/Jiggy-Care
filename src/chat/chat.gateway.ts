@@ -32,7 +32,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private chatService: ChatService,
     private readonly oneSignalService: OneSignalService,
-    private readonly userRepository:  UserRepository, 
+    private readonly userRepository: UserRepository,
   ) {}
 
   handleConnection(client: Socket) {
@@ -150,25 +150,28 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.to(conversationId).emit('new_message', result);
       console.log('Event emitted successfully');
 
-          const patientInfo = await this.userRepository.findUserById(conversationInfo.patientId);
-          const consultantInfo = await this.userRepository.findUserById(conversationInfo.consultantId);
+      const patientInfo = await this.userRepository.findUserById(
+        conversationInfo.patientId,
+      );
+      const consultantInfo = await this.userRepository.findUserById(
+        conversationInfo.consultantId,
+      );
 
+      const isPatientSender = senderType === 'patient'; // or whatever your enum value is
 
-          const isPatientSender = senderType === 'patient'; // or whatever your enum value is
+      const sender = isPatientSender ? patientInfo : consultantInfo;
+      const receiver = isPatientSender ? consultantInfo : patientInfo;
 
-          const sender = isPatientSender ? patientInfo : consultantInfo;
-          const receiver = isPatientSender ? consultantInfo : patientInfo;
-
-          this.oneSignalService.sendNotificationToUser(
-            receiver.id, 
-            `New message from ${sender.fullName}`,
-            content, 
-            {
-              category: 'Message',
-              action: 'New Message',
-              conversationId, 
-            },
-          );
+      this.oneSignalService.sendNotificationToUser(
+        receiver.id,
+        `New message from ${sender.fullName}`,
+        content,
+        {
+          category: 'Message',
+          action: 'New Message',
+          conversationId,
+        },
+      );
 
       return {
         event: 'message_sent',
@@ -252,6 +255,66 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  // @SubscribeMessage('call:initiate')
+  // async handleCallInitiate(
+  //   @MessageBody()
+  //   data: {
+  //     toUserId: string;
+  //     conversationId: string;
+  //     callType: 'video' | 'audio';
+  //   },
+  //   @ConnectedSocket() client: Socket,
+  // ) {
+  //   const targetSocketId = this.userSockets.get(data.toUserId);
+  //   const fromUserId = this.activeUsers.get(client.id)?.userId;
+
+  //   if (!targetSocketId || !fromUserId) return;
+
+  //   // Start ringing on the caller's side
+  //   client.emit('call:ringing', {
+  //     toUserId: data.toUserId,
+  //     conversationId: data.conversationId,
+  //     callType: data.callType,
+  //   });
+
+  //   // Notify the recipient about incoming call
+  //   this.server.to(targetSocketId).emit('call:incoming', {
+  //     fromUserId,
+  //     conversationId: data.conversationId,
+  //     callType: data.callType,
+  //   });
+
+  //   const user = await this.userRepository.findUserById(fromUserId)
+
+  //   this.oneSignalService.sendNotificationToUser(
+  //     data.toUserId,
+  //     `Incoming call from ${user.fullName}`,
+  //     ``,
+  //     {
+  //       category: 'Call',
+  //       action: 'Incoming Call',
+  //     },
+  //   );
+
+  //   // Set a timeout for no answer (e.g., 45 seconds)
+  //   const ringingTimeout = setTimeout(() => {
+  //     // Notify caller that call was not answered
+  //     client.emit('call:no-answer', {
+  //       toUserId: data.toUserId,
+  //     });
+
+  //     // Notify recipient that call timed out
+  //     this.server.to(targetSocketId).emit('call:missed', {
+  //       fromUserId,
+  //       conversationId: data.conversationId,
+  //     });
+
+  //     this.activeRingingCalls.delete(fromUserId);
+  //   }, 45000); // 45 seconds
+
+  //   this.activeRingingCalls.set(fromUserId, ringingTimeout);
+  // }
+
   @SubscribeMessage('call:initiate')
   async handleCallInitiate(
     @MessageBody()
@@ -265,53 +328,47 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const targetSocketId = this.userSockets.get(data.toUserId);
     const fromUserId = this.activeUsers.get(client.id)?.userId;
 
-    if (!targetSocketId || !fromUserId) return;
+    if (!fromUserId) return; 
 
-    // Start ringing on the caller's side
-    client.emit('call:ringing', {
-      toUserId: data.toUserId,
-      conversationId: data.conversationId,
-      callType: data.callType,
-    });
+    const user = await this.userRepository.findUserById(fromUserId);
 
-    // Notify the recipient about incoming call
-    this.server.to(targetSocketId).emit('call:incoming', {
-      fromUserId,
-      conversationId: data.conversationId,
-      callType: data.callType,
-    });
-
-    const user = await this.userRepository.findUserById(fromUserId)
-
-    this.oneSignalService.sendNotificationToUser(
+    await this.oneSignalService.sendNotificationToUser(
       data.toUserId,
       `Incoming call from ${user.fullName}`,
       ``,
       {
         category: 'Call',
         action: 'Incoming Call',
+        conversationId: data.conversationId,
+        callType: data.callType,
       },
     );
 
-    // Set a timeout for no answer (e.g., 45 seconds)
-    const ringingTimeout = setTimeout(() => {
-      // Notify caller that call was not answered
-      client.emit('call:no-answer', {
+    if (targetSocketId) {
+      client.emit('call:ringing', {
         toUserId: data.toUserId,
+        conversationId: data.conversationId,
+        callType: data.callType,
       });
 
-      // Notify recipient that call timed out
-      this.server.to(targetSocketId).emit('call:missed', {
+      this.server.to(targetSocketId).emit('call:incoming', {
         fromUserId,
         conversationId: data.conversationId,
+        callType: data.callType,
       });
 
-      this.activeRingingCalls.delete(fromUserId);
-    }, 45000); // 45 seconds
+      const ringingTimeout = setTimeout(() => {
+        client.emit('call:no-answer', { toUserId: data.toUserId });
+        this.server.to(targetSocketId).emit('call:missed', {
+          fromUserId,
+          conversationId: data.conversationId,
+        });
+        this.activeRingingCalls.delete(fromUserId);
+      }, 45000);
 
-    this.activeRingingCalls.set(fromUserId, ringingTimeout);
+      this.activeRingingCalls.set(fromUserId, ringingTimeout);
+    }
   }
-
   @SubscribeMessage('call:accept')
   handleCallAccept(
     @MessageBody() data: { toUserId: string },
