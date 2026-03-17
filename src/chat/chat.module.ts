@@ -7,9 +7,10 @@ import { MessageRepository } from '@src/chat/repository/message.repository';
 import { DbModule } from '@src/db/db.module';
 import { BookingModule } from '@src/booking/booking.module';
 import { OneSignalModule } from '@src/one-signal/one-signal.module';
+import { UserModule } from '@src/users/users.module';
 
 @Module({
-  imports: [DbModule, BookingModule, OneSignalModule], 
+  imports: [DbModule, BookingModule, OneSignalModule, UserModule], 
   controllers: [ChatController],
   providers: [
     ChatService,

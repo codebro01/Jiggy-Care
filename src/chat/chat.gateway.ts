@@ -1,4 +1,3 @@
-
 import {
   WebSocketGateway,
   SubscribeMessage,
@@ -12,6 +11,7 @@ import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { OneSignalService } from '@src/one-signal/one-signal.service';
+import { UserRepository } from '@src/users/repository/user.repository';
 
 @WebSocketGateway({
   cors: {
@@ -29,7 +29,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private userSockets = new Map<string, string>();
   private activeRingingCalls = new Map<string, NodeJS.Timeout>(); // Track ringing timeouts
 
-  constructor(private chatService: ChatService, private readonly oneSignalService: OneSignalService) {}
+  constructor(
+    private chatService: ChatService,
+    private readonly oneSignalService: OneSignalService,
+    private readonly userRepository:  UserRepository, 
+  ) {}
 
   handleConnection(client: Socket) {
     console.log(`Client connected: ${client.id}`);
@@ -146,6 +150,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.to(conversationId).emit('new_message', result);
       console.log('Event emitted successfully');
 
+          const patientInfo = await this.userRepository.findUserById(conversationInfo.patientId);
+          const consultantInfo = await this.userRepository.findUserById(conversationInfo.consultantId);
+
+
+          const isPatientSender = senderType === 'patient'; // or whatever your enum value is
+
+          const sender = isPatientSender ? patientInfo : consultantInfo;
+          const receiver = isPatientSender ? consultantInfo : patientInfo;
+
+          this.oneSignalService.sendNotificationToUser(
+            receiver.id, 
+            `New message from ${sender.fullName}`,
+            content, 
+            {
+              category: 'Message',
+              action: 'New Message',
+              conversationId, 
+            },
+          );
+
       return {
         event: 'message_sent',
         data: result,
@@ -229,7 +253,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('call:initiate')
-  handleCallInitiate(
+  async handleCallInitiate(
     @MessageBody()
     data: {
       toUserId: string;
@@ -257,15 +281,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       callType: data.callType,
     });
 
-       this.oneSignalService.sendNotificationToUser(
-                  data.toUserId,
-                  'Incoming Call',
-                  ``,
-                  {
-                    category: 'Call',
-                    action: 'Incoming Call',
-                  },
-                )
+    const user = await this.userRepository.findUserById(fromUserId)
+
+    this.oneSignalService.sendNotificationToUser(
+      data.toUserId,
+      `Incoming call from ${user.fullName}`,
+      ``,
+      {
+        category: 'Call',
+        action: 'Incoming Call',
+      },
+    );
 
     // Set a timeout for no answer (e.g., 45 seconds)
     const ringingTimeout = setTimeout(() => {
