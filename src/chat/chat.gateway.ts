@@ -349,6 +349,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         callType: data.callType,
         callerName: user.fullName, 
         bookingId: conversationInfo.bookingId, 
+        fromUserId, 
       },
     );
 
