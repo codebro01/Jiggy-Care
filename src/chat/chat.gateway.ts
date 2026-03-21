@@ -170,6 +170,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           category: 'Message',
           action: 'New Message',
           conversationId,
+          bookingId: conversationInfo.bookingId
         },
       );
 
@@ -332,6 +333,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const user = await this.userRepository.findUserById(fromUserId);
 
+     const conversationInfo =
+       await this.chatService.getConversationByConversationId(data.conversationId);
+
+       if(!conversationInfo) throw new BadRequestException('Invalid conversation')
+
     await this.oneSignalService.sendNotificationToUser(
       data.toUserId,
       `Incoming call from ${user.fullName}`,
@@ -341,6 +347,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         action: 'Incoming Call',
         conversationId: data.conversationId,
         callType: data.callType,
+        callerName: user.fullName, 
+        bookingId: conversationInfo.bookingId, 
       },
     );
 
