@@ -341,7 +341,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     await this.oneSignalService.sendNotificationToUser(
       data.toUserId,
       `Incoming call from ${user.fullName}`,
-      ``,
+      `Open app to answer`,
       {
         category: 'Call',
         action: 'Incoming Call',
