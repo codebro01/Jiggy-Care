@@ -170,7 +170,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           category: 'Message',
           action: 'New Message',
           conversationId,
-          bookingId: conversationInfo.bookingId
+          bookingId: conversationInfo.bookingId,
         },
       );
 
@@ -316,6 +316,72 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   //   this.activeRingingCalls.set(fromUserId, ringingTimeout);
   // }
 
+  // @SubscribeMessage('call:initiate')
+  // async handleCallInitiate(
+  //   @MessageBody()
+  //   data: {
+  //     toUserId: string;
+  //     conversationId: string;
+  //     callType: 'video' | 'audio';
+  //   },
+  //   @ConnectedSocket() client: Socket,
+  // ) {
+  //   const targetSocketId = this.userSockets.get(data.toUserId);
+  //   const fromUserId = this.activeUsers.get(client.id)?.userId;
+
+  //   if (!fromUserId) return;
+
+  //   const user = await this.userRepository.findUserById(fromUserId);
+
+  //    const conversationInfo =
+  //      await this.chatService.getConversationByConversationId(data.conversationId);
+
+  //      if(!conversationInfo) throw new BadRequestException('Invalid conversation')
+
+  //   await this.oneSignalService.sendNotificationToUser(
+  //     data.toUserId,
+  //     `Incoming call from ${user.fullName}`,
+  //     `Open app to answer`,
+  //     {
+  //       category: 'Call',
+  //       action: 'Incoming Call',
+  //       conversationId: data.conversationId,
+  //       callType: data.callType,
+  //       callerName: user.fullName,
+  //       bookingId: conversationInfo.bookingId,
+  //       fromUserId,
+  //     },
+  //   );
+
+  //   if (targetSocketId) {
+  //     client.emit('call:ringing', {
+  //       toUserId: data.toUserId,
+  //       conversationId: data.conversationId,
+  //       callType: data.callType,
+  //     });
+
+  //     this.server.to(targetSocketId).emit('call:incoming', {
+  //       fromUserId,
+  //       conversationId: data.conversationId,
+  //       callType: data.callType,
+  //     });
+
+  //     const ringingTimeout = setTimeout(() => {
+  //       client.emit('call:no-answer', { toUserId: data.toUserId });
+  //       this.server.to(targetSocketId).emit('call:missed', {
+  //         fromUserId,
+  //         conversationId: data.conversationId,
+  //       });
+  //       this.activeRingingCalls.delete(fromUserId);
+  //     }, 45000);
+
+  //     this.activeRingingCalls.set(fromUserId, ringingTimeout);
+  //   }
+  // }
+
+  // Add this to your Gateway class properties
+  private activeCallNotifications = new Set<string>(); // ✅ tracks notified calls
+
   @SubscribeMessage('call:initiate')
   async handleCallInitiate(
     @MessageBody()
@@ -329,29 +395,42 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const targetSocketId = this.userSockets.get(data.toUserId);
     const fromUserId = this.activeUsers.get(client.id)?.userId;
 
-    if (!fromUserId) return; 
+    if (!fromUserId) return;
 
     const user = await this.userRepository.findUserById(fromUserId);
 
-     const conversationInfo =
-       await this.chatService.getConversationByConversationId(data.conversationId);
+    const conversationInfo =
+      await this.chatService.getConversationByConversationId(
+        data.conversationId,
+      );
 
-       if(!conversationInfo) throw new BadRequestException('Invalid conversation')
+    if (!conversationInfo)
+      throw new BadRequestException('Invalid conversation');
 
-    await this.oneSignalService.sendNotificationToUser(
-      data.toUserId,
-      `Incoming call from ${user.fullName}`,
-      `Open app to answer`,
-      {
-        category: 'Call',
-        action: 'Incoming Call',
-        conversationId: data.conversationId,
-        callType: data.callType,
-        callerName: user.fullName, 
-        bookingId: conversationInfo.bookingId, 
-        fromUserId, 
-      },
-    );
+    // ✅ Only send notification once per unique call
+    if (!this.activeCallNotifications.has(data.conversationId)) {
+      this.activeCallNotifications.add(data.conversationId);
+
+      await this.oneSignalService.sendNotificationToUser(
+        data.toUserId,
+        `Incoming call from ${user.fullName}`,
+        `Open app to answer`,
+        {
+          category: 'Call',
+          action: 'Incoming Call',
+          conversationId: data.conversationId,
+          callType: data.callType,
+          callerName: user.fullName,
+          bookingId: conversationInfo.bookingId,
+          fromUserId,
+        },
+      );
+
+      // ✅ Clean up after 60s so future calls on same conversation work
+      setTimeout(() => {
+        this.activeCallNotifications.delete(data.conversationId);
+      }, 60000);
+    }
 
     if (targetSocketId) {
       client.emit('call:ringing', {
@@ -373,6 +452,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           conversationId: data.conversationId,
         });
         this.activeRingingCalls.delete(fromUserId);
+        this.activeCallNotifications.delete(data.conversationId); // ✅ also clean up on no-answer
       }, 45000);
 
       this.activeRingingCalls.set(fromUserId, ringingTimeout);
