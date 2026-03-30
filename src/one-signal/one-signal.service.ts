@@ -37,6 +37,8 @@ export class OneSignalService {
   notification.priority = 10;
     notification.headings = { en: heading };
     notification.contents = { en: content };
+       notification.ios_sound = 'default';
+       notification.android_sound = 'default';
     
     if (data) {
       notification.data = data;
@@ -65,8 +67,8 @@ export class OneSignalService {
     notification.include_subscription_ids = [subscriptionId];
     notification.headings = { en: heading };
     notification.contents = { en: content };
-    // notification.ios_sound = 'default';
-    // notification.android_sound = 'default';
+    notification.ios_sound = 'default';
+    notification.android_sound = 'default';
 
     if (data) {
       notification.data = data;

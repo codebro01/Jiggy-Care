@@ -474,11 +474,11 @@ export class PaymentController {
   async handleCallback(@Query() query: any) {
     const verified = await this.paymentService.verifyPayment(query.reference);
 
+    // <pre>${JSON.stringify(verified.data, null, 2)}</pre>
     return `
     <html>
       <body>
         <h1>Payment ${verified.data.status}</h1>
-        <pre>${JSON.stringify(verified.data, null, 2)}</pre>
       </body>
     </html>
   `;
