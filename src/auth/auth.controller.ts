@@ -124,6 +124,8 @@ export class AuthController {
 
     res.setHeader('x-access-token', accessToken);
     res.setHeader('x-refresh-token', refreshToken);
+
+    console.log('google user login response data', user)
     return {
       sucess: true,
       data: user,
