@@ -60,8 +60,9 @@ export const consultantTable = pgTable('consultants', {
     .references(() => userTable.id, { onDelete: 'cascade' })
     .unique(),
   availability: boolean('availability').default(false),
-  speciality: uuid('speciality')
-    .references(() => specialityTable.id, { onDelete: 'set null' }),
+  speciality: uuid('speciality').references(() => specialityTable.id, {
+    onDelete: 'set null',
+  }),
   yrsOfExperience: integer('years_of_experience'),
   about: text('about'),
   languages: text('languages').array(),
@@ -77,6 +78,8 @@ export const consultantTable = pgTable('consultants', {
     sunday?: string;
   }>(),
   approvedStatus: boolean('approved_status').default(true),
+  loginOtp: varchar('login_otp', { length: 255 }),
+  loginOtpExpiresAt: timestamp('login_otp_expires_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

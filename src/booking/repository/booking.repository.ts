@@ -321,6 +321,22 @@ export class BookingRepository {
       )
       .returning();
   }
+  async cancelAppointment(bookingId: string, patientId: string) {
+    return await this.DbProvider.update(bookingTable)
+      .set({
+        status: 'cancelled',
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(bookingTable.id, bookingId),
+          eq(bookingTable.patientId, patientId),
+        ),
+      )
+      .returning({
+        status: bookingTable.status
+      });
+  }
   async patientMarkNoShow(bookingId: string, patientId: string) {
     return await this.DbProvider.update(bookingTable)
       .set({

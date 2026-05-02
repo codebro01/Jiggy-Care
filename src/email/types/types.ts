@@ -24,6 +24,7 @@ export enum EmailTemplateType {
   EMAIL_VERIFICATION = 'email-verification',
   APPOINTMENT_SUMMARY = 'appointment-summary',
   CONSULTANT_APPOINTMENT_SUMMARY = 'consultant-appointment-summary',
+  LOGIN_OTP = 'login-otp', 
 }
 
 export interface EmailResponse {
@@ -78,10 +79,15 @@ export interface EmailVerificationTemplateData {
   verificationCode: string;
   name: string;
 }
+export interface LoginOtpTemplateData {
+  verificationCode: string;
+  name: string;
+}
 
 export type EmailTemplateData =
   | WelcomeTemplateData
   | CampaignCreatedTemplateData
   | CampaignApprovedTemplateData
   | PasswordResetTemplateData
-  | EmailVerificationTemplateData;
+  | EmailVerificationTemplateData
+  | LoginOtpTemplateData;

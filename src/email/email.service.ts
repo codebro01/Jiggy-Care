@@ -15,6 +15,7 @@ import {
   EmailResponse,
   appointmentSummaryTemplateData,
   consultantAppointmentSummaryTemplateData,
+  LoginOtpTemplateData,
 } from '@src/email/types/types';
 
 @Injectable()
@@ -39,7 +40,6 @@ export class EmailService {
       throw new Error('FROM_EMAIL environment variable is not set');
     }
     this.fromEmail = fromEmail;
-
   }
 
   async queueEmail(data: EmailJobData, priority: number = 0): Promise<string> {
@@ -140,6 +140,13 @@ export class EmailService {
           ),
         };
 
+      case EmailTemplateType.LOGIN_OTP:
+        return {
+          to,
+          subject: 'Your One Time Password',
+          html: this.emailTemplate.getLoginOtp(data as LoginOtpTemplateData),
+        };
+
       default:
         throw new Error(`Unknown email template: ${template}`);
     }
@@ -171,7 +178,7 @@ export class EmailService {
         success: true,
         messageId: response.data?.id,
       };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('Failed to send email:', error);
       return {
         success: false,
@@ -190,6 +197,7 @@ export class EmailService {
       [EmailTemplateType.CAMPAIGN_REJECTED]: 2,
       [EmailTemplateType.WELCOME]: 3,
       [EmailTemplateType.CAMPAIGN_CREATED]: 3,
+      [EmailTemplateType.LOGIN_OTP]: 1,
     };
     return priorities[template] || 5;
   }

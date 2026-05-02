@@ -11,6 +11,8 @@ import { PatientModule } from '@src/patient/patient.module';
 import { ConsultantModule } from '@src/consultant/consultant.module';
 import { GoogleAuthModule } from '@src/google-auth/google-auth.module';
 import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
+import { EmailModule } from '@src/email/email.module';
+
 @Module({
   imports: [
     JwtModule.register({
@@ -24,6 +26,7 @@ import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
      ConsultantModule,
      GoogleAuthModule, 
     forwardRef(() => UserModule),
+    EmailModule
   ],
   controllers: [AuthController],
   providers: [AuthService, AuthRepository, JwtAuthGuard],

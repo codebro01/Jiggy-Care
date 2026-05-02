@@ -6,7 +6,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { userTable } from '@src/db';
+import { consultantTable, userTable } from '@src/db';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
@@ -33,30 +33,30 @@ export class AuthRepository {
     private readonly jwtService: JwtService,
   ) {}
 
-
   async findUserByEmail(email: string) {
-       const [user] = await this.DbProvider.select()
-         .from(userTable)
-         .where(eq(userTable.email, email));
+    const [user] = await this.DbProvider.select()
+      .from(userTable)
+      .where(eq(userTable.email, email));
 
-         return user;
+    return user;
   }
   async findUserRefreshTokenByUserId(userId: string) {
-       const [user] = await this.DbProvider.select({refreshToken: userTable.refreshToken})
-         .from(userTable)
-         .where(eq(userTable.id, userId));
+    const [user] = await this.DbProvider.select({
+      refreshToken: userTable.refreshToken,
+    })
+      .from(userTable)
+      .where(eq(userTable.id, userId));
 
-         return user;
+    return user;
   }
 
-  
-
-  async updateUserRefreshToken(refreshToken: string | null, userId: string){
+  async updateUserRefreshToken(refreshToken: string | null, userId: string) {
     const [user] = await this.DbProvider.update(userTable)
       .set({ refreshToken })
-      .where(eq(userTable.id, userId)).returning();
+      .where(eq(userTable.id, userId))
+      .returning();
 
-      return  user;
+    return user;
   }
   async loginUser(data: { email: string; password: string }) {
     const { email, password } = data;
@@ -95,6 +95,33 @@ export class AuthRepository {
 
     if (!updateUserToken) throw new InternalServerErrorException();
     return { user, accessToken, refreshToken };
+  }
+
+  async saveLoginOTP(userId: string, otp: string) {
+    const hashedOtp = await bcrypt.hash(otp, 10);
+    await this.DbProvider.update(consultantTable)
+      .set({
+        loginOtp: hashedOtp,
+        loginOtpExpiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 mins
+      })
+      .where(eq(consultantTable.userId, userId));
+  }
+
+  async getLoginOTP(userId: string) {
+    const [consultant] = await this.DbProvider.select({
+      loginOtp: consultantTable.loginOtp,
+      loginOtpExpiresAt: consultantTable.loginOtpExpiresAt,
+    })
+      .from(consultantTable)
+      .where(eq(consultantTable.userId, userId));
+
+    return consultant;
+  }
+
+  async clearLoginOTP(userId: string) {
+    await this.DbProvider.update(consultantTable)
+      .set({ loginOtp: null, loginOtpExpiresAt: null })
+      .where(eq(consultantTable.userId, userId));
   }
 
   async logoutUser(res: Response, req: customRequest) {

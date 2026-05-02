@@ -134,6 +134,30 @@ export class EmailTemplate {
     `;
   }
 
+
+  getLoginOtp(data: {
+    verificationCode: string;
+    name: string;
+  }): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <body>
+          <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+            <h2>Verify Your Email Address</h2>
+
+            <p>Hi ${data.name},</p>
+            <p>Use the OTP Below to login to your account</p>
+            <h1 style="display: inline-block; padding: 12px 24px; background: #0e0e0fff; color: white; text-decoration: none; margin: 20px 0;">
+              ${data.verificationCode}
+            </h1>
+            <p><small>If you didn't create an account, please ignore this email.</small></p>
+          </div>
+        </body>
+      </html>
+    `;
+  }
+
   getAppointmentSummaryTemplate(data: {
     invoiceNo: string;
     appointmentDate: Date;

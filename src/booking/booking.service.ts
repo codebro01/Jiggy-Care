@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { BookingRepository } from '@src/booking/repository/booking.repository';
 import { CreateBookingDto } from '@src/booking/dto/createBooking.dto';
 import { NotFoundException } from '@nestjs/common';
@@ -264,6 +268,19 @@ export class BookingService {
     return await this.bookingRepository.totalBookings(patientId);
   }
 
+  // ! patient cancels appointment
+
+  async cancelAppointment(bookingId: string, patientId: string) {
+    const booking = await this.bookingRepository.cancelAppointment(
+      bookingId,
+      patientId,
+    );
+    if (!booking)
+      throw new InternalServerErrorException(
+        'An error occured while cancelling bookings',
+      );
+    return booking;
+  }
   // !consultant starts appointment
 
   async consultantStartAppointment(bookingId: string, consultantId: string) {
@@ -278,6 +295,10 @@ export class BookingService {
     if (booking.status !== 'upcoming') {
       return;
       throw new BadRequestException('Appointment already started or completed');
+    }
+    if (booking.status !== 'cancelled') {
+      return;
+      throw new BadRequestException('You cannot start a cancelled appointment');
     }
 
     return await this.bookingRepository.consultantStartAppointment(
@@ -303,13 +324,30 @@ export class BookingService {
       throw new BadRequestException('Appointment not in progress');
     }
 
-    return await this.bookingRepository.consultantCompleteAppointment(
+    const completeBookings =
+      await this.bookingRepository.consultantCompleteAppointment(
+        {
+          consultationNotes: notes,
+        },
+        bookingId,
+        consultantId,
+      );
+
+    const consultant =
+      await this.consultantRepository.findApprovedConsultantById(consultantId);
+
+    if (!consultant) throw new NotFoundException('Consultant not found');
+
+    this.oneSignalService.sendNotificationToUser(
+      booking.patientId,
+      `Appointment completion comfirmation`,
+      `Please, verify the completion of your appointment with ${consultant.fullName}`,
       {
-        consultationNotes: notes,
+        category: 'Appointment',
       },
-      bookingId,
-      consultantId,
     );
+
+    return completeBookings;
 
     // TODO: Send notification to patient to confirm
   }
@@ -323,17 +361,19 @@ export class BookingService {
   ) {
     const booking = await this.bookingRepository.getBooking(
       bookingId,
-      undefined, 
+      undefined,
       patientId,
     );
 
-    console.log(patientId, bookingId, booking)
+    console.log(patientId, bookingId, booking);
     if (!booking || booking.patientId !== patientId) {
       throw new ForbiddenException('Not authorized');
     }
 
     if (booking.status !== 'pending_confirmation') {
-      throw new BadRequestException('Appointment not pending confirmation, the consultant first has to comfirm the completion of the appointment ');
+      throw new BadRequestException(
+        'Appointment not pending confirmation, the consultant first has to comfirm the completion of the appointment ',
+      );
     }
 
     const newStatus = confirmed ? 'completed' : 'disputed';
@@ -361,10 +401,12 @@ export class BookingService {
       throw new ForbiddenException('Not authorized');
     }
 
-    console.log(booking)
+    console.log(booking);
 
     if (booking.status !== 'in_progress' && booking.status !== 'upcoming') {
-      throw new BadRequestException('Can only mark no show if appointment is upcoming or in progress');
+      throw new BadRequestException(
+        'Can only mark no show if appointment is upcoming or in progress',
+      );
     }
 
     return await this.bookingRepository.consultantMarkNoShow(
@@ -385,19 +427,17 @@ export class BookingService {
 
     //! consultant Can only mark no-show if  in_progress
     if (!['upcoming'].includes(booking.status)) {
-      throw new BadRequestException('Can only mark as no show if the appointment is upcoming!');
+      throw new BadRequestException(
+        'Can only mark as no show if the appointment is upcoming!',
+      );
     }
 
-    return await this.bookingRepository.patientMarkNoShow(
-      bookingId,
-      patientId,
-    );
+    return await this.bookingRepository.patientMarkNoShow(bookingId, patientId);
   }
 
-    async getPatientAllBookings(query: QueryBookingDto, patientId: string) {
-      return await this.bookingRepository.getPatientAllBookings(query, patientId)
-    }
-  
+  async getPatientAllBookings(query: QueryBookingDto, patientId: string) {
+    return await this.bookingRepository.getPatientAllBookings(query, patientId);
+  }
 
   //! Cron job: Auto-complete if patient doesn't respond within 24hrs
   @Cron(CronExpression.EVERY_HOUR)
@@ -408,7 +448,6 @@ export class BookingService {
       twentyFourHoursAgo,
     );
   }
-  
 
   async listBookingsByFilter(query: QueryBookingDto) {
     const bookings = await this.bookingRepository.listBookingsByFilter(query);

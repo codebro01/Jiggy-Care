@@ -312,14 +312,50 @@ export class BookingController {
   @ApiBearerAuth('JWT-auth') // For mobile clients
   @ApiCookieAuth('access_token')
   @HttpCode(HttpStatus.OK)
-  async consultantStartAppointment(
+  async patientCancelAppointment(
     @Req() req: Request,
     @Param('bookingId', ParseUUIDPipe) bookingId: string,
   ) {
     const { id: patientId } = req.user;
-    const bookings = await this.bookingService.consultantStartAppointment(
+    const bookings = await this.bookingService.cancelAppointment(
       bookingId,
       patientId,
+    );
+    console.log('bookings', bookings);
+    return { success: true, data: bookings };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('consultant')
+  @Patch(':bookingId/consultant/start')
+  @ApiOperation({
+    summary:
+      'This endpoint allows a consultant to mark an appointment in progress when they click on start',
+    description:
+      'When a consultant clicks on start, it automatically sets the appointment state to in_progresss.The endpoint is only accessible to consultant',
+  })
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth') // For mobile clients
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
+  async consultantStartAppointment(
+    @Req() req: Request,
+    @Param('bookingId', ParseUUIDPipe) bookingId: string,
+  ) {
+    const { id: consultantId } = req.user;
+    const bookings = await this.bookingService.consultantStartAppointment(
+      bookingId,
+      consultantId,
     );
     console.log('bookings', bookings);
     return { success: true, data: bookings };
@@ -421,8 +457,14 @@ export class BookingController {
   @ApiBearerAuth('JWT-auth') // For mobile clients
   @ApiCookieAuth('access_token')
   @HttpCode(HttpStatus.OK)
-  async getPatientAllBookings(@Query() query: QueryBookingDto, @Param('patientId', ParseUUIDPipe) patientId: string) {
-    const bookings = await this.bookingService.getPatientAllBookings(query, patientId);
+  async getPatientAllBookings(
+    @Query() query: QueryBookingDto,
+    @Param('patientId', ParseUUIDPipe) patientId: string,
+  ) {
+    const bookings = await this.bookingService.getPatientAllBookings(
+      query,
+      patientId,
+    );
 
     return { success: true, data: bookings };
   }

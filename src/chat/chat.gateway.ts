@@ -178,7 +178,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         event: 'message_sent',
         data: result,
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending message:', error);
       return {
         event: 'error',
@@ -246,7 +246,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           success: true,
         },
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         event: 'error',
         data: {

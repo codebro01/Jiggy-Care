@@ -18,6 +18,8 @@ import { GoogleAuthService } from '@src/google-auth/google-auth.service';
 import * as bcrypt from 'bcrypt';
 import { GoogleMobileSigninDto } from '@src/auth/dto/google-mobile-signin.dto';
 import { roleType } from '@src/users/dto/createUser.dto';
+import { EmailService } from '@src/email/email.service';
+import { EmailTemplateType } from '@src/email/types/types';
 
 @Injectable()
 export class AuthService {
@@ -34,6 +36,7 @@ export class AuthService {
     private readonly patientRepository: PatientRepository,
     private readonly consultantRepository: ConsultantRepository,
     private readonly googleAuthService: GoogleAuthService,
+    private readonly emailService: EmailService,
   ) {}
 
   generateRandomPassword(length = 12): string {
@@ -141,9 +144,12 @@ export class AuthService {
           expiresIn: '30d',
         });
 
-                const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+        const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
-        await this.authRepository.updateUserRefreshToken(hashedRefreshToken, user.id);
+        await this.authRepository.updateUserRefreshToken(
+          hashedRefreshToken,
+          user.id,
+        );
 
         return { user: patientInfo, refreshToken, accessToken };
       }
@@ -160,7 +166,7 @@ export class AuthService {
           expiresIn: '30d',
         });
 
-                const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+        const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
         await this.authRepository.updateUserRefreshToken(
           hashedRefreshToken,
@@ -204,7 +210,6 @@ export class AuthService {
         });
 
         const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-
 
         await this.authRepository.updateUserRefreshToken(
           hashedRefreshToken,
@@ -343,7 +348,7 @@ export class AuthService {
           secret: jwtConstants.refreshTokenSecret,
           expiresIn: '30d',
         });
-                const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+        const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
         await this.authRepository.updateUserRefreshToken(
           hashedRefreshToken,
@@ -364,7 +369,7 @@ export class AuthService {
           secret: jwtConstants.refreshTokenSecret,
           expiresIn: '30d',
         });
-        const hashedRefreshToken = await bcrypt.hash(refreshToken, 10)
+        const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
         await this.authRepository.updateUserRefreshToken(
           hashedRefreshToken,
           user.id,
@@ -376,19 +381,19 @@ export class AuthService {
 
     switch (role) {
       case roleType.PATIENT: {
-       
+        const user = await this.helperRepository.executeInTransaction(
+          async (trx) => {
+            const patient = await this.userRepository.createUser(
+              payload,
+              'google',
+              trx,
+            );
+            await this.patientRepository.createPatient(patient.id, trx);
+            return patient;
+          },
+        );
 
-       const user = await this.helperRepository.executeInTransaction(async (trx) => {
-          const patient = await this.userRepository.createUser(
-            payload,
-            'google',
-            trx,
-          );
-          await this.patientRepository.createPatient(patient.id, trx);
-          return patient;
-        });
-
-       const jwtPayload = {
+        const jwtPayload = {
           email: user.email,
           role: user.role,
           id: user.id,
@@ -405,7 +410,7 @@ export class AuthService {
           secret: jwtConstants.refreshTokenSecret,
           expiresIn: '30d',
         });
-                const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+        const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
         await this.authRepository.updateUserRefreshToken(
           hashedRefreshToken,
@@ -416,18 +421,22 @@ export class AuthService {
       }
 
       case roleType.CONSULTANT: {
-      
-        const user = await this.helperRepository.executeInTransaction(async (trx) => {
-          const consultant = await this.userRepository.createUser(
-            payload,
-            'google',
-            trx,
-          );
-          await this.consultantRepository.createConsultant(consultant.id, trx);
-          return consultant;
-        }); // ← Fixed: closing parenthesis right after the callback
+        const user = await this.helperRepository.executeInTransaction(
+          async (trx) => {
+            const consultant = await this.userRepository.createUser(
+              payload,
+              'google',
+              trx,
+            );
+            await this.consultantRepository.createConsultant(
+              consultant.id,
+              trx,
+            );
+            return consultant;
+          },
+        ); // ← Fixed: closing parenthesis right after the callback
 
-      const  jwtPayload = {
+        const jwtPayload = {
           email: user.email,
           role: user.role,
           id: user.id,
@@ -506,5 +515,42 @@ export class AuthService {
     } catch (error) {
       console.log(error);
     }
+  }
+
+  async sendLoginOTP(userId: string, email: string, fullName: string) {
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await this.authRepository.saveLoginOTP(userId, otp);
+
+    await this.emailService.queueTemplatedEmail(
+      EmailTemplateType.LOGIN_OTP, // add this to your EmailTemplateType enum
+      email,
+      {
+        verificationCode: otp,
+        name: fullName,
+      },
+    );
+
+    return 'A one time password has been sent to your registered email';
+  }
+
+  async verifyLoginOTP(userId: string, otp: string) {
+    const consultant = await this.authRepository.getLoginOTP(userId);
+
+    if (!consultant || !consultant.loginOtp)
+      throw new BadRequestException('No OTP found, please request a new one');
+
+    if ( consultant.loginOtpExpiresAt === null || new Date() > consultant.loginOtpExpiresAt)
+      throw new BadRequestException(
+        'OTP has expired, please request a new one',
+      );
+
+    const isValid = await bcrypt.compare(otp, consultant.loginOtp);
+
+    if (!isValid)
+      throw new UnauthorizedException('Invalid OTP, please try again');
+
+    await this.authRepository.clearLoginOTP(userId);
+    return true;
   }
 }
