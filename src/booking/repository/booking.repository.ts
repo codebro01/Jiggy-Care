@@ -1,7 +1,7 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CreateBookingDto } from '../dto/createBooking.dto';
-import { or, eq, and, desc, lt, sql } from 'drizzle-orm';
+import { or, eq, and, desc, lt, sql, gte } from 'drizzle-orm';
 import { NotFoundError } from 'rxjs';
 import {
   bookingTable,
@@ -502,5 +502,25 @@ export class BookingRepository {
       .offset(offset);
 
     return bookings;
+  }
+
+
+  async getTenMinutesBookingFronNow(tenMinutesFromNow: Date, elevenMinutesFromNow: Date) {
+       const upcomingBookings = await this.DbProvider.select({
+         id: bookingTable.id,
+         patientId: bookingTable.patientId,
+         consultantId: bookingTable.consultantId,
+         date: bookingTable.date,
+       })
+         .from(bookingTable)
+         .where(
+           and(
+             eq(bookingTable.status, 'upcoming'),
+             gte(bookingTable.date, tenMinutesFromNow),
+             lt(bookingTable.date, elevenMinutesFromNow),
+           ),
+         );
+
+         return upcomingBookings
   }
 }

@@ -32,7 +32,7 @@ export const bookingTable = pgTable(
       .notNull()
       .references(() => userTable.id, { onDelete: 'cascade' }),
     date: timestamp('date', { withTimezone: true, mode: 'date' }).notNull(),
-    duration: integer('duration').default(1),
+    duration: integer('duration').default(30),
     symptoms: text('symptoms'),
     status: bookingStatusType('status').default('upcoming').notNull(),
     paymentStatus: boolean('payment_status').default(false),

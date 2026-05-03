@@ -24,6 +24,14 @@ type DayName =
   | 'friday'
   | 'saturday';
 
+
+  type TimeSlot = {
+    hour: number;
+    minute: number;
+    display: string;
+    value: string;
+  };
+
 @Injectable()
 export class BookingService {
   constructor(
@@ -31,6 +39,8 @@ export class BookingService {
     private readonly consultantRepository: ConsultantRepository,
     private readonly oneSignalService: OneSignalService,
   ) {}
+
+
 
   async createBooking(
     data: CreateBookingDto,
@@ -128,13 +138,14 @@ export class BookingService {
     ]);
 
     // 6. Get booked hours
-    const bookedHours = bookedSlots.map((booking: bookingTableSelectType) =>
-      new Date(booking.date).getHours(),
-    );
+    const bookedKeys = bookedSlots.map((booking: bookingTableSelectType) => {
+      const d = new Date(booking.date);
+      return `${d.getHours()}:${d.getMinutes()}`;
+    });
 
     // 7. Filter out booked slots
     const availableSlots = allSlots.filter(
-      (slot) => !bookedHours.includes(slot.hour),
+      (slot: TimeSlot) => !bookedKeys.includes(`${slot.hour}:${slot.minute}`),
     );
 
     return {
@@ -142,7 +153,9 @@ export class BookingService {
       day: dayName,
       workingHours: daySchedule,
       availableSlots,
-      bookedSlots: allSlots.filter((slot) => bookedHours.includes(slot.hour)),
+      bookedSlots: allSlots.filter((slot: TimeSlot) =>
+        bookedKeys.includes(`${slot.hour}:${slot.minute}`),
+      ),
     };
   }
 
@@ -159,47 +172,77 @@ export class BookingService {
     return hours;
   }
 
-  private generateTimeSlots(startHour: number, endHour: number) {
-    const slots = [];
+  // private generateTimeSlots(startHour: number, endHour: number) {
+  //   const slots = [];
 
-    // Handle overnight shifts (e.g., 10pm - 4am)
+  //   // Handle overnight shifts (e.g., 10pm - 4am)
+
+  //   if (startHour > endHour) {
+  //     // From start to midnight
+
+  //     for (let hour = startHour; hour < 24; hour++) {
+  //       slots.push({
+  //         hour,
+  //         display: this.formatHour(hour),
+  //         value: `${hour}:00:00`,
+  //       });
+  //             slots.push({ hour, minute: 30, display: this.formatSlot(hour, 30), value: `${hour}:30:00` });
+
+  //     }
+  //     // From midnight to end
+  //     for (let hour = 0; hour < endHour; hour++) {
+  //       slots.push({
+  //         hour,
+  //         display: this.formatHour(hour),
+  //         value: `${hour}:00:00`,
+  //       });
+  //     }
+  //   } else {
+  //     // Normal shift
+  //     for (let hour = startHour; hour < endHour; hour++) {
+  //       slots.push({
+  //         hour,
+  //         display: this.formatHour(hour),
+  //         value: `${hour}:00:00`,
+  //       });
+  //     }
+  //   }
+
+  //   return slots;
+  // }
+  private generateTimeSlots(startHour: number, endHour: number) {
+    const slots: TimeSlot[] = [];
+    const generate = (start: number, end: number) => {
+      for (let hour = start; hour < end; hour++) {
+        slots.push({
+          hour,
+          minute: 0,
+          display: this.formatSlot(hour, 0),
+          value: `${hour}:00:00`,
+        });
+        slots.push({
+          hour,
+          minute: 30,
+          display: this.formatSlot(hour, 30),
+          value: `${hour}:30:00`,
+        });
+      }
+    };
 
     if (startHour > endHour) {
-      // From start to midnight
-
-      for (let hour = startHour; hour < 24; hour++) {
-        slots.push({
-          hour,
-          display: this.formatHour(hour),
-          value: `${hour}:00:00`,
-        });
-      }
-      // From midnight to end
-      for (let hour = 0; hour < endHour; hour++) {
-        slots.push({
-          hour,
-          display: this.formatHour(hour),
-          value: `${hour}:00:00`,
-        });
-      }
+      generate(startHour, 24);
+      generate(0, endHour);
     } else {
-      // Normal shift
-      for (let hour = startHour; hour < endHour; hour++) {
-        slots.push({
-          hour,
-          display: this.formatHour(hour),
-          value: `${hour}:00:00`,
-        });
-      }
+      generate(startHour, endHour);
     }
 
     return slots;
   }
 
-  private formatHour(hour: number): string {
+  private formatSlot(hour: number, minute: number): string {
     const period = hour >= 12 ? 'PM' : 'AM';
     const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    return `${displayHour}:00 ${period}`;
+    return `${displayHour}:${minute === 0 ? '00' : '30'} ${period}`;
   }
 
   async validateBookingSlot(
@@ -213,8 +256,8 @@ export class BookingService {
     const hourStart = new Date(bookingDate);
     hourStart.setMinutes(0, 0, 0);
 
-    const hourEnd = new Date(bookingDate);
-    hourEnd.setMinutes(59, 59, 999);
+   const hourEnd = new Date(bookingDate);
+   hourEnd.setMinutes(bookingDate.getMinutes() + 29, 59, 999);
 
     const conditions = [
       eq(bookingTable.consultantId, consultantId),
@@ -230,9 +273,9 @@ export class BookingService {
       await this.bookingRepository.findBookingsByConditions(conditions);
 
     if (existingBooking) {
-      throw new BadRequestException(
-        `Time slot at ${bookingDate.getHours() - 1}:00 is already booked`,
-      );
+     throw new BadRequestException(
+       `Time slot at ${this.formatSlot(bookingDate.getHours(), bookingDate.getMinutes())} is already booked`,
+     );
     }
 
     return true;
@@ -446,6 +489,50 @@ export class BookingService {
 
     return await this.bookingRepository.updateBookingAfterInterval(
       twentyFourHoursAgo,
+    );
+  }
+
+  // ! send reminder notification for appointment
+  @Cron(CronExpression.EVERY_MINUTE)
+  async sendReminderNotificationForAppointment() {
+    const now = new Date();
+    const tenMinutesFromNow = new Date(now.getTime() + 10 * 60 * 1000);
+    const elevenMinutesFromNow = new Date(now.getTime() + 11 * 60 * 1000);
+
+    // grab all upcoming bookings in the 10-11 minute window
+    const upcomingBookings =
+      await this.bookingRepository.getTenMinutesBookingFronNow(
+        tenMinutesFromNow,
+        elevenMinutesFromNow,
+      );
+
+    if (!upcomingBookings.length) return;
+
+    await Promise.all(
+      upcomingBookings.map(async (booking) => {
+        // get consultant name for the notification message
+        const consultant =
+          await this.consultantRepository.findApprovedConsultantById(
+            booking.consultantId,
+          );
+
+        await Promise.all([
+          // notify patient
+          this.oneSignalService.sendNotificationToUser(
+            booking.patientId,
+            'Appointment Reminder 🔔',
+            `Your appointment with ${consultant.fullName} starts in 10 minutes`,
+            { category: 'Appointment' },
+          ),
+          // notify consultant too
+          this.oneSignalService.sendNotificationToUser(
+            booking.consultantId,
+            'Appointment Reminder 🔔',
+            `You have an appointment starting in 10 minutes`,
+            { category: 'Appointment' },
+          ),
+        ]);
+      }),
     );
   }
 
