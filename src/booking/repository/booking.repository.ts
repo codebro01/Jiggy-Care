@@ -222,6 +222,7 @@ export class BookingRepository {
       date: bookingTable.date,
       status: bookingTable.status,
       duration: bookingTable.duration,
+      symptoms: bookingTable.symptoms, 
     })
       .from(bookingTable)
       .where(
