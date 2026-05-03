@@ -277,10 +277,18 @@ export class BookingService {
     const [existingBooking] =
       await this.bookingRepository.findBookingsByConditions(conditions);
 
+
+      const displayTime = bookingDate.toLocaleTimeString('en-NG', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Africa/Lagos',
+      });
+
     if (existingBooking) {
       throw new BadRequestException(
-        `Time slot at ${this.formatSlot(bookingDate.getHours(), bookingDate.getMinutes())} is already booked`,
+        `Time slot at ${displayTime} is already booked`,
       );
+
     }
 
     return true;
