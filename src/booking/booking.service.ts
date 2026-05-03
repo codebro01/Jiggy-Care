@@ -69,7 +69,7 @@ export class BookingService {
   }
 
   async getAvailableSlots(consultantId: string, date: string) {
-    const bookingDate = new Date(date);
+    const bookingDate = this.parseBookingDate(date);
 
     const dayNames: DayName[] = [
       'sunday',
@@ -170,6 +170,13 @@ export class BookingService {
     return hours;
   }
 
+  private parseBookingDate(date: string): Date {
+    // if frontend sends without timezone, treat it as Lagos time (UTC+1)
+    if (!date.includes('+') && !date.includes('Z')) {
+      return new Date(`${date}+01:00`);
+    }
+    return new Date(date);
+  }
   // private generateTimeSlots(startHour: number, endHour: number) {
   //   const slots = [];
 
@@ -248,16 +255,13 @@ export class BookingService {
     consultantId: string,
     bookingIdToExclude?: string,
   ) {
-    const bookingDate = new Date(date);
-
+    const bookingDate = this.parseBookingDate(date);
     // Check for bookings in the same hour
     const slotStart = new Date(bookingDate);
 
     const slotEnd = new Date(bookingDate);
 
     slotEnd.setMinutes(slotEnd.getMinutes() + 29, 59, 999);
-
-  
 
     const conditions = [
       eq(bookingTable.consultantId, consultantId),
