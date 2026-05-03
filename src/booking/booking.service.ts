@@ -135,6 +135,7 @@ export class BookingService {
       eq(bookingTable.consultantId, consultantId),
       gte(bookingTable.date, dayStart),
       lte(bookingTable.date, dayEnd),
+      eq(bookingTable.paymentStatus, true)
     ]);
 
     // 6. Get booked hours
