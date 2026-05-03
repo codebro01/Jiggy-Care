@@ -24,13 +24,12 @@ type DayName =
   | 'friday'
   | 'saturday';
 
-
-  type TimeSlot = {
-    hour: number;
-    minute: number;
-    display: string;
-    value: string;
-  };
+type TimeSlot = {
+  hour: number;
+  minute: number;
+  display: string;
+  value: string;
+};
 
 @Injectable()
 export class BookingService {
@@ -39,8 +38,6 @@ export class BookingService {
     private readonly consultantRepository: ConsultantRepository,
     private readonly oneSignalService: OneSignalService,
   ) {}
-
-
 
   async createBooking(
     data: CreateBookingDto,
@@ -135,7 +132,7 @@ export class BookingService {
       eq(bookingTable.consultantId, consultantId),
       gte(bookingTable.date, dayStart),
       lte(bookingTable.date, dayEnd),
-      eq(bookingTable.paymentStatus, true)
+      // eq(bookingTable.paymentStatus, true)
     ]);
 
     // 6. Get booked hours
@@ -254,16 +251,19 @@ export class BookingService {
     const bookingDate = new Date(date);
 
     // Check for bookings in the same hour
-    const hourStart = new Date(bookingDate);
-    hourStart.setMinutes(0, 0, 0);
+    const slotStart = new Date(bookingDate);
 
-   const hourEnd = new Date(bookingDate);
-   hourEnd.setMinutes(bookingDate.getMinutes() + 29, 59, 999);
+    const slotEnd = new Date(bookingDate);
+
+    slotEnd.setMinutes(slotEnd.getMinutes() + 29, 59, 999);
+
+  
 
     const conditions = [
       eq(bookingTable.consultantId, consultantId),
-      gte(bookingTable.date, hourStart),
-      lte(bookingTable.date, hourEnd),
+      gte(bookingTable.date, slotStart),
+      lte(bookingTable.date, slotEnd),
+      eq(bookingTable.paymentStatus, true),
     ];
 
     if (bookingIdToExclude) {
@@ -274,9 +274,9 @@ export class BookingService {
       await this.bookingRepository.findBookingsByConditions(conditions);
 
     if (existingBooking) {
-     throw new BadRequestException(
-       `Time slot at ${this.formatSlot(bookingDate.getHours(), bookingDate.getMinutes())} is already booked`,
-     );
+      throw new BadRequestException(
+        `Time slot at ${this.formatSlot(bookingDate.getHours(), bookingDate.getMinutes())} is already booked`,
+      );
     }
 
     return true;
