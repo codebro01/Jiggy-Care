@@ -29,7 +29,6 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBody,
-  ApiParam,
   ApiQuery,
   ApiProduces,
   ApiCookieAuth,
@@ -176,7 +175,7 @@ export class NotificationController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles('admin', 'consultant', 'patient')
   @Post('update-notification/:id')
   @ApiHeader({
     name: 'x-client-type',

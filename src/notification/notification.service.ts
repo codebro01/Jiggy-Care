@@ -45,7 +45,7 @@ export class NotificationService {
       );
 
       return notification;
-    } catch (error) {
+    } catch (error: any) {
       console.log(error)
       throw new BadRequestException(error.message || 'An error occured, please try again')
 
@@ -65,7 +65,7 @@ export class NotificationService {
         );
 
       return notification;
-    } catch (error) {
+    } catch (error: any) {
       throw new BadRequestException(error.message || 'An error occured, please try again')
 
     }
@@ -83,7 +83,7 @@ export class NotificationService {
       );
 
       return notification;
-    } catch (error) {
+    } catch (error: any) {
       throw new BadRequestException(error.message || 'An error occured, please try again')
 
     }
@@ -98,7 +98,7 @@ export class NotificationService {
       );
 
       return data;
-    } catch (error) {
+    } catch (error: any) {
       throw new BadRequestException(error.message || 'An error occured, please try again')
 
     }
