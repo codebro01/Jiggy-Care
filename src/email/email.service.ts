@@ -16,6 +16,8 @@ import {
   appointmentSummaryTemplateData,
   consultantAppointmentSummaryTemplateData,
   LoginOtpTemplateData,
+  SevenDayFollowUpTemplateData,
+  twoDayFollowUpTemplateData,
 } from '@src/email/types/types';
 
 @Injectable()
@@ -146,6 +148,18 @@ export class EmailService {
           subject: 'Your One Time Password',
           html: this.emailTemplate.getLoginOtp(data as LoginOtpTemplateData),
         };
+      case EmailTemplateType.SEVEN_DAY_FOLLOW_UP:
+        return {
+          to,
+          subject: 'One Week On — How Is Your Recovery Going?',
+          html: this.emailTemplate.getSevenDayFollowUpTemplate(data as SevenDayFollowUpTemplateData),
+        };
+      case EmailTemplateType.TWO_DAY_FOLLOW_UP:
+        return {
+          to,
+          subject: 'Checking In On You — How Are You Feeling?',
+          html: this.emailTemplate.getTwoDayFollowUpTemplate(data as twoDayFollowUpTemplateData),
+        };
 
       default:
         throw new Error(`Unknown email template: ${template}`);
@@ -198,6 +212,8 @@ export class EmailService {
       [EmailTemplateType.WELCOME]: 3,
       [EmailTemplateType.CAMPAIGN_CREATED]: 3,
       [EmailTemplateType.LOGIN_OTP]: 1,
+      [EmailTemplateType.SEVEN_DAY_FOLLOW_UP]: 2,
+      [EmailTemplateType.TWO_DAY_FOLLOW_UP]: 2,
     };
     return priorities[template] || 5;
   }

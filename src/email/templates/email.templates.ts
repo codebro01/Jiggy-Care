@@ -1,3 +1,5 @@
+import { SevenDayFollowUpTemplateData } from "../types/types";
+
 export class EmailTemplate {
   getWelcomeTemplate(data: { name: string; email: string }): string {
     return `
@@ -134,11 +136,7 @@ export class EmailTemplate {
     `;
   }
 
-
-  getLoginOtp(data: {
-    verificationCode: string;
-    name: string;
-  }): string {
+  getLoginOtp(data: { verificationCode: string; name: string }): string {
     return `
       <!DOCTYPE html>
       <html>
@@ -348,5 +346,196 @@ export class EmailTemplate {
       </body>
     </html>
   `;
+  }
+
+  getTwoDayFollowUpTemplate(data: {
+    patientName: string;
+    doctorName: string;
+    consultationDate: Date;
+  }): string {
+    return `
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+        .container { max-width: 650px; margin: 0 auto; padding: 20px; background: #ffffff; }
+        .header { background: #1a6b4a; color: white; padding: 30px 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 28px; }
+        .header p { color: #a8d5b5; font-size: 14px; margin-top: 8px; }
+        .content { padding: 30px 20px; }
+        .checklist { background: #f0faf4; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #1a6b4a; }
+        .checklist-title { font-weight: 600; color: #1a6b4a; margin-bottom: 12px; font-size: 16px; }
+        .checklist-item { display: flex; align-items: flex-start; padding: 8px 0; color: #444; font-size: 14px; }
+        .checklist-item span { margin-left: 10px; }
+        .consultation-info { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e0e0e0; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { font-weight: 600; color: #555; }
+        .detail-value { color: #333; text-align: right; }
+        .cta-section { text-align: center; margin: 30px 0; }
+        .cta-button { display: inline-block; padding: 14px 32px; background: #1a6b4a; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px; margin: 8px; }
+        .cta-button-outline { display: inline-block; padding: 14px 32px; background: white; color: #1a6b4a; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px; margin: 8px; border: 2px solid #1a6b4a; }
+        .alert-banner { background: #e8f5e9; border: 1px solid #81c784; border-radius: 8px; padding: 15px 20px; margin: 20px 0; text-align: center; color: #2e7d32; font-weight: 600; }
+        .footer { text-align: center; padding: 20px; color: #777; font-size: 13px; border-top: 1px solid #e0e0e0; margin-top: 30px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>👋 How Are You Feeling?</h1>
+          <p>2-Day Post-Consultation Check-In</p>
+        </div>
+
+        <div class="content">
+          <p>Dear <strong>${data.patientName}</strong>,</p>
+          <p>
+            It has been 2 days since your consultation with <strong>Dr. ${data.doctorName}</strong>. 
+            We hope you are on the path to feeling better. We are checking in to see how you are doing.
+          </p>
+
+          <div class="alert-banner">
+            💊 Remember to keep taking your prescribed medication as directed
+          </div>
+
+          <div class="consultation-info">
+            <div class="detail-row">
+              <span class="detail-label">Consulting Doctor</span>
+              <span class="detail-value">Dr. ${data.doctorName}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Consultation Date</span>
+              <span class="detail-value">
+                ${new Date(data.consultationDate).toLocaleDateString('en-NG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </span>
+            </div>
+          </div>
+
+          <div class="checklist">
+            <div class="checklist-title">📋 Quick Check-In</div>
+            <div class="checklist-item">✅ <span>Are your symptoms improving since your consultation?</span></div>
+            <div class="checklist-item">💊 <span>Have you been following your prescribed medication or treatment plan?</span></div>
+            <div class="checklist-item">⚠️ <span>Have you experienced any new or worsening symptoms?</span></div>
+          </div>
+
+          <p style="font-size: 14px; color: #555;">
+            If anything is bothering you or your condition has not improved, please do not wait — 
+            book a follow-up consultation with your doctor right away.
+          </p>
+
+          <div class="cta-section">
+            <a href="#" class="cta-button">Book a Follow-Up</a>
+            <a href="#" class="cta-button-outline">I'm Feeling Better ✓</a>
+          </div>
+        </div>
+
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} Jigicare. All rights reserved.</p>
+          <p>This is an automated follow-up notification from your care team.</p>
+        </div>
+      </div>
+    </body>
+  </html>
+`;
+  }
+
+  getSevenDayFollowUpTemplate(data: SevenDayFollowUpTemplateData): string {
+    return `
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+        .container { max-width: 650px; margin: 0 auto; padding: 20px; background: #ffffff; }
+        .header { background: #1565c0; color: white; padding: 30px 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 28px; }
+        .header p { color: #90caf9; font-size: 14px; margin-top: 8px; }
+        .content { padding: 30px 20px; }
+        .recovery-card { background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
+        .recovery-label { font-size: 14px; color: #666; margin-bottom: 6px; }
+        .recovery-days { font-size: 48px; font-weight: bold; color: #1565c0; }
+        .recovery-sub { font-size: 14px; color: #1976d2; margin-top: 6px; }
+        .consultation-info { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e0e0e0; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { font-weight: 600; color: #555; }
+        .detail-value { color: #333; text-align: right; }
+        .checklist { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #1565c0; }
+        .checklist-title { font-weight: 600; color: #1565c0; margin-bottom: 12px; font-size: 16px; }
+        .checklist-item { display: flex; align-items: flex-start; padding: 8px 0; color: #444; font-size: 14px; }
+        .checklist-item span { margin-left: 10px; }
+        .cta-section { text-align: center; margin: 30px 0; }
+        .cta-button { display: inline-block; padding: 14px 32px; background: #1565c0; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px; margin: 8px; }
+        .cta-button-outline { display: inline-block; padding: 14px 32px; background: white; color: #1565c0; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px; margin: 8px; border: 2px solid #1565c0; }
+        .alert-banner { background: #fff3e0; border: 1px solid #ffb74d; border-radius: 8px; padding: 15px 20px; margin: 20px 0; text-align: center; color: #e65100; font-weight: 600; }
+        .footer { text-align: center; padding: 20px; color: #777; font-size: 13px; border-top: 1px solid #e0e0e0; margin-top: 30px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🩺 One Week Check-In</h1>
+          <p>7-Day Post-Consultation Recovery Review</p>
+        </div>
+
+        <div class="content">
+          <p>Dear <strong>${data.patientName}</strong>,</p>
+          <p>
+            A full week has passed since your consultation with <strong>Dr. ${data.doctorName}</strong>. 
+            We want to check on your recovery and make sure you are getting the care you need.
+          </p>
+
+          <div class="recovery-card">
+            <div class="recovery-label">Days Since Your Consultation</div>
+            <div class="recovery-days">7</div>
+            <div class="recovery-sub">
+              ${new Date(data.consultationDate).toLocaleDateString('en-NG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </div>
+          </div>
+
+          <div class="consultation-info">
+            <div class="detail-row">
+              <span class="detail-label">Consulting Doctor</span>
+              <span class="detail-value">Dr. ${data.doctorName}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Consultation Date</span>
+              <span class="detail-value">
+                ${new Date(data.consultationDate).toLocaleDateString('en-NG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </span>
+            </div>
+          </div>
+
+          <div class="checklist">
+            <div class="checklist-title">📋 Recovery Evaluation</div>
+            <div class="checklist-item">🔍 <span>Have you fully recovered, or are symptoms still present?</span></div>
+            <div class="checklist-item">💊 <span>Have you completed your full medication course as prescribed?</span></div>
+            <div class="checklist-item">🩺 <span>Do you feel you need to speak with a doctor again?</span></div>
+            <div class="checklist-item">📈 <span>Has your overall health improved since your consultation?</span></div>
+          </div>
+
+          <div class="alert-banner">
+            ⚠️ If symptoms persist or have worsened, please book a follow-up consultation immediately
+          </div>
+
+          <p style="font-size: 14px; color: #555;">
+            Your health and wellbeing matter to us. Whether you have fully recovered or still need support, 
+            our doctors are always here for you.
+          </p>
+
+          <div class="cta-section">
+            <a href="#" class="cta-button">Book a Follow-Up</a>
+            <a href="#" class="cta-button-outline">I've Fully Recovered ✓</a>
+          </div>
+        </div>
+
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} Jigicare. All rights reserved.</p>
+          <p>This is an automated follow-up notification from your care team.</p>
+        </div>
+      </div>
+    </body>
+  </html>
+`;
   }
 }

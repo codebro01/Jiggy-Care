@@ -14,6 +14,9 @@ import { bookingTableSelectType } from '@src/db';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { QueryBookingDto } from '@src/booking/dto/query-booking.dto';
 import { OneSignalService } from '@src/one-signal/one-signal.service';
+import { EmailService } from '@src/email/email.service';
+import { EmailTemplateType } from '@src/email/types/types';
+import { UserRepository } from '@src/users/repository/user.repository';
 
 type DayName =
   | 'sunday'
@@ -37,6 +40,8 @@ export class BookingService {
     private readonly bookingRepository: BookingRepository,
     private readonly consultantRepository: ConsultantRepository,
     private readonly oneSignalService: OneSignalService,
+    private readonly emailService: EmailService,
+    private readonly userRepository: UserRepository,
   ) {}
 
   async createBooking(
@@ -277,18 +282,16 @@ export class BookingService {
     const [existingBooking] =
       await this.bookingRepository.findBookingsByConditions(conditions);
 
-
-      const displayTime = bookingDate.toLocaleTimeString('en-NG', {
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: 'Africa/Lagos',
-      });
+    const displayTime = bookingDate.toLocaleTimeString('en-NG', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Africa/Lagos',
+    });
 
     if (existingBooking) {
       throw new BadRequestException(
         `Time slot at ${displayTime} is already booked`,
       );
-
     }
 
     return true;
@@ -548,6 +551,98 @@ export class BookingService {
       }),
     );
   }
+
+  @Cron(CronExpression.EVERY_DAY_AT_8AM) // fires once daily at 8am
+  async handleFollowUpNotifications() {
+    const now = new Date();
+
+    // 2-day window (full day, 2 days ago)
+    const twoDaysAgoStart = new Date(now);
+    twoDaysAgoStart.setDate(now.getDate() - 2);
+    twoDaysAgoStart.setHours(0, 0, 0, 0);
+
+    const twoDaysAgoEnd = new Date(twoDaysAgoStart);
+    twoDaysAgoEnd.setHours(23, 59, 59, 999);
+
+    // 7-day window (full day, 7 days ago)
+    const sevenDaysAgoStart = new Date(now);
+    sevenDaysAgoStart.setDate(now.getDate() - 7);
+    sevenDaysAgoStart.setHours(0, 0, 0, 0);
+
+    const sevenDaysAgoEnd = new Date(sevenDaysAgoStart);
+    sevenDaysAgoEnd.setHours(23, 59, 59, 999);
+
+    const [twoDayBookings, sevenDayBookings] = await Promise.all([
+      this.bookingRepository.getTwoDaysCompletedBookings(
+        twoDaysAgoStart,
+        twoDaysAgoEnd,
+      ),
+      this.bookingRepository.getSevenDaysCompletedBookings(
+        sevenDaysAgoStart,
+        sevenDaysAgoEnd,
+      ),
+    ]);
+
+    // 2-day follow-ups
+    await Promise.all(
+      twoDayBookings.map(async (booking: any) => {
+        const patient = await this.userRepository.findUserById(
+          booking.patientId,
+        );
+        const consultant = await this.userRepository.findUserById(
+          booking.consultantId,
+        );
+
+        await this.oneSignalService.sendNotificationToUser(
+          booking.patientId,
+          'Two days On — How Is Your Recovery Going?',
+          `Hi ${patient.fullName.split(' ')[0]}, it's been 2 days since your consultation with Dr. ${consultant.fullName}. How are you feeling?`,
+          { category: 'FollowUp', bookingId: booking.id },
+        );
+
+        await this.emailService.queueTemplatedEmail(
+          EmailTemplateType.TWO_DAY_FOLLOW_UP,
+          patient.email,
+          {
+            patientName: patient.fullName,
+            doctorName: consultant.fullName,
+            consultationDate: booking.date,
+          },
+        );
+      }),
+    );
+
+    // 7-day follow-ups
+    await Promise.all(
+      sevenDayBookings.map(async (booking: any) => {
+        const patient = await this.userRepository.findUserById(
+          booking.patientId,
+        );
+        const consultant = await this.userRepository.findUserById(
+          booking.consultantId,
+        );
+
+
+          await this.oneSignalService.sendNotificationToUser(
+            booking.patientId,
+            'One Week On — How Is Your Recovery Going?',
+            `Hi ${patient.fullName.split(' ')[0]}, it's been 7 days since your consultation with Dr. ${consultant.fullName}. How are you feeling?`,
+            { category: 'FollowUp', bookingId: booking.id },
+          );
+        await this.emailService.queueTemplatedEmail(
+          EmailTemplateType.SEVEN_DAY_FOLLOW_UP,
+          patient.email,
+          {
+            patientName: patient.fullName,
+            doctorName: consultant.fullName,
+            consultationDate: booking.date,
+          },
+        );
+      }),
+    );
+  }
+
+  //! end of appointment crons
 
   async listBookingsByFilter(query: QueryBookingDto) {
     const bookings = await this.bookingRepository.listBookingsByFilter(query);

@@ -25,6 +25,8 @@ export enum EmailTemplateType {
   APPOINTMENT_SUMMARY = 'appointment-summary',
   CONSULTANT_APPOINTMENT_SUMMARY = 'consultant-appointment-summary',
   LOGIN_OTP = 'login-otp', 
+  SEVEN_DAY_FOLLOW_UP = 'seven-days-follow-up', 
+  TWO_DAY_FOLLOW_UP = 'two-days-follow-up', 
 }
 
 export interface EmailResponse {
@@ -84,10 +86,23 @@ export interface LoginOtpTemplateData {
   name: string;
 }
 
+export interface SevenDayFollowUpTemplateData {
+  patientName: string;
+  doctorName: string;
+  consultationDate: Date;
+}
+export interface twoDayFollowUpTemplateData {
+  patientName: string;
+  doctorName: string;
+  consultationDate: Date;
+}
+
 export type EmailTemplateData =
   | WelcomeTemplateData
   | CampaignCreatedTemplateData
   | CampaignApprovedTemplateData
   | PasswordResetTemplateData
   | EmailVerificationTemplateData
-  | LoginOtpTemplateData;
+  | LoginOtpTemplateData
+  | twoDayFollowUpTemplateData
+  | SevenDayFollowUpTemplateData;

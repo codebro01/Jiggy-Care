@@ -43,6 +43,7 @@ import { SupportModule } from './support/support.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { OneSignalModule } from './one-signal/one-signal.module';
+import { ChatbotModule } from './chatbot/chatbot.module';
 @Module({
   imports: [
     ScheduleModule.forRoot(), 
@@ -109,6 +110,7 @@ import { OneSignalModule } from './one-signal/one-signal.module';
     SupportModule,
     DashboardModule,
     OneSignalModule,
+    ChatbotModule,
   ],
   controllers: [AppController],
   providers: [AppService, NeonProvider, MulterService],

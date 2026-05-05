@@ -222,7 +222,7 @@ export class BookingRepository {
       date: bookingTable.date,
       status: bookingTable.status,
       duration: bookingTable.duration,
-      symptoms: bookingTable.symptoms, 
+      symptoms: bookingTable.symptoms,
     })
       .from(bookingTable)
       .where(
@@ -247,7 +247,7 @@ export class BookingRepository {
       date: bookingTable.date,
       status: bookingTable.status,
       duration: bookingTable.duration,
-      symptoms: bookingTable.symptoms, 
+      symptoms: bookingTable.symptoms,
     })
       .from(bookingTable)
       .where(
@@ -336,7 +336,7 @@ export class BookingRepository {
         ),
       )
       .returning({
-        status: bookingTable.status
+        status: bookingTable.status,
       });
   }
   async patientMarkNoShow(bookingId: string, patientId: string) {
@@ -446,7 +446,7 @@ export class BookingRepository {
 
     const condition = [eq(bookingTable.patientId, patientId)];
 
-    if(query.status) condition.push(eq(bookingTable.status, query.status))
+    if (query.status) condition.push(eq(bookingTable.status, query.status));
 
     const offset = (page - 1) * limit;
     const bookings = await this.DbProvider.select({
@@ -456,7 +456,7 @@ export class BookingRepository {
       date: bookingTable.date,
       status: bookingTable.status,
       consultantId: consultantTable.userId,
-      consultantName: userTable.fullName, 
+      consultantName: userTable.fullName,
       rating: sql<number>`ROUND(CAST(AVG(${ratingTable.rating}) AS numeric), 2)`,
     })
       .from(bookingTable)
@@ -483,7 +483,7 @@ export class BookingRepository {
       )
       .limit(limit)
       .offset(offset)
-      .orderBy(desc(bookingTable.date))
+      .orderBy(desc(bookingTable.date));
 
     return bookings;
   }
@@ -491,10 +491,9 @@ export class BookingRepository {
     const limit = query.limit || 10;
     const page = query.page || 1;
 
+    const condition = [];
 
-        const condition = [];
-
-        if (query.status) condition.push(eq(bookingTable.status, query.status));
+    if (query.status) condition.push(eq(bookingTable.status, query.status));
 
     const offset = (page - 1) * limit;
     const bookings = await this.DbProvider.select()
@@ -506,23 +505,68 @@ export class BookingRepository {
     return bookings;
   }
 
+  async getTenMinutesBookingFronNow(
+    tenMinutesFromNow: Date,
+    elevenMinutesFromNow: Date,
+  ) {
+    const upcomingBookings = await this.DbProvider.select({
+      id: bookingTable.id,
+      patientId: bookingTable.patientId,
+      consultantId: bookingTable.consultantId,
+      date: bookingTable.date,
+    })
+      .from(bookingTable)
+      .where(
+        and(
+          eq(bookingTable.status, 'upcoming'),
+          gte(bookingTable.date, tenMinutesFromNow),
+          lt(bookingTable.date, elevenMinutesFromNow),
+        ),
+      );
 
-  async getTenMinutesBookingFronNow(tenMinutesFromNow: Date, elevenMinutesFromNow: Date) {
-       const upcomingBookings = await this.DbProvider.select({
-         id: bookingTable.id,
-         patientId: bookingTable.patientId,
-         consultantId: bookingTable.consultantId,
-         date: bookingTable.date,
-       })
-         .from(bookingTable)
-         .where(
-           and(
-             eq(bookingTable.status, 'upcoming'),
-             gte(bookingTable.date, tenMinutesFromNow),
-             lt(bookingTable.date, elevenMinutesFromNow),
-           ),
-         );
+    return upcomingBookings;
+  }
 
-         return upcomingBookings
+  async getTwoDaysCompletedBookings(twoDaysAgo: Date, twoDaysAgoEnd: Date) {
+    const completedBookings = await this.DbProvider.select({
+      id: bookingTable.id,
+      patientId: bookingTable.patientId,
+      consultantId: bookingTable.consultantId,
+      date: bookingTable.date,
+      actualEnd: bookingTable.actualEnd,
+    })
+      .from(bookingTable)
+      .where(
+        and(
+          eq(bookingTable.status, 'completed'),
+          gte(bookingTable.actualEnd, twoDaysAgo),
+          lt(bookingTable.actualEnd, twoDaysAgoEnd),
+        ),
+      );
+
+    return completedBookings;
+  }
+
+  async getSevenDaysCompletedBookings(
+    sevenDaysAgo: Date,
+    sevenDaysAgoEnd: Date,
+  ) {
+    const completedBookings = await this.DbProvider.select({
+      id: bookingTable.id,
+      patientId: bookingTable.patientId,
+      consultantId: bookingTable.consultantId,
+      date: bookingTable.date,
+      actualEnd: bookingTable.actualEnd,
+    })
+      .from(bookingTable)
+      .where(
+        and(
+          eq(bookingTable.status, 'completed'),
+          gte(bookingTable.actualEnd, sevenDaysAgo),
+          lt(bookingTable.actualEnd, sevenDaysAgoEnd),
+        ),
+      );
+
+    return completedBookings;
   }
 }
