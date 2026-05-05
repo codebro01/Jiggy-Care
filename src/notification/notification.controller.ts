@@ -196,61 +196,6 @@ export class NotificationController {
     description:
       'Updates an existing notification by ID. Only accessible by administrators.',
   })
-  @ApiParam({
-    name: 'id',
-    type: String,
-    description: 'Notification ID',
-    example: 'notif-123',
-  })
-  @ApiBody({
-    type: UpdateNotificationDto,
-    description: 'Notification update data',
-    examples: {
-      example1: {
-        summary: 'Mark as read',
-        value: {
-          isRead: true,
-        },
-      },
-      example2: {
-        summary: 'Update message',
-        value: {
-          message: 'Updated notification message',
-          priority: 'medium',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Notification updated successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'success' },
-        data: {
-          type: 'object',
-          description: 'Updated notification object',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad Request - Invalid input data',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing JWT token',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - User does not have admin role',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Not Found - Notification does not exist',
-  })
   async updateNotification(
     @Body() body: UpdateNotificationDto,
     @Req() req: Request,
