@@ -11,6 +11,7 @@ import {
   Query,
   Param,
   Get,
+  Patch,
 } from '@nestjs/common';
 import { Roles } from '@src/auth/decorators/roles.decorators';
 import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
@@ -176,7 +177,7 @@ export class NotificationController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'consultant', 'patient')
-  @Post('update-notification/:id')
+  @Patch('update-notification/:id')
   @ApiHeader({
     name: 'x-client-type',
     description:
@@ -213,7 +214,7 @@ export class NotificationController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin, businessOwner, driver')
-  @Post('update-notifications')
+  @Patch('update-notifications')
   @ApiHeader({
     name: 'x-client-type',
     description:
