@@ -28,7 +28,7 @@ export class ChatbotService {
 
     // 3. send to Groq
     const response = await this.groq.chat.completions.create({
-      model: 'llama3-70b-8192',
+      model: 'llama-3.3-70b-versatile',
       messages: [
         {
           role: 'system',

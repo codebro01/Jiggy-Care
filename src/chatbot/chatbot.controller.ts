@@ -24,7 +24,7 @@ export class ChatbotController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
-  @Get('send')
+  @Post('send')
   @ApiOperation({
     summary: 'This endpoint enables patient send message to the chatbot',
     description:

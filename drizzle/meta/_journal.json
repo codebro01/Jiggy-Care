@@ -281,6 +281,13 @@
       "when": 1777955770703,
       "tag": "0039_cute_preak",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1777987632437,
+      "tag": "0040_safe_stark_industries",
+      "breakpoints": true
     }
   ]
 }
