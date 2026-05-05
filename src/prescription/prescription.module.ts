@@ -4,8 +4,10 @@ import { PrescriptionController } from '@src/prescription/prescription.controlle
 import { PrescriptionRepository } from '@src/prescription/repository/prescription.repository';
 import { DbModule } from '@src/db/db.module';
 import { UserModule } from '@src/users/users.module';
+import { OneSignalModule } from '@src/one-signal/one-signal.module';
+import { NotificationModule } from '@src/notification/notification.module';
 @Module({
-  imports: [DbModule, forwardRef(() => UserModule)],
+  imports: [DbModule, forwardRef(() => UserModule), OneSignalModule, NotificationModule],
   controllers: [PrescriptionController],
   providers: [PrescriptionService, PrescriptionRepository],
   exports: [PrescriptionService, PrescriptionRepository],

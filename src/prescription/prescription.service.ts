@@ -7,6 +7,8 @@ import { PrescriptionRepository } from './repository/prescription.repository';
 import { CreatePrescriptionDto } from './dto/create-prescription.dto';
 import { UpdatePrescriptionDto } from './dto/update-prescription.dto';
 import { UserRepository } from '@src/users/repository/user.repository';
+import { NotificationService } from '@src/notification/notification.service';
+import { OneSignalService } from '@src/one-signal/one-signal.service';
 
 const daysToFrequency = {
   once_daily: 1,
@@ -21,6 +23,8 @@ export class PrescriptionService {
   constructor(
     private readonly prescriptionRepository: PrescriptionRepository,
     private readonly userRepository: UserRepository,
+    private readonly oneSignalService: OneSignalService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async create(
@@ -42,6 +46,18 @@ export class PrescriptionService {
     if (!prescribedBy) throw new BadRequestException('Invalid consultant');
 
     const totalPills = daysToFrequency[data.frequency] * data.dosage * data.duration;
+
+    const consultant = await this.userRepository.findApprovedConsultantById(consultantId);
+    if(!consultant) throw new NotFoundException('Could  not consultant')
+
+     this.oneSignalService.sendNotificationToUser(
+       patientId,
+       `New Prescription from ${consultant.specialityPrefix} ${consultant.fullName}`,
+       `Please check your prescription screen for full details`,
+       {
+         category: 'Prescription',
+       },
+     );
 
     return await this.prescriptionRepository.create(
       { ...data, prescribedBy: prescribedBy.fullName, totalPills },
