@@ -5,6 +5,7 @@ import {
   integer,
   timestamp,
   date,
+  text
 } from 'drizzle-orm/pg-core';
 import { consultantTable, patientTable } from './users';
 import { pgEnum } from 'drizzle-orm/pg-core';
@@ -28,6 +29,7 @@ export const prescriptionTable = pgTable('prescriptions', {
     .notNull(),
   name: varchar('name', { length: 255 }).notNull(),
   dosage: integer('dosage').notNull(),
+  notes: text('notes').notNull(), 
   mg: integer('mg').notNull(),
   duration: integer('duration').notNull(),
   frequency: frequencyType('frequency').notNull(),

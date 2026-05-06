@@ -288,6 +288,13 @@
       "when": 1777987632437,
       "tag": "0040_safe_stark_industries",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1778048829053,
+      "tag": "0041_abandoned_mantis",
+      "breakpoints": true
     }
   ]
 }

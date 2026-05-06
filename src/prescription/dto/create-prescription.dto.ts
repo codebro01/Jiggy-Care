@@ -40,6 +40,15 @@ export class CreatePrescriptionDto {
   @IsString()
   name: string;
 
+
+  @ApiProperty({
+    example: 'The medication should be takenn in the morning and in the night',
+    description: 'consultation notes',
+  })
+  @IsNotEmpty()
+  @IsString()
+  notes: string;
+
   @ApiProperty({
     example: 2,
     description: 'The dosage quantity per intake',
