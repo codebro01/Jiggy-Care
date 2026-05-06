@@ -9,5 +9,6 @@ import { RecentActivityRepository } from '@src/recent-activity/repository/recent
   imports: [DbModule], 
   controllers: [RecentActivityController],
   providers: [RecentActivityService, RecentActivityRepository],
+  exports: [RecentActivityService]
 })
 export class RecentActivityModule {}

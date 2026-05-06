@@ -9,6 +9,7 @@ import { UpdatePrescriptionDto } from './dto/update-prescription.dto';
 import { UserRepository } from '@src/users/repository/user.repository';
 import { NotificationService } from '@src/notification/notification.service';
 import { OneSignalService } from '@src/one-signal/one-signal.service';
+import { RecentActivityService } from '@src/recent-activity/recent-activity.service';
 
 const daysToFrequency = {
   once_daily: 1,
@@ -25,6 +26,7 @@ export class PrescriptionService {
     private readonly userRepository: UserRepository,
     private readonly oneSignalService: OneSignalService,
     private readonly notificationService: NotificationService,
+    private readonly recentActivityService: RecentActivityService,
   ) {}
 
   async create(
@@ -45,19 +47,28 @@ export class PrescriptionService {
 
     if (!prescribedBy) throw new BadRequestException('Invalid consultant');
 
-    const totalPills = daysToFrequency[data.frequency] * data.dosage * data.duration;
+    const totalPills =
+      daysToFrequency[data.frequency] * data.dosage * data.duration;
 
-    const consultant = await this.userRepository.findApprovedConsultantById(consultantId);
-    if(!consultant) throw new NotFoundException('Could  not consultant')
+    const consultant =
+      await this.userRepository.findApprovedConsultantById(consultantId);
+    if (!consultant) throw new NotFoundException('Could  not consultant');
 
-     this.oneSignalService.sendNotificationToUser(
-       patientId,
-       `New Prescription from ${consultant.specialityPrefix} ${consultant.fullName}`,
-       `Please check your prescription screen for full details`,
-       {
-         category: 'Prescription',
-       },
-     );
+    this.oneSignalService.sendNotificationToUser(
+      patientId,
+      `New Prescription from ${consultant.specialityPrefix} ${consultant.fullName}`,
+      `Please check your prescription screen for full details`,
+      {
+        category: 'Prescription',
+      },
+    );
+
+    await this.recentActivityService.createRecentActivity(
+      {
+        action: `You received a new medicine prescription`,
+      },
+      patientId,
+    );
 
     return await this.prescriptionRepository.create(
       { ...data, prescribedBy: prescribedBy.fullName, totalPills },
@@ -92,15 +103,26 @@ export class PrescriptionService {
 
     const prescriptionsWithConsultant = data.map((prescription) => ({
       ...prescription,
-      totalPills: daysToFrequency[prescription.frequency] * prescription.dosage * prescription.duration, 
+      totalPills:
+        daysToFrequency[prescription.frequency] *
+        prescription.dosage *
+        prescription.duration,
       prescribedBy: prescribedBy.fullName,
     }));
 
-    return await this.prescriptionRepository.createMany(
+    const bulkPrescription = await this.prescriptionRepository.createMany(
       prescriptionsWithConsultant,
       consultantId,
       patientId,
     );
+    await this.recentActivityService.createRecentActivity(
+      {
+        action: `You received a new medicine prescription`,
+      },
+      patientId,
+    );
+
+    return bulkPrescription;
   }
 
   async findAll(consultantId?: string, patientId?: string) {

@@ -7,6 +7,7 @@ import { OneSignalModule } from '@src/one-signal/one-signal.module';
 import { DbModule } from '@src/db/db.module';
 import { EmailModule } from '@src/email/email.module';
 import { UserModule } from '@src/users/users.module';
+import { RecentActivityModule } from '@src/recent-activity/recent-activity.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { UserModule } from '@src/users/users.module';
     OneSignalModule,
     EmailModule,
     forwardRef(() => UserModule),
+    RecentActivityModule, 
   ],
   controllers: [BookingController],
   providers: [BookingService, BookingRepository],

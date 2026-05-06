@@ -6,8 +6,9 @@ import { DbModule } from '@src/db/db.module';
 import { UserModule } from '@src/users/users.module';
 import { OneSignalModule } from '@src/one-signal/one-signal.module';
 import { NotificationModule } from '@src/notification/notification.module';
+import { RecentActivityModule } from '@src/recent-activity/recent-activity.module';
 @Module({
-  imports: [DbModule, forwardRef(() => UserModule), OneSignalModule, NotificationModule],
+  imports: [DbModule, forwardRef(() => UserModule), OneSignalModule, NotificationModule, RecentActivityModule],
   controllers: [PrescriptionController],
   providers: [PrescriptionService, PrescriptionRepository],
   exports: [PrescriptionService, PrescriptionRepository],

@@ -41,6 +41,7 @@ import { EmailService } from '@src/email/email.service';
 import { EmailTemplateType } from '@src/email/types/types';
 import { SpecialityRepository } from '@src/speciality/repository/speciality.repository';
 import { ConsultantRepository } from '@src/consultant/repository/consultant.repository';
+import { RecentActivityService } from '@src/recent-activity/recent-activity.service';
 
 interface VerifyPaymentResponse {
   status: boolean;
@@ -80,6 +81,7 @@ export class PaymentService {
     private readonly testBookingPaymentRepository: TestBookingPaymentRepository,
     private readonly cartRepository: CartRepository,
     private readonly specialityRepository: SpecialityRepository,
+    private readonly recentActivityService: RecentActivityService,
   ) {
     const key = this.configService.get<string>('PAYSTACK_SECRET_KEY');
     if (!key) {
@@ -135,7 +137,7 @@ export class PaymentService {
         ),
       );
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
       throw new HttpException(
         error.response?.data?.message || 'Failed to initialize payment',
@@ -226,7 +228,7 @@ export class PaymentService {
         ),
       );
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
       throw new HttpException(
         error.response?.data?.message || 'Failed to initialize payment',
@@ -300,7 +302,7 @@ export class PaymentService {
         ),
       );
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
       throw new HttpException(
         error.response?.data?.message || 'Failed to initialize payment',
@@ -329,7 +331,7 @@ export class PaymentService {
       );
 
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       throw new HttpException(
         error.response?.data?.message || 'Failed to verify payment',
         error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
@@ -359,7 +361,7 @@ export class PaymentService {
       );
 
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       throw new HttpException(
         error.response?.data?.message || 'Failed to get transaction',
         error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
@@ -382,7 +384,7 @@ export class PaymentService {
       );
 
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       throw new HttpException(
         error.response?.data?.message || 'Failed to list transactions',
         error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
@@ -395,7 +397,7 @@ export class PaymentService {
       const result = await this.paymentRepository.listTransactions(userId);
 
       return result;
-    } catch (error) {
+    } catch (error: any) {
       console.error('error', error.message);
       throw new InternalServerErrorException(
         'An error occured while listing transactions, please try again!!!',
@@ -405,7 +407,7 @@ export class PaymentService {
 
   async processWebhookEvent(event: any) {
     try {
-      const { reference, email} = event.data;
+      const { reference, email } = event.data;
       const { channel } = event.data.authorization || {};
       const {
         paymentFor,
@@ -486,19 +488,22 @@ export class PaymentService {
               consultant.speciality,
             );
 
-           const dayName = booking.appointmentDate.toLocaleDateString('en-US', {
-             weekday: 'long',
-             timeZone: 'Africa/Lagos',
-           });
+            const dayName = booking.appointmentDate.toLocaleDateString(
+              'en-US',
+              {
+                weekday: 'long',
+                timeZone: 'Africa/Lagos',
+              },
+            );
 
-           const time = booking.appointmentDate.toLocaleTimeString('en-US', {
-             hour: 'numeric',
-             minute: '2-digit',
-             hour12: true,
-             timeZone: 'Africa/Lagos',
-           });
+            const time = booking.appointmentDate.toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true,
+              timeZone: 'Africa/Lagos',
+            });
 
-           const formattedDate = `${dayName} at ${time}`;
+            const formattedDate = `${dayName} at ${time}`;
 
             console.log('appointment date', booking.appointmentDate);
 
@@ -555,6 +560,13 @@ export class PaymentService {
                   },
                 ),
               ]);
+
+              await this.recentActivityService.createRecentActivity(
+                {
+                  action: `You booked a new appointment scheduled to hold ${formattedDate}`,
+                },
+                patientId,
+              );
 
               console.log(
                 'Alls notifications created:',
@@ -710,6 +722,13 @@ export class PaymentService {
               patientId,
             );
 
+            await this.recentActivityService.createRecentActivity(
+              {
+                action: `New medication purchased`,
+              },
+              patientId,
+            );
+
             break;
           }
           case 'charge.failed': {
@@ -836,6 +855,13 @@ export class PaymentService {
                 category: CategoryType.ORDER,
                 priority: '',
                 status: StatusType.UNREAD,
+              },
+              patientId,
+            );
+
+            await this.recentActivityService.createRecentActivity(
+              {
+                action: `You booked a new laboratory test`,
               },
               patientId,
             );

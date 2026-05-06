@@ -17,6 +17,7 @@ import { OneSignalService } from '@src/one-signal/one-signal.service';
 import { EmailService } from '@src/email/email.service';
 import { EmailTemplateType } from '@src/email/types/types';
 import { UserRepository } from '@src/users/repository/user.repository';
+import { RecentActivityService } from '@src/recent-activity/recent-activity.service';
 
 type DayName =
   | 'sunday'
@@ -42,6 +43,7 @@ export class BookingService {
     private readonly oneSignalService: OneSignalService,
     private readonly emailService: EmailService,
     private readonly userRepository: UserRepository,
+    private readonly recentActivityService: RecentActivityService,
   ) {}
 
   async createBooking(
@@ -69,6 +71,7 @@ export class BookingService {
       patientId,
       consultantId,
     );
+
 
     return booking;
   }

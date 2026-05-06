@@ -18,6 +18,7 @@ import { OneSignalModule } from '@src/one-signal/one-signal.module';
 import { EmailModule } from '@src/email/email.module';
 import { SpecialityModule } from '@src/speciality/speciality.module';
 import { ConsultantModule } from '@src/consultant/consultant.module';
+import { RecentActivityModule } from '@src/recent-activity/recent-activity.module';
 
 @Module({
   imports: [
@@ -35,7 +36,8 @@ import { ConsultantModule } from '@src/consultant/consultant.module';
     OneSignalModule, 
     EmailModule, 
     SpecialityModule,
-    ConsultantModule 
+    ConsultantModule, 
+    RecentActivityModule
   ],
   controllers: [PaymentController],
   providers: [PaymentService, DbProvider, PaymentRepository],
