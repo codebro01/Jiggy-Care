@@ -290,13 +290,12 @@ export class BookingController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('consultant')
-  @Patch(':bookingId/consultant/start')
+  @Roles('patient')
+  @Patch(':bookingId/patient/cancel')
   @ApiOperation({
-    summary:
-      'This endpoint allows a consultant to mark an appointment in progress when they click on start',
+    summary: 'This endpoint allows patients to cancel an appointment',
     description:
-      'When a consultant clicks on start, it automatically sets the appointment state to in_progresss.The endpoint is only accessible to consultant',
+      'This endpoint allows patients to cancel an appointment.The endpoint is only accessible to patients',
   })
   @ApiHeader({
     name: 'x-client-type',
