@@ -1,2 +1,0 @@
-ALTER TABLE "prescriptions" ADD COLUMN "bookingId" uuid NOT NULL;--> statement-breakpoint
-ALTER TABLE "prescriptions" ADD CONSTRAINT "prescriptions_bookingId_bookings_id_fk" FOREIGN KEY ("bookingId") REFERENCES "public"."bookings"("id") ON DELETE cascade ON UPDATE no action;

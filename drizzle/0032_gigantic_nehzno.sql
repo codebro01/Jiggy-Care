@@ -1,1 +1,0 @@
-ALTER TABLE "conversations" ALTER COLUMN "booking_id" SET NOT NULL;

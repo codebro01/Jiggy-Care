@@ -1,1 +1,0 @@
-ALTER TABLE "speciality" ADD COLUMN "prefix" varchar(10) DEFAULT 'Dr.' NOT NULL;

@@ -1,0 +1,1 @@
+ALTER TABLE "prescriptions" ALTER COLUMN "notes" SET DEFAULT 'Take medications day and night';

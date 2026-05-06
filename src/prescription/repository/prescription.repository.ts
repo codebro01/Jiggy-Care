@@ -74,6 +74,7 @@ export class PrescriptionRepository {
       pillsRemaining: prescriptionTable.pillsRemaining,
       prescribedBy: prescriptionTable.prescribedBy,
       totalPills: prescriptionTable.totalPills,
+      notes: prescriptionTable.notes,
       startDate: prescriptionTable.startDate,
       status: prescriptionTable.status,
       createdAt: prescriptionTable.createdAt,
