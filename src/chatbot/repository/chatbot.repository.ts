@@ -15,10 +15,14 @@ export class ChatbotRepository {
   }
 
   async getSessionMessages(sessionId: string) {
-    return this.DbProvider.select()
+    const sessionMessages = await this.DbProvider.select()
       .from(chatbotMessageTable)
       .where(eq(chatbotMessageTable.sessionId, sessionId))
       .orderBy(asc(chatbotMessageTable.createdAt));
+
+      console.log('sessionmessages', sessionMessages)
+
+      return sessionMessages;
   }
 
   async getPatientSessions(patientId: string) {

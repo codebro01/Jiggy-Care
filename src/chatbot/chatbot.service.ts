@@ -42,8 +42,6 @@ export class ChatbotService {
     });
 
     const reply = response.choices[0].message.content ?? '';
-  
-
 
     // 4. save assistant response
     await this.chatbotRepository.saveMessage({

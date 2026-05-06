@@ -110,7 +110,10 @@ export class UploadController {
       'my-folder',
     );
 
-    return {success: true,  data: {secure_url: result.secure_url, public_id: result.public_id} };
+    return {
+      success: true,
+      data: { secure_url: result.secure_url, public_id: result.public_id },
+    };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -188,10 +191,12 @@ export class UploadController {
       'my-folder',
     );
 
-    const mappedResult = results.map((result) => ({success: true,  data: {secure_url: result.secure_url, public_id: result.public_id}
-}))
+    const mappedResult = results.map((result) => ({
+      success: true,
+      data: { secure_url: result.secure_url, public_id: result.public_id },
+    }));
 
-    return {success: true,  data: mappedResult };
+    return { success: true, data: mappedResult };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -239,9 +244,107 @@ export class UploadController {
   })
   @HttpCode(HttpStatus.OK)
   async deleteImage(@Param('publicId') publicId: string) {
-    console.log(publicId)
+    console.log(publicId);
     await this.cloudinaryService.deleteImage(publicId);
 
     return { messgae: 'Image deleted successfully' };
+  }
+
+  // !upload of files for chat
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'consultant', 'patient')
+  @Post('file')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: multer.memoryStorage(),
+    }),
+  )
+  @ApiOperation({
+    summary: 'Upload a single image',
+    description:
+      'Uploads a single image file to Cloudinary. Accepts JPEG and PNG formats up to 10MB.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Image file (JPEG or PNG, max 10MB)',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Image successfully uploaded',
+    schema: {
+      type: 'object',
+      properties: {
+        uploaded: {
+          type: 'object',
+          description: 'Cloudinary upload result',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Bad request - No file selected, invalid format, or file too large',
+  })
+  @HttpCode(HttpStatus.OK)
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+    // console.log(file);
+    if (!file) throw new BadRequestException('Please select a file');
+
+    const maxSize = 1024 * 1024 * 100; // 100MB
+
+    const ALLOWED_MIME_TYPES = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'video/mp4',
+      'video/quicktime',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      throw new BadRequestException(
+        'File type not allowed. Only images, videos and documents are supported',
+      );
+    }
+    if (file.size > maxSize) {
+      throw new BadRequestException('Image file too big (max 100MB)');
+    }
+
+    const result = await this.cloudinaryService.uploadFile(
+      file.buffer,
+      'chat-files',
+      file.mimetype,
+    );
+
+    return {
+      success: true,
+      data: { fileUrl: result.fileUrl, fileType: result.fileType },
+    };
   }
 }

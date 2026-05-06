@@ -9,7 +9,9 @@ export interface CreateMessageDto {
   conversationId: string;
   senderId: string;
   senderType: 'consultant' | 'patient';
-  content: string;
+  content?: string;
+  fileUrl?: string;
+  fileType?: string;
 }
 
 @Injectable()

@@ -110,7 +110,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     // Handle both direct data and nested data structure
     const data = payload.data || payload;
-    const { conversationId, content, senderType } = data;
+    const { conversationId, content, senderType, fileUrl, fileType } = data;
 
     const conversationInfo =
       await this.chatService.getConversationByConversationId(conversationId);
@@ -123,12 +123,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       senderType,
     });
 
-    if (!conversationId || !content || !senderType) {
-      return {
-        event: 'error',
-        data: { message: 'Missing required fields' },
-      };
-    }
+if (!conversationId || !senderType || (!content && !fileUrl)) {
+  return {
+    event: 'error',
+    data: { message: 'Missing required fields' },
+  };
+}
 
     if (!conversationInfo.bookingId)
       throw new BadRequestException('Could not get booking Id');
@@ -140,6 +140,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         patientId: conversationInfo?.patientId,
         content,
         senderType,
+        fileUrl, 
+        fileType, 
       });
 
       // console.log(
@@ -165,7 +167,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.oneSignalService.sendNotificationToUser(
         receiver.id,
         `New message from ${sender.fullName}`,
-        content,
+        content ?? '📎 Sent an attachment',
         {
           category: 'Message',
           action: 'New Message',

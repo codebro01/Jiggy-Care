@@ -52,7 +52,6 @@ export class ChatbotController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('patient')
-  @Get('session')
   @ApiOperation({
     summary: 'This endpoint helps to get  sessions',
     description:
@@ -74,6 +73,8 @@ export class ChatbotController {
   @HttpCode(HttpStatus.OK)
   @Get('session/:sessionId')
   async getSessionHistory(@Param('sessionId') sessionId: string) {
+        console.log('sessionId', sessionId);
+
     return this.chatbotService.getSessionHistory(sessionId);
   }
 

@@ -13,8 +13,10 @@ export interface SendMessageDto {
   consultantId?: string;
   patientId?: string;
   bookingId: string;
-  content: string;
+  content?: string;
   senderType: 'consultant' | 'patient';
+  fileUrl?: string;
+  fileType?: string;
 }
 
 export interface GetConversationDto {
@@ -104,6 +106,13 @@ export class ChatService {
       );
     }
 
+
+    if (!dto.content && !dto.fileUrl) {
+      throw new BadRequestException(
+        'Message must have either content or a file',
+      );
+    }
+
     const conversation = await this.getOrCreateConversation(
       bookingId,
       consultantId,
@@ -112,12 +121,14 @@ export class ChatService {
 
     const senderId = senderType === 'consultant' ? consultantId : patientId;
 
-    const message = await this.messageRepo.create({
-      conversationId: conversation.id,
-      senderId,
-      senderType,
-      content,
-    });
+  const message = await this.messageRepo.create({
+    conversationId: conversation.id,
+    senderId,
+    senderType,
+    content,
+    fileUrl: dto.fileUrl,
+    fileType: dto.fileType,
+  });
 
     return {
       message,

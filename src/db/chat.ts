@@ -41,7 +41,9 @@ export const messagesTable = pgTable(
       .references(() => conversationsTable.id, { onDelete: 'cascade' }),
     senderId: uuid('sender_id').notNull(),
     senderType: text('sender_type').notNull(), // 'consultant' or 'patient'
-    content: text('content').notNull(),
+    content: text('content'),
+    fileUrl: text('file_url'),
+    fileType: text('file_type'),
     isRead: boolean('is_read').default(false).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
