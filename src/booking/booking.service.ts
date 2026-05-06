@@ -330,15 +330,25 @@ export class BookingService {
   // ! patient cancels appointment
 
   async cancelAppointment(bookingId: string, patientId: string) {
-    const booking = await this.bookingRepository.cancelAppointment(
-      bookingId,
-      patientId,
-    );
-    if (!booking)
+    const existingBooking =
+      await this.bookingRepository.findBookingsByConditions([
+        eq(bookingTable.patientId, patientId),
+        eq(bookingTable.id, bookingId),
+        eq(bookingTable.status, 'upcoming'),
+      ]);
+
+
+    if (!existingBooking)
       throw new InternalServerErrorException(
-        'An error occured while cancelling bookings',
+        'Could not get bookings, only bookings that are upcominig can be cancelled',
       );
-    return booking;
+
+    
+      const booking = await this.bookingRepository.cancelAppointment(
+        bookingId,
+        patientId,
+      );
+      return booking;
   }
   // !consultant starts appointment
 
