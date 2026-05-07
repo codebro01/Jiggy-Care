@@ -133,7 +133,7 @@ if (!conversationId || !senderType || (!content && !fileUrl)) {
     if (!conversationInfo.bookingId)
       throw new BadRequestException('Could not get booking Id');
 
-    console.log('entered about sending the message to the user')
+    console.log('entered about sending the message to the user', fileUrl, fileType)
 
     try {
       const result = await this.chatService.sendMessage({
