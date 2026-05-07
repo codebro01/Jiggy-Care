@@ -126,7 +126,13 @@ export class MedicationRepository {
   ) {
     const request = await this.DbProvider.insert(medicationRequestTable).values(
       { ...data, userId: patientId },
-    );
+    ).returning({
+      id: medicationRequestTable.id, 
+      userId: medicationRequestTable.userId, 
+      name: medicationRequestTable.name, 
+      gram: medicationRequestTable.gram || 'Empty',
+      requestedAt: medicationRequestTable.createdAt, 
+    });
     return request;
   }
   async fetchMedicationRequest(patientId: string) {
