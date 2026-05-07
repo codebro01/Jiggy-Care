@@ -120,8 +120,9 @@ export class NotificationController {
     const { id: userId } = req.user;
     const notification =
       await this.notificationService.getNotifications(userId);
+    const count = await this.notificationService.getNotificationsCount(userId)
 
-    res.status(HttpStatus.OK).json({ message: 'success', data: notification });
+    res.status(HttpStatus.OK).json({ message: 'success', data: notification, count});
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

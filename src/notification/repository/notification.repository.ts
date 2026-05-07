@@ -1,7 +1,7 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { notificationTable } from '@src/db';
-import { eq, and, inArray, sql, desc, SQL, } from 'drizzle-orm';
+import { eq, and, inArray, sql, desc, SQL } from 'drizzle-orm';
 import { CreateNotificationDto } from '@src/notification/dto/createNotificationDto';
 import { notificationTableSelectType } from '@src/db/notifications';
 // import { UpdateNotificationDto } from '@src/notification/dto/updateNotificationDto';
@@ -26,21 +26,46 @@ export class NotificationRepository {
 
       return notification;
     } catch (error) {
-      console.log(error)
-      throw new BadRequestException('An error occured, please try again')
-
+      console.log(error);
+      throw new BadRequestException('An error occured, please try again');
     }
   }
 
   async getNotifications(
     userId: string,
   ): Promise<notificationTableSelectType[]> {
-    const notifications = await this.DbProvider.select()
+    const notifications = await this.DbProvider.select({
+      id: notificationTable.id,
+      userId: notificationTable.userId,
+      title: notificationTable.title,
+      message: notificationTable.message,
+      status: notificationTable.status,
+      variant: notificationTable.variant,
+      category: notificationTable.category,
+      priority: notificationTable.priority,
+      createdAt: notificationTable.createdAt,
+      updatedAt: notificationTable.updatedAt,
+    })
       .from(notificationTable)
       .where(eq(notificationTable.userId, userId))
       .orderBy(desc(notificationTable.createdAt));
 
     return notifications;
+  }
+
+  async countUnreadNotifications(userId: string): Promise<number> {
+    const [{ count }] = await this.DbProvider.select({
+      count: sql<number>`COUNT(*)`.mapWith(Number),
+    })
+      .from(notificationTable)
+      .where(
+        and(
+          eq(notificationTable.userId, userId),
+          eq(notificationTable.status, 'unread'),
+        ),
+      );
+
+    return count;
   }
 
   async getNotification(

@@ -6,9 +6,7 @@ import { FilterNotificationsDto } from './dto/filterNotificationDto';
 
 @Injectable()
 export class NotificationService {
-  constructor(
-    private notificationRepository: NotificationRepository,
-  ) { }
+  constructor(private notificationRepository: NotificationRepository) {}
 
   async createNotification(data: CreateNotificationDto, userId: string) {
     try {
@@ -19,8 +17,8 @@ export class NotificationService {
 
       return notification;
     } catch (error) {
-      console.log(error)
-      throw new BadRequestException('An error occured, please try again')
+      console.log(error);
+      throw new BadRequestException('An error occured, please try again');
     }
   }
 
@@ -28,12 +26,22 @@ export class NotificationService {
     try {
       const notification =
         await this.notificationRepository.getNotifications(userId);
-
       return notification;
     } catch (error) {
-      console.log(error)
-      throw new BadRequestException('Could not load notifications')
+      console.log(error);
+      throw new BadRequestException('Could not load notifications');
+    }
+  }
+  async getNotificationsCount(userId: string) {
+    try {
 
+      const count =
+        await this.notificationRepository.countUnreadNotifications(userId);
+
+      return count;
+    } catch (error) {
+      console.log(error);
+      throw new BadRequestException('Could not load notifications');
     }
   }
 
@@ -46,9 +54,10 @@ export class NotificationService {
 
       return notification;
     } catch (error: any) {
-      console.log(error)
-      throw new BadRequestException(error.message || 'An error occured, please try again')
-
+      console.log(error);
+      throw new BadRequestException(
+        error.message || 'An error occured, please try again',
+      );
     }
   }
   async updateNotifications(
@@ -66,8 +75,9 @@ export class NotificationService {
 
       return notification;
     } catch (error: any) {
-      throw new BadRequestException(error.message || 'An error occured, please try again')
-
+      throw new BadRequestException(
+        error.message || 'An error occured, please try again',
+      );
     }
   }
   async updateNotification(
@@ -84,28 +94,29 @@ export class NotificationService {
 
       return notification;
     } catch (error: any) {
-      throw new BadRequestException(error.message || 'An error occured, please try again')
-
+      throw new BadRequestException(
+        error.message || 'An error occured, please try again',
+      );
     }
   }
-  async notificationDashboard(
-    userId: string,
-  ) {
+  async notificationDashboard(userId: string) {
     try {
-      const data = await this.notificationRepository.notificationDashboard(
-
-        userId,
-      );
+      const data =
+        await this.notificationRepository.notificationDashboard(userId);
 
       return data;
     } catch (error: any) {
-      throw new BadRequestException(error.message || 'An error occured, please try again')
-
+      throw new BadRequestException(
+        error.message || 'An error occured, please try again',
+      );
     }
   }
 
   async filterNotifications(filters: FilterNotificationsDto, userId: string) {
-    const data = await this.notificationRepository.filterNotifications(filters, userId);
+    const data = await this.notificationRepository.filterNotifications(
+      filters,
+      userId,
+    );
     return data;
   }
 }
