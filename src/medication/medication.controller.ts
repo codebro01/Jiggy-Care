@@ -191,12 +191,14 @@ export class MedicationController {
       example: 'mobile',
     },
   })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   @ApiOperation({
     summary: 'Make a request for a medication',
     description:
       'This endpoint allows patients to make request for medications that are not available in the medications to purchase',
   })
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   async medicationRequest(
     @Body() body: CreateMedicationRequestDto,
     @Req() req: Request,
@@ -219,13 +221,17 @@ export class MedicationController {
       example: 'mobile',
     },
   })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
   @ApiOperation({
     summary: 'Fetch medication requests',
     description: 'This endpoint fetches all medication requests for this user',
   })
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   async fetchMedicationRequest(@Req() req: Request) {
     const { id: patientId } = req.user;
-    await this.medicationService.fetchMedicationRequest(patientId);
+   const requests =  await this.medicationService.fetchMedicationRequest(patientId);
+
+    return {success: true, data: requests}
   }
 }

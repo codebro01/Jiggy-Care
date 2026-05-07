@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateMedicationRequestDto {
   @ApiProperty({ example: 'Paracetamol' })
@@ -9,6 +9,6 @@ export class CreateMedicationRequestDto {
 
   @ApiProperty({ example: 500 })
   @IsNumber()
-  @IsNotEmpty()
-  gram: number;
+  @IsOptional()
+  gram?: number;
 }

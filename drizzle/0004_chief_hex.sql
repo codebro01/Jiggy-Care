@@ -1,0 +1,1 @@
+ALTER TABLE "medications_request" ALTER COLUMN "gram" DROP NOT NULL;

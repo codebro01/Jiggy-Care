@@ -31,7 +31,7 @@ export const medicationRequestTable = pgTable('medications_request', {
     .notNull()
     .references(() => userTable.id, { onDelete: 'cascade' }).notNull(),
   name: varchar('name', { length: 255 }).notNull(),
-  gram: integer('gram').notNull(),
+  gram: integer('gram'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
