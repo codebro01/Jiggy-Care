@@ -98,7 +98,7 @@ export class ChatService {
   }
 
   async sendMessage(dto: SendMessageDto) {
-    const { bookingId, consultantId, patientId, content, senderType } = dto;
+    const { bookingId, consultantId, patientId, content, senderType, fileType, fileUrl } = dto;
 
     if (!consultantId || !patientId || !bookingId) {
       throw new BadRequestException(
@@ -126,8 +126,8 @@ export class ChatService {
     senderId,
     senderType,
     content,
-    fileUrl: dto.fileUrl,
-    fileType: dto.fileType,
+    fileUrl: fileUrl,
+    fileType: fileType,
   });
 
     return {

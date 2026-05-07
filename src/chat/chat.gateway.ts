@@ -166,17 +166,20 @@ if (!conversationId || !senderType || (!content && !fileUrl)) {
       const sender = isPatientSender ? patientInfo : consultantInfo;
       const receiver = isPatientSender ? consultantInfo : patientInfo;
 
-      this.oneSignalService.sendNotificationToUser(
-        receiver.id,
-        `New message from ${sender.fullName}`,
-        content ?? '📎 Sent an attachment',
-        {
-          category: 'Message',
-          action: 'New Message',
-          conversationId,
-          bookingId: conversationInfo.bookingId,
-        },
-      );
+      this.oneSignalService
+        .sendNotificationToUser(
+          receiver.id,
+          `New message from ${sender.fullName}`,
+          content || '📎 Sent an attachment',
+          {
+            category: 'Message',
+            action: 'New Message',
+            conversationId,
+            bookingId: conversationInfo.bookingId,
+          },
+        )
+        .catch((err) => console.error('Error sending notification:', err));
+;
 
       return {
         event: 'message_sent',
