@@ -29,7 +29,7 @@ import { QueryMedicationDto } from './dto/query-medication.dto';
 import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { Roles } from '@src/auth/decorators/roles.decorators';
-import  type { Request } from '@src/types';
+import type { Request } from '@src/types';
 import { CreateMedicationRequestDto } from './dto/request-medication.dto';
 
 @ApiTags('Medications')
@@ -197,8 +197,35 @@ export class MedicationController {
       'This endpoint allows patients to make request for medications that are not available in the medications to purchase',
   })
   @HttpCode(HttpStatus.NO_CONTENT)
-  async medicationRequest(@Body() body:CreateMedicationRequestDto , @Req() req: Request) {
-    const {id: patientId} = req.user;
+  async medicationRequest(
+    @Body() body: CreateMedicationRequestDto,
+    @Req() req: Request,
+  ) {
+    const { id: patientId } = req.user;
     await this.medicationService.requestMedication(body, patientId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('patient')
+  @Get('requests')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiOperation({
+    summary: 'Fetch medication requests',
+    description: 'This endpoint fetches all medication requests for this user',
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async fetchMedicationRequest(@Req() req: Request) {
+    const { id: patientId } = req.user;
+    await this.medicationService.fetchMedicationRequest(patientId);
   }
 }

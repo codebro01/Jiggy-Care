@@ -1,7 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq, like, and, sql, inArray } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { MedicationRequestInsertType, medicationRequestTable, medicationTable } from '@src/db/medication';
+import {
+  MedicationRequestInsertType,
+  medicationRequestTable,
+  medicationTable,
+} from '@src/db/medication';
 import { CreateMedicationDto } from '../dto/create-medication.dto';
 import { UpdateMedicationDto } from '../dto/update-medication.dto';
 import { QueryMedicationDto } from '@src/medication/dto/query-medication.dto';
@@ -123,6 +127,12 @@ export class MedicationRepository {
     const request = await this.DbProvider.insert(medicationRequestTable).values(
       { ...data, userId: patientId },
     );
+    return request;
+  }
+  async fetchMedicationRequest(patientId: string) {
+    const request = await this.DbProvider.select()
+      .from(medicationRequestTable)
+      .where(eq(medicationRequestTable.userId, patientId));
     return request;
   }
 }

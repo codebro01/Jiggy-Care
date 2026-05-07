@@ -51,4 +51,10 @@ export class MedicationService {
       throw new BadRequestException('Could not make medication request');
     return request;
   }
+
+    async fetchMedicationRequest(patientId: string) {
+      const requests = await this.medicationRepository.fetchMedicationRequest(patientId);
+      return requests;
+    }
+
 }
