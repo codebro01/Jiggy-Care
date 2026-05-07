@@ -204,7 +204,9 @@ export class MedicationController {
     @Req() req: Request,
   ) {
     const { id: patientId } = req.user;
-    await this.medicationService.requestMedication(body, patientId);
+    const request = await this.medicationService.requestMedication(body, patientId);
+
+    return {success: true, data: request}
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
