@@ -15,6 +15,13 @@
       "when": 1778060645131,
       "tag": "0001_brown_paladin",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778091761260,
+      "tag": "0002_smart_nuke",
+      "breakpoints": true
     }
   ]
 }
