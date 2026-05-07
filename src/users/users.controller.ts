@@ -9,6 +9,7 @@ import {
   Req,
   Patch,
   HttpCode,
+  Delete,
 } from '@nestjs/common';
 import { UserService } from '@src/users/users.service';
 import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
@@ -283,7 +284,7 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('consultant', 'patient')
-  @Patch('profile-pic/update')
+  @Delete('delete')
   @ApiOperation({
     summary: 'This enpoint deletes user account',
     description: 'This enpoint deletes user account, and is only accessible to consultant and patient',
