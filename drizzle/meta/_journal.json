@@ -36,6 +36,13 @@
       "when": 1778167340284,
       "tag": "0004_chief_hex",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1778169742292,
+      "tag": "0005_pretty_baron_zemo",
+      "breakpoints": true
     }
   ]
 }
