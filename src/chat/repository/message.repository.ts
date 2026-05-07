@@ -25,6 +25,8 @@ export class MessageRepository {
       .values(data)
       .returning();
 
+      console.log('this is the created message', result)
+
     return result[0];
   }
 

@@ -152,7 +152,7 @@ if (!conversationId || !senderType || (!content && !fileUrl)) {
       // );
       console.log(`Broadcasting to room: ${conversationId}`);
       this.server.to(conversationId).emit('new_message', result);
-      console.log('Event emitted successfully');
+      console.log('Event emitted successfully', result);
 
       const patientInfo = await this.userRepository.findUserById(
         conversationInfo.patientId,
