@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -28,6 +29,8 @@ import { QueryMedicationDto } from './dto/query-medication.dto';
 import { JwtAuthGuard } from '@src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { Roles } from '@src/auth/decorators/roles.decorators';
+import  type { Request } from '@src/types';
+import { CreateMedicationRequestDto } from './dto/request-medication.dto';
 
 @ApiTags('Medications')
 @Controller('medication')
@@ -165,12 +168,37 @@ export class MedicationController {
   @ApiOperation({
     summary: 'Delete a medication',
     description:
-    'Delete a medication by its id and its only accessible to admins',
+      'Delete a medication by its id and its only accessible to admins',
   })
   @ApiResponse({ status: 204, description: 'Medication successfully deleted' })
   @ApiResponse({ status: 404, description: 'Medication not found' })
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string) {
     await this.medicationService.remove(id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('patient')
+  @Post('request')
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiOperation({
+    summary: 'Make a request for a medication',
+    description:
+      'This endpoint allows patients to make request for medications that are not available in the medications to purchase',
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async medicationRequest(@Body() body:CreateMedicationRequestDto , @Req() req: Request) {
+    const {id: patientId} = req.user;
+    await this.medicationService.requestMedication(body, patientId);
   }
 }

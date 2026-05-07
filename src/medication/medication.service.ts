@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { MedicationRepository } from './repository/medication.repository';
 import { CreateMedicationDto } from './dto/create-medication.dto';
 import { UpdateMedicationDto } from './dto/update-medication.dto';
 import { QueryMedicationDto } from './dto/query-medication.dto';
+import { CreateMedicationRequestDto } from './dto/request-medication.dto';
 
 @Injectable()
 export class MedicationService {
@@ -38,5 +39,16 @@ export class MedicationService {
       throw new NotFoundException(`Medication with ID ${id} not found`);
     }
     return await this.medicationRepository.delete(id);
+  }
+
+  async requestMedication(data: CreateMedicationRequestDto, patientId: string) {
+    const request = await this.medicationRepository.requestMedication(
+      data,
+      patientId,
+    );
+
+    if (!request)
+      throw new BadRequestException('Could not make medication request');
+    return request;
   }
 }
