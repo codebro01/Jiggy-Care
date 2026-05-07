@@ -72,7 +72,6 @@ export class BookingService {
       consultantId,
     );
 
-
     return booking;
   }
 
@@ -340,18 +339,16 @@ export class BookingService {
         eq(bookingTable.status, 'upcoming'),
       ]);
 
-
     if (!existingBooking)
       throw new InternalServerErrorException(
         'Could not get bookings, only bookings that are upcominig can be cancelled',
       );
 
-    
-      const booking = await this.bookingRepository.cancelAppointment(
-        bookingId,
-        patientId,
-      );
-      return booking;
+    const booking = await this.bookingRepository.cancelAppointment(
+      bookingId,
+      patientId,
+    );
+    return booking;
   }
   // !consultant starts appointment
 
@@ -561,6 +558,8 @@ export class BookingService {
             { category: 'Appointment' },
           ),
         ]);
+
+        await this.bookingRepository.markReminderSent(booking.id);
       }),
     );
   }
@@ -635,13 +634,12 @@ export class BookingService {
           booking.consultantId,
         );
 
-
-          await this.oneSignalService.sendNotificationToUser(
-            booking.patientId,
-            'One Week On — How Is Your Recovery Going?',
-            `Hi ${patient.fullName.split(' ')[0]}, it's been 7 days since your consultation with Dr. ${consultant.fullName}. How are you feeling?`,
-            { category: 'FollowUp', bookingId: booking.id },
-          );
+        await this.oneSignalService.sendNotificationToUser(
+          booking.patientId,
+          'One Week On — How Is Your Recovery Going?',
+          `Hi ${patient.fullName.split(' ')[0]}, it's been 7 days since your consultation with Dr. ${consultant.fullName}. How are you feeling?`,
+          { category: 'FollowUp', bookingId: booking.id },
+        );
         await this.emailService.queueTemplatedEmail(
           EmailTemplateType.SEVEN_DAY_FOLLOW_UP,
           patient.email,

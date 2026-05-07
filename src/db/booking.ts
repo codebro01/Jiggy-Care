@@ -53,6 +53,7 @@ export const bookingTable = pgTable(
 
     consultationNotes: text('consultation_notes'),
     disputeReason: text('dispute_reason'),
+    reminderSent: boolean('reminder_sent').default(false).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
       .defaultNow()
       .notNull(),

@@ -521,6 +521,7 @@ export class BookingRepository {
           eq(bookingTable.status, 'upcoming'),
           gte(bookingTable.date, tenMinutesFromNow),
           lt(bookingTable.date, elevenMinutesFromNow),
+          eq(bookingTable.reminderSent, false), 
         ),
       );
 
@@ -568,5 +569,11 @@ export class BookingRepository {
       );
 
     return completedBookings;
+  }
+
+  async markReminderSent(bookingId: string) {
+    await this.DbProvider.update(bookingTable)
+      .set({ reminderSent: true })
+      .where(eq(bookingTable.id, bookingId));
   }
 }
