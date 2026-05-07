@@ -1,4 +1,4 @@
-import { SevenDayFollowUpTemplateData } from "../types/types";
+import { SevenDayFollowUpTemplateData } from '../types/types';
 
 export class EmailTemplate {
   getWelcomeTemplate(data: { name: string; email: string }): string {
@@ -383,26 +383,26 @@ export class EmailTemplate {
     <body>
       <div class="container">
         <div class="header">
-          <h1>👋 How Are You Feeling?</h1>
-          <p>2-Day Post-Consultation Check-In</p>
+          <h1>Hello <strong>${data.patientName}</h1>
         </div>
 
         <div class="content">
-          <p>Dear <strong>${data.patientName}</strong>,</p>
           <p>
-            It has been 2 days since your consultation with <strong>Dr. ${data.doctorName}</strong>. 
-            We hope you are on the path to feeling better. We are checking in to see how you are doing.
+            We hope you're feeling better today. It’s been few days since your consultation with us, and we wanted to check in on your progress.
+
+Hope there has been improvements in your symptoms?
+Are you following the treatment plan and hope it has been helpful?
+
+Your health matters to us, and staying consistent with your treatment is key to recovery. If you have any concerns, side effects, or questions, please don’t hesitate to reach out through the app, we are here for you.
+
+
           </p>
 
           <div class="alert-banner">
-            💊 Remember to keep taking your prescribed medication as directed
-          </div>
+Wishing you a smooth and speedy recovery.
+The JigiCare Team          </div>
 
           <div class="consultation-info">
-            <div class="detail-row">
-              <span class="detail-label">Consulting Doctor</span>
-              <span class="detail-value">Dr. ${data.doctorName}</span>
-            </div>
             <div class="detail-row">
               <span class="detail-label">Consultation Date</span>
               <span class="detail-value">
@@ -474,16 +474,21 @@ export class EmailTemplate {
     <body>
       <div class="container">
         <div class="header">
-          <h1>🩺 One Week Check-In</h1>
+          <h1>Hello <strong>${data.patientName}</strong>,</h1>
           <p>7-Day Post-Consultation Recovery Review</p>
         </div>
 
         <div class="content">
-          <p>Dear <strong>${data.patientName}</strong>,</p>
           <p>
-            A full week has passed since your consultation with <strong>Dr. ${data.doctorName}</strong>. 
-            We want to check on your recovery and make sure you are getting the care you need.
-          </p>
+It’s been a week since your consultation, and we wanted to check in on how you're doing.
+
+Hope your symptoms have improved/fully resolved?
+If you need further medical support or clarification, kindly reach out. 
+
+Your continued well-being is important to us. If you're not feeling fully recovered or would like a follow-up consultation, you can easily book one through the app.
+
+We are always here to support you every step of the way.
+       </p>
 
           <div class="recovery-card">
             <div class="recovery-label">Days Since Your Consultation</div>
@@ -494,10 +499,6 @@ export class EmailTemplate {
           </div>
 
           <div class="consultation-info">
-            <div class="detail-row">
-              <span class="detail-label">Consulting Doctor</span>
-              <span class="detail-value">Dr. ${data.doctorName}</span>
-            </div>
             <div class="detail-row">
               <span class="detail-label">Consultation Date</span>
               <span class="detail-value">
