@@ -13,7 +13,7 @@ import { eq } from 'drizzle-orm';
 
 import { UpdateUserDto } from '../dto/updateUser.dto';
 import { UpdatePatientDto } from '@src/users/dto/updatePatient.dto';
-import { specialityTable } from '@src/db';
+import { emailVerificationTable, specialityTable } from '@src/db';
 
 @Injectable()
 export class UserRepository {
@@ -78,8 +78,8 @@ export class UserRepository {
       height: patientTable.height,
       weight: patientTable.weight,
       gender: userTable.gender,
-      dateJoined: userTable.createdAt, 
-      dp: userTable.dp
+      dateJoined: userTable.createdAt,
+      dp: userTable.dp,
     })
       .from(patientTable)
       .where(eq(patientTable.userId, userId))
@@ -108,7 +108,7 @@ export class UserRepository {
       workingHours: consultantTable.workingHours,
       gender: userTable.gender,
       dateJoined: userTable.createdAt,
-      dp: userTable.dp
+      dp: userTable.dp,
     })
       .from(consultantTable)
       .where(eq(consultantTable.userId, userId))
@@ -195,12 +195,27 @@ export class UserRepository {
     return users;
   }
 
-  async updateUserDp(dpUrl: string, userId: string){
-    if(!dpUrl) throw new NotFoundException('Please provide url for profile picture')
-    const [user] = await this.DbProvider.update(userTable).set({dp: dpUrl}).where(eq(userTable.id, userId)).returning();
-   
-    return user
+  async updateUserDp(dpUrl: string, userId: string) {
+    if (!dpUrl)
+      throw new NotFoundException('Please provide url for profile picture');
+    const [user] = await this.DbProvider.update(userTable)
+      .set({ dp: dpUrl })
+      .where(eq(userTable.id, userId))
+      .returning();
+
+    return user;
   }
 
-  
+  async deleteUser(userId: string) {
+    const user = await this.findUserById(userId);
+    if (!user) throw new NotFoundException('Cound not find user');
+    await Promise.all([
+      this.DbProvider.delete(emailVerificationTable).where(
+        eq(emailVerificationTable.email, user.email),
+      ),
+      this.DbProvider.delete(userTable).where(eq(userTable.id, userId)),
+    ]);
+
+    return true;
+  }
 }

@@ -274,7 +274,7 @@ export class UserService {
             languages: data.languages || consultant.languages,
             certification: data.certification || consultant.certification,
             workingHours: data.workingHours || consultant.workingHours,
-            speciality: data.speciality || consultant.speciality, 
+            speciality: data.speciality || consultant.speciality,
           },
           userId,
           trx,
@@ -302,13 +302,11 @@ export class UserService {
   }
 
   async profileCards(patientId: string) {
-    const [totalBookings, totalReports, activeMeds] = await Promise.all(
-      [
-        this.bookingRepository.totalBookings(patientId),
-        this.testResultRepository.totalTests(patientId),
-        this.prescriptionRepository.totalActivePresciptions(patientId),
-      ],
-    );
+    const [totalBookings, totalReports, activeMeds] = await Promise.all([
+      this.bookingRepository.totalBookings(patientId),
+      this.testResultRepository.totalTests(patientId),
+      this.prescriptionRepository.totalActivePresciptions(patientId),
+    ]);
 
     return {
       appointments: totalBookings,
@@ -327,5 +325,12 @@ export class UserService {
     } else {
       return {};
     }
+  }
+
+  async deleteUser(userId: string) {
+    const user = await this.userRepository.deleteUser(userId);
+
+    if (!user) throw new BadRequestException('Could not deleted user');
+    return user;
   }
 }

@@ -16,7 +16,12 @@ import { RolesGuard } from '@src/auth/guards/roles.guard';
 import { Roles } from '@src/auth/decorators/roles.decorators';
 import type { Response } from 'express';
 import { UpdatePatientDto, CreateUserDto } from '@src/users/dto/index.dto';
-import { ApiCookieAuth, ApiBearerAuth, ApiHeader, ApiOperation } from '@nestjs/swagger';
+import {
+  ApiCookieAuth,
+  ApiBearerAuth,
+  ApiHeader,
+  ApiOperation,
+} from '@nestjs/swagger';
 import omit from 'lodash.omit';
 import { UpdateConsultantDto } from '@src/consultant/dto/updateConsultantDto';
 import type { Request } from '@src/types';
@@ -48,14 +53,14 @@ export class UserController {
   @HttpCode(HttpStatus.CREATED)
   async createUser(
     @Body() body: CreateUserDto,
-    @Res({passthrough: true}) res: Response,
+    @Res({ passthrough: true }) res: Response,
     @Req() req: Request,
   ) {
     const { user, accessToken, refreshToken } =
       await this.userService.createUser(body, 'local');
 
     const isMobileClient = this.jwtAuthGuard.isMobileClient(req);
-    console.log(user, accessToken, refreshToken)
+    console.log(user, accessToken, refreshToken);
     if (isMobileClient) {
       res.setHeader('x-access-token', accessToken);
       res.setHeader('x-refresh-token', refreshToken);
@@ -177,7 +182,6 @@ export class UserController {
     const { id: userId } = req.user;
     const data = await this.userService.profileCards(userId);
 
-
     return { sucess: true, data: data };
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -210,7 +214,6 @@ export class UserController {
 
     return { sucess: true, data: safeUser };
   }
-
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('consultant')
@@ -246,8 +249,9 @@ export class UserController {
   @Roles('consultant', 'patient', 'admin', 'agent')
   @Patch('profile-pic/update')
   @ApiOperation({
-    summary: "This enpoint updates the user profile  picture", 
-    description:"This endpoint requires an image url that has been uploaded to cloudinary. This endpoint is accessible to all users"
+    summary: 'This enpoint updates the user profile  picture',
+    description:
+      'This endpoint requires an image url that has been uploaded to cloudinary. This endpoint is accessible to all users',
   })
   @ApiHeader({
     name: 'x-client-type',
@@ -275,5 +279,33 @@ export class UserController {
     ]);
 
     return { sucess: true, data: safeUser };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('consultant', 'patient')
+  @Patch('profile-pic/update')
+  @ApiOperation({
+    summary: 'This enpoint deletes user account',
+    description: 'This enpoint deletes user account, and is only accessible to consultant and patient',
+  })
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
+  async deleteUser(@Req() req: Request) {
+    const { id: userId } = req.user;
+    await this.userService.deleteUser(userId);
+
+    return { sucess: true, message: 'User account successfully deleted' };
   }
 }
