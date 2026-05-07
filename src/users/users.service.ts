@@ -20,6 +20,7 @@ import { EmailVerificationService } from '@src/email-verification/email-verifica
 import { BookingRepository } from '@src/booking/repository/booking.repository';
 import { TestResultRepository } from '@src/test-result/repository/test-result.repository';
 import { PrescriptionRepository } from '@src/prescription/repository/prescription.repository';
+import PDFDocument from 'pdfkit';
 
 @Injectable()
 export class UserService {
@@ -332,5 +333,211 @@ export class UserService {
 
     if (!user) throw new BadRequestException('Could not deleted user');
     return user;
+  }
+
+  // ! adding pdf download kit
+
+  async generatePatientHealthPdf(patientId: string): Promise<Buffer> {
+    // 1. Fetch patient profile + health data in parallel
+    const [patient, [healthData]] = await Promise.all([
+      this.userRepository.findPatientById(patientId),
+      this.userRepository.getUserHealthData(patientId),
+    ]);
+
+    if (!patient) throw new NotFoundException('Patient not found');
+
+    // 2. Build the PDF
+    const doc = new PDFDocument({ margin: 50 });
+    const chunks: Buffer[] = [];
+
+    doc.on('data', (chunk: any) => chunks.push(chunk));
+
+    return new Promise((resolve, reject) => {
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      const primaryColor = '#1a5276';
+      const mutedColor = '#7f8c8d';
+      const lineColor = '#d5d8dc';
+
+      // ── Header ──────────────────────────────────────────────
+      doc
+        .fillColor(primaryColor)
+        .fontSize(22)
+        .font('Helvetica-Bold')
+        .text('Patient Health Report', { align: 'center' });
+
+      doc
+        .fillColor(mutedColor)
+        .fontSize(10)
+        .font('Helvetica')
+        .text(`Generated: ${new Date().toLocaleString()}`, { align: 'center' });
+
+      doc.moveDown(1.5);
+
+      // ── Patient Info ─────────────────────────────────────────
+      doc
+        .fillColor(primaryColor)
+        .fontSize(14)
+        .font('Helvetica-Bold')
+        .text('Patient Information');
+
+      doc
+        .moveTo(50, doc.y + 4)
+        .lineTo(550, doc.y + 4)
+        .strokeColor(lineColor)
+        .stroke();
+
+      doc.moveDown(0.5);
+
+      const infoFields: [string, string | null | undefined][] = [
+        ['Full Name', patient.fullName],
+        ['Email', patient.email],
+        ['Phone', patient.phone],
+        [
+          'Date of Birth',
+          patient.dateOfBirth
+            ? new Date(patient.dateOfBirth).toDateString()
+            : null,
+        ],
+        ['Gender', patient.gender],
+        ['Address', patient.address],
+        ['Blood Type', patient.bloodType],
+        ['Height', patient.height ? `${patient.height} cm` : null],
+        ['Weight', patient.weight ? `${patient.weight} kg` : null],
+        [
+          'Emergency Contact',
+          patient.emergencyContact
+            ? `${patient.emergencyContact.name} (${patient.emergencyContact.relationship}) — ${patient.emergencyContact.phone}`
+            : 'No emergency contact',
+        ],
+      ];
+
+      for (const [label, value] of infoFields) {
+        if (!value) continue;
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(10)
+          .fillColor('#2c3e50')
+          .text(`${label}: `, { continued: true });
+        doc.font('Helvetica').fillColor('#555').text(value);
+      }
+
+      doc.moveDown(1.5);
+
+      // ── Health Readings ──────────────────────────────────────
+      doc
+        .fillColor(primaryColor)
+        .fontSize(14)
+        .font('Helvetica-Bold')
+        .text('Health Readings');
+
+      doc
+        .moveTo(50, doc.y + 4)
+        .lineTo(550, doc.y + 4)
+        .strokeColor(lineColor)
+        .stroke();
+
+      doc.moveDown(0.5);
+
+      if (!healthData) {
+        doc
+          .font('Helvetica')
+          .fontSize(10)
+          .fillColor(mutedColor)
+          .text('No health readings recorded yet.');
+      } else {
+        // Temperature
+        if (healthData.temperature) {
+          this.renderReadingSection(doc, 'Temperature', [
+            ['Value', `${healthData.temperature.value} °C`],
+            ['Status', healthData.temperature.status ?? 'N/A'],
+            ['Note', healthData.temperature.note ?? 'N/A'],
+          ]);
+        }
+
+        // Heart Rate
+        if (healthData.heartRate) {
+          this.renderReadingSection(doc, 'Heart Rate', [
+            ['Value', `${healthData.heartRate.value} bpm`],
+            ['Status', healthData.heartRate.status ?? 'N/A'],
+            ['Note', healthData.heartRate.note ?? 'N/A'],
+          ]);
+        }
+
+        // Weight
+        if (healthData.weight) {
+          this.renderReadingSection(doc, 'Weight', [
+            ['Value', `${healthData.weight.value} kg`],
+            ['Status', healthData.weight.status ?? 'N/A'],
+            ['Note', healthData.weight.note ?? 'N/A'],
+          ]);
+        }
+
+        // Blood Pressure (array — render each entry)
+        if (healthData.bloodPressure?.length) {
+          doc
+            .font('Helvetica-Bold')
+            .fontSize(11)
+            .fillColor('#2c3e50')
+            .text('Blood Pressure History');
+          doc.moveDown(0.3);
+
+          healthData.bloodPressure.forEach((entry: any, index: any) => {
+            doc
+              .font('Helvetica-Bold')
+              .fontSize(10)
+              .fillColor(mutedColor)
+              .text(
+                `Entry ${index + 1}${entry.date ? ` — ${entry.date}` : ''}:`,
+              );
+
+            this.renderReadingSection(doc, null, [
+              ['Systolic', `${entry.systolic} mmHg`],
+              ['Diastolic', `${entry.diastolic} mmHg`],
+              ['Status', entry.status ?? 'N/A'],
+              ['Note', entry.note ?? 'N/A'],
+            ]);
+          });
+        }
+      }
+
+      // ── Footer ───────────────────────────────────────────────
+      doc
+        .moveDown(2)
+        .fontSize(8)
+        .fillColor(mutedColor)
+        .font('Helvetica')
+        .text(
+          'This report is auto-generated and intended for personal records only.',
+          {
+            align: 'center',
+          },
+        );
+
+      doc.end();
+    });
+  }
+
+  // Helper to render a named reading block
+  private renderReadingSection(
+    doc: PDFKit.PDFDocument,
+    title: string | null,
+    fields: [string, string][],
+  ) {
+    if (title) {
+      doc.font('Helvetica-Bold').fontSize(11).fillColor('#2c3e50').text(title);
+    }
+
+    for (const [label, value] of fields) {
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(10)
+        .fillColor('#555')
+        .text(`  ${label}: `, { continued: true });
+      doc.font('Helvetica').text(value);
+    }
+
+    doc.moveDown(0.8);
   }
 }

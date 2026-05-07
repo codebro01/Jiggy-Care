@@ -14,6 +14,7 @@ import { eq } from 'drizzle-orm';
 import { UpdateUserDto } from '../dto/updateUser.dto';
 import { UpdatePatientDto } from '@src/users/dto/updatePatient.dto';
 import { emailVerificationTable, specialityTable } from '@src/db';
+import { healthMonitoringTable } from '@src/db/health-monitoring';
 
 @Injectable()
 export class UserRepository {
@@ -217,5 +218,14 @@ export class UserRepository {
     ]);
 
     return true;
+  }
+
+  async getUserHealthData(patientId: string) {
+    const healthData = await this.DbProvider.select()
+      .from(healthMonitoringTable)
+      .where(eq(healthMonitoringTable.patientId, patientId))
+      .limit(1);
+
+      return healthData;
   }
 }

@@ -287,7 +287,8 @@ export class UserController {
   @Delete('delete')
   @ApiOperation({
     summary: 'This enpoint deletes user account',
-    description: 'This enpoint deletes user account, and is only accessible to consultant and patient',
+    description:
+      'This enpoint deletes user account, and is only accessible to consultant and patient',
   })
   @ApiHeader({
     name: 'x-client-type',
@@ -308,5 +309,41 @@ export class UserController {
     await this.userService.deleteUser(userId);
 
     return { sucess: true, message: 'User account successfully deleted' };
+  }
+
+  @Get('download-report')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('patient')
+  @ApiOperation({
+    summary: 'This enpoint downloads user information',
+    description:
+      'This enpoint downloads user health data',
+  })
+  @ApiHeader({
+    name: 'x-client-type',
+    description:
+      'Client type identifier. Set to "mobile" for mobile applications (React Native, etc.). If not provided, the server will attempt to detect the client type automatically.',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
+  async downloadHealthReport(@Req() req: Request, @Res() res: Response) {
+    const { id: patientId } = req.user;
+    const pdfBuffer =
+      await this.userService.generatePatientHealthPdf(patientId);
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="health-report-${patientId}.pdf"`,
+      'Content-Length': pdfBuffer.length,
+    });
+
+    res.end(pdfBuffer);
   }
 }
