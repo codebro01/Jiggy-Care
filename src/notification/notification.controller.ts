@@ -29,7 +29,6 @@ import { FilterNotificationsDto } from '@src/notification/dto/filterNotification
 import {
   ApiOperation,
   ApiResponse,
-  ApiBody,
   ApiQuery,
   ApiProduces,
   ApiCookieAuth,
@@ -97,8 +96,7 @@ export class NotificationController {
   @ApiCookieAuth('access_token')
   @ApiOperation({
     summary: 'Gets all notifications',
-    description:
-      'Get notifications particular to a user',
+    description: 'Get notifications particular to a user',
   })
   @ApiResponse({
     status: 200,
@@ -120,9 +118,11 @@ export class NotificationController {
     const { id: userId } = req.user;
     const notification =
       await this.notificationService.getNotifications(userId);
-    const count = await this.notificationService.getNotificationsCount(userId)
+    const count = await this.notificationService.getNotificationsCount(userId);
 
-    res.status(HttpStatus.OK).json({ message: 'success', data: notification, count});
+    res
+      .status(HttpStatus.OK)
+      .json({ message: 'success', data: notification, count });
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -214,7 +214,7 @@ export class NotificationController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin, businessOwner, driver')
+  @Roles('admin', 'consultant', 'patient')
   @Patch('update-notifications')
   @ApiHeader({
     name: 'x-client-type',
@@ -240,24 +240,6 @@ export class NotificationController {
     description: 'Comma-separated list of notification IDs',
     example: 'notif-123,notif-456,notif-789',
     required: true,
-  })
-  @ApiBody({
-    type: UpdateNotificationDto,
-    description: 'Update data to apply to all specified notifications',
-    examples: {
-      example1: {
-        summary: 'Mark multiple as read',
-        value: {
-          isRead: true,
-        },
-      },
-      example2: {
-        summary: 'Archive multiple notifications',
-        value: {
-          isArchived: true,
-        },
-      },
-    },
   })
   @ApiResponse({
     status: 200,
@@ -292,7 +274,7 @@ export class NotificationController {
     @Body() body: UpdateNotificationDto,
     @Req() req: Request,
     @Res() res: Response,
-    @Query('ids') query: UpdateNotificationsQueryDto,
+    @Query() query: UpdateNotificationsQueryDto,
   ) {
     const { id: userId } = req.user;
 
@@ -304,8 +286,11 @@ export class NotificationController {
 
     res.status(HttpStatus.OK).json({ message: 'success', data: notification });
   }
+
+
+
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin', 'businessOwner', 'driver')
+  @Roles('admin', 'consultant', 'patient')
   @Get('dashboard-data')
   @ApiHeader({
     name: 'x-client-type',
