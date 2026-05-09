@@ -21,6 +21,7 @@ import { BookingRepository } from '@src/booking/repository/booking.repository';
 import { TestResultRepository } from '@src/test-result/repository/test-result.repository';
 import { PrescriptionRepository } from '@src/prescription/repository/prescription.repository';
 import PDFDocument from 'pdfkit';
+import { NotificationService } from '@src/notification/notification.service';
 
 @Injectable()
 export class UserService {
@@ -32,6 +33,7 @@ export class UserService {
     private readonly bookingRepository: BookingRepository,
     private readonly testResultRepository: TestResultRepository,
     private readonly prescriptionRepository: PrescriptionRepository,
+    private readonly notificationService: NotificationService,
     private jwtService: JwtService,
   ) {}
 
@@ -291,8 +293,10 @@ export class UserService {
 
   async getPatientProfile(userId: string) {
     const patient = await this.userRepository.findPatientById(userId);
+    const notificationCount =
+      await this.notificationService.getNotificationsCount(userId);
 
-    return patient;
+    return { patient, notificationCount };
   }
   async getConsultantProfile(userId: string) {
     console.log('userId', userId);

@@ -13,6 +13,7 @@ import { EmailVerificationModule } from '@src/email-verification/email-verificat
 import { BookingModule } from '@src/booking/booking.module';
 import { PrescriptionModule } from '@src/prescription/prescription.module';
 import { TestResultModule } from '@src/test-result/test-result.module';
+import { NotificationModule } from '@src/notification/notification.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { TestResultModule } from '@src/test-result/test-result.module';
     TestResultModule,
     PrescriptionModule,
     BookingModule,
+    NotificationModule
   ],
   controllers: [UserController],
   providers: [

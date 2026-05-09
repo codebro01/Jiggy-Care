@@ -213,7 +213,7 @@ export class UserController {
       'role',
     ]);
 
-    return { sucess: true, data: safeUser };
+    return { sucess: true, data: safeUser.patient, notificationCount: safeUser.notificationCount };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
