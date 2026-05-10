@@ -510,13 +510,24 @@ export class BookingService {
 
   //! Cron job: Auto-complete if patient doesn't respond within 24hrs
   @Cron(CronExpression.EVERY_HOUR)
-  async autoCompleteStaleAppointments() {
+  async autoCompleteAppointmentsWithNoPatientResponse() {
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     return await this.bookingRepository.updateBookingAfterInterval(
       twentyFourHoursAgo,
     );
   }
+
+  @Cron(CronExpression.EVERY_HOUR)
+  async autoCompleteStaleAppointment() {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    return await this.bookingRepository.updateBookingAfterIntervalForStaleAppointments(
+      twentyFourHoursAgo,
+    );
+  }
+
+
 
   // ! send reminder notification for appointment
   @Cron(CronExpression.EVERY_MINUTE)

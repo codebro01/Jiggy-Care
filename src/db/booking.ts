@@ -11,7 +11,7 @@ import {
 import { consultantTable, userTable } from './users';
 import { InferSelectModel } from 'drizzle-orm';
 
-export const bookingStatusType = pgEnum('booking_status_type', [
+export const bookingStatusType = pgEnum('Booking_Status_Type', [
   'completed',
   'upcoming',
   'in_progress',
@@ -19,6 +19,7 @@ export const bookingStatusType = pgEnum('booking_status_type', [
   'no_show',
   'disputed',
   'pending_confirmation',
+  'stale'
 ]);
 
 export const bookingTable = pgTable(

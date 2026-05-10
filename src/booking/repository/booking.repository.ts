@@ -89,6 +89,11 @@ export class BookingRepository {
 
     return result;
   }
+
+  async getAllInProgressBooking() {
+    const bookings = await this.DbProvider.select().from(bookingTable).where(eq(bookingTable.status, 'in_progress'));
+    return bookings
+  }
   async updateBooking(
     data: Partial<bookingTableInsertType>,
     bookingId: string,
@@ -366,6 +371,23 @@ export class BookingRepository {
       .where(
         and(
           eq(bookingTable.status, 'pending_confirmation'),
+          lt(bookingTable.consultantCompletedAt, new Date(interval)),
+          eq(bookingTable.patientConfirmed, false),
+        ),
+      )
+      .returning();
+  }
+  async updateBookingAfterIntervalForStaleAppointments(interval: Date) {
+    return await this.DbProvider.update(bookingTable)
+      .set({
+        status: 'completed',
+        patientConfirmed: true, // Auto-confirmed
+        patientCompletedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(bookingTable.status, 'upcoming'),
           lt(bookingTable.consultantCompletedAt, new Date(interval)),
           eq(bookingTable.patientConfirmed, false),
         ),
