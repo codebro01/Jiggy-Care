@@ -374,7 +374,9 @@ export class BookingRepository {
   }
 
   async consultantStartAppointment(bookingId: string, consultantId: string) {
-    return await this.DbProvider.update(bookingTable)
+        // console.log('got into appointment start repo', bookingId, consultantId);
+
+    const appointment = await this.DbProvider.update(bookingTable)
       .set({
         status: 'in_progress',
         updatedAt: new Date(),
@@ -386,6 +388,10 @@ export class BookingRepository {
         ),
       )
       .returning();
+
+      // console.log('appointment', appointment)
+
+      return appointment;
   }
 
   async consultantCompleteAppointment(

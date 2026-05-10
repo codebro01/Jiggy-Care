@@ -365,7 +365,7 @@ export class BookingService {
       return;
       throw new BadRequestException('Appointment already started or completed');
     }
-    if (booking.status !== 'cancelled') {
+    if (booking.status === 'cancelled') {
       return;
       throw new BadRequestException('You cannot start a cancelled appointment');
     }

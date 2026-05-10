@@ -352,6 +352,7 @@ export class BookingController {
     @Param('bookingId', ParseUUIDPipe) bookingId: string,
   ) {
     const { id: consultantId } = req.user;
+
     const bookings = await this.bookingService.consultantStartAppointment(
       bookingId,
       consultantId,

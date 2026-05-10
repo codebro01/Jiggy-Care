@@ -34,7 +34,6 @@ export class NotificationService {
   }
   async getNotificationsCount(userId: string) {
     try {
-
       const count =
         await this.notificationRepository.countUnreadNotifications(userId);
 
