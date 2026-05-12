@@ -10,6 +10,7 @@ export enum AppointmentStatus {
   NO_SHOW = 'no_show',
   DISPUTED = 'disputed',
   PENDING_CONFIRMATION = 'pending_confirmation',
+  STALE = 'stale'
 }
 
 export class QueryBookingDto {
