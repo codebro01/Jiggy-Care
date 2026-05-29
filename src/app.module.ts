@@ -44,6 +44,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { OneSignalModule } from './one-signal/one-signal.module';
 import { ChatbotModule } from './chatbot/chatbot.module';
+import { AgoraModule } from './agora/agora.module';
 @Module({
   imports: [
     ScheduleModule.forRoot(), 
@@ -111,6 +112,7 @@ import { ChatbotModule } from './chatbot/chatbot.module';
     DashboardModule,
     OneSignalModule,
     ChatbotModule,
+    AgoraModule,
   ],
   controllers: [AppController],
   providers: [AppService, NeonProvider, MulterService],
