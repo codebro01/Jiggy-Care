@@ -45,6 +45,8 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { OneSignalModule } from './one-signal/one-signal.module';
 import { ChatbotModule } from './chatbot/chatbot.module';
 import { AgoraModule } from './agora/agora.module';
+import { FcmService } from './fcm/fcm.service';
+import { FcmModule } from './fcm/fcm.module';
 @Module({
   imports: [
     ScheduleModule.forRoot(), 
@@ -113,8 +115,9 @@ import { AgoraModule } from './agora/agora.module';
     OneSignalModule,
     ChatbotModule,
     AgoraModule,
+    FcmModule,
   ],
   controllers: [AppController],
-  providers: [AppService, NeonProvider, MulterService],
+  providers: [AppService, NeonProvider, MulterService, FcmService],
 })
 export class AppModule {}

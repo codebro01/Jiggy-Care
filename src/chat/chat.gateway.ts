@@ -12,6 +12,7 @@ import { ChatService } from './chat.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { OneSignalService } from '@src/one-signal/one-signal.service';
 import { UserRepository } from '@src/users/repository/user.repository';
+import { FcmService } from '@src/fcm/fcm.service';
 
 @WebSocketGateway({
   cors: {
@@ -33,6 +34,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private chatService: ChatService,
     private readonly oneSignalService: OneSignalService,
     private readonly userRepository: UserRepository,
+    private readonly fcmService: FcmService, 
   ) {}
 
   handleConnection(client: Socket) {
@@ -123,17 +125,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       senderType,
     });
 
-if (!conversationId || !senderType || (!content && !fileUrl)) {
-  return {
-    event: 'error',
-    data: { message: 'Missing required fields' },
-  };
-}
+    if (!conversationId || !senderType || (!content && !fileUrl)) {
+      return {
+        event: 'error',
+        data: { message: 'Missing required fields' },
+      };
+    }
 
     if (!conversationInfo.bookingId)
       throw new BadRequestException('Could not get booking Id');
 
-    console.log('entered about sending the message to the user', fileUrl, fileType)
+    console.log(
+      'entered about sending the message to the user',
+      fileUrl,
+      fileType,
+    );
 
     try {
       const result = await this.chatService.sendMessage({
@@ -142,8 +148,8 @@ if (!conversationId || !senderType || (!content && !fileUrl)) {
         patientId: conversationInfo?.patientId,
         content,
         senderType,
-        fileUrl, 
-        fileType, 
+        fileUrl,
+        fileType,
       });
 
       // console.log(
@@ -179,8 +185,6 @@ if (!conversationId || !senderType || (!content && !fileUrl)) {
           },
         )
         .catch((err) => console.error('Error sending notification:', err));
-;
-
       return {
         event: 'message_sent',
         data: result,
@@ -405,6 +409,7 @@ if (!conversationId || !senderType || (!content && !fileUrl)) {
     if (!fromUserId) return;
 
     const user = await this.userRepository.findUserById(fromUserId);
+    const receiver = await this.userRepository.findUserById(data.toUserId); // ✅ Get receiver for FCM token
 
     const conversationInfo =
       await this.chatService.getConversationByConversationId(
@@ -418,21 +423,40 @@ if (!conversationId || !senderType || (!content && !fileUrl)) {
     if (!this.activeCallNotifications.has(data.conversationId)) {
       this.activeCallNotifications.add(data.conversationId);
 
-      await this.oneSignalService.sendNotificationToUser(
-        data.toUserId,
-        `Incoming call from ${user.fullName}`,
-        `Open app to answer`,
-        {
-          category: 'Call',
-          action: 'Incoming Call',
-          conversationId: data.conversationId,
-          callType: data.callType,
-          callerName: user.fullName,
-          bookingId: conversationInfo.bookingId,
-          fromUserId,
-        },
-      );
+       if (receiver.fcmToken) {
+         await this.fcmService
+           .sendCallNotification(receiver.fcmToken, {
+             callId: data.conversationId, // or a dedicated callId if you have one
+             callerName: user.fullName,
+             callerUserId: fromUserId,
+             conversationId: data.conversationId,
+             callType: data.callType,
+             bookingId: conversationInfo.bookingId,
+           })
+           .catch((err) => console.error('FCM call notification error:', err));
+       }
 
+       // ✅ Keep OneSignal as fallback for users without FCM token
+       if (!receiver.fcmToken) {
+         await this.oneSignalService
+           .sendNotificationToUser(
+             data.toUserId,
+             `Incoming call from ${user.fullName}`,
+             `Open app to answer`,
+             {
+               category: 'Call',
+               action: 'Incoming Call',
+               conversationId: data.conversationId,
+               callType: data.callType,
+               callerName: user.fullName,
+               bookingId: conversationInfo.bookingId,
+               fromUserId,
+             },
+           )
+           .catch((err) =>
+             console.error('OneSignal call notification error:', err),
+           );
+       }
       // ✅ Clean up after 60s so future calls on same conversation work
       setTimeout(() => {
         this.activeCallNotifications.delete(data.conversationId);

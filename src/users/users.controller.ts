@@ -27,6 +27,7 @@ import omit from 'lodash.omit';
 import { UpdateConsultantDto } from '@src/consultant/dto/updateConsultantDto';
 import type { Request } from '@src/types';
 import { UpdateDpDto } from '@src/users/dto/update-dp.dto';
+import { UpdateFcmTokenDto } from '@src/users/dto/update-fcm-token.dto';
 
 @Controller('users')
 export class UserController {
@@ -213,7 +214,11 @@ export class UserController {
       'role',
     ]);
 
-    return { sucess: true, data: safeUser.patient, notificationCount: safeUser.notificationCount };
+    return {
+      sucess: true,
+      data: safeUser.patient,
+      notificationCount: safeUser.notificationCount,
+    };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -316,8 +321,7 @@ export class UserController {
   @Roles('patient')
   @ApiOperation({
     summary: 'This enpoint downloads user information',
-    description:
-      'This enpoint downloads user health data',
+    description: 'This enpoint downloads user health data',
   })
   @ApiHeader({
     name: 'x-client-type',
@@ -345,5 +349,31 @@ export class UserController {
     });
 
     res.end(pdfBuffer);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('consultant', 'patient')
+  @Patch('fcm-token')
+  @ApiOperation({
+    summary: 'Update FCM token',
+    description: 'Saves the device FCM token for push notifications',
+  })
+  @ApiHeader({
+    name: 'x-client-type',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
+  async updateFcmToken(@Req() req: Request, @Body() body: UpdateFcmTokenDto) {
+    const { id: userId } = req.user;
+    await this.userService.updateFcmToken(userId, body.token);
+
+    return { success: true, message: 'FCM token updated successfully' };
   }
 }

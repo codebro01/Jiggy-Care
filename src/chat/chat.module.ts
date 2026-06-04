@@ -8,9 +8,10 @@ import { DbModule } from '@src/db/db.module';
 import { BookingModule } from '@src/booking/booking.module';
 import { OneSignalModule } from '@src/one-signal/one-signal.module';
 import { UserModule } from '@src/users/users.module';
+import { FcmModule } from '@src/fcm/fcm.module';
 
 @Module({
-  imports: [DbModule, BookingModule, OneSignalModule, UserModule], 
+  imports: [DbModule, BookingModule, OneSignalModule, UserModule, FcmModule], 
   controllers: [ChatController],
   providers: [
     ChatService,

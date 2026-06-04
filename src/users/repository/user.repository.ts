@@ -42,6 +42,7 @@ export class UserRepository {
       role: userTable.role,
       emailVerified: userTable.emailVerified,
       fullName: userTable.fullName,
+      fcmToken: userTable.fcmToken,
     })
       .from(userTable)
       .where(eq(userTable.id, userId))
@@ -226,6 +227,16 @@ export class UserRepository {
       .where(eq(healthMonitoringTable.patientId, patientId))
       .limit(1);
 
-      return healthData;
+    return healthData;
+  }
+
+  async updateFcmToken(userId: string, fcmToken: string) {
+    const [user] = await this.DbProvider.update(userTable)
+      .set({ fcmToken })
+      .where(eq(userTable.id, userId))
+      .returning();
+
+      console.log(user.fcmToken, 'updated FCM token in DB');
+    return user;
   }
 }

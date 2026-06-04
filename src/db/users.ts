@@ -28,6 +28,7 @@ export const userTable = pgTable('users', {
     .default('local')
     .notNull(),
   refreshToken: text('refreshToken'),
+  fcmToken: text('fcmToken'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
