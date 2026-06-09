@@ -43,4 +43,26 @@ export class FcmService implements OnModuleInit {
       },
     });
   }
+
+  async sendCallEndedNotification(
+    fcmToken: string,
+    payload: {
+      callId: string;
+      conversationId: string;
+      reason?: 'ended' | 'cancelled' | 'rejected' | 'missed';
+    },
+  ) {
+    return admin.messaging().send({
+      token: fcmToken,
+      data: {
+        type: 'call_ended',
+        callId: payload.callId,
+        conversationId: payload.conversationId,
+        reason: payload.reason ?? 'ended',
+      },
+      android: {
+        priority: 'high',
+      },
+    });
+  }
 }

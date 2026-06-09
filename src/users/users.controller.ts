@@ -376,4 +376,30 @@ export class UserController {
 
     return { success: true, message: 'FCM token updated successfully' };
   }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('consultant', 'patient')
+  @Delete('fcm-token')
+  @ApiOperation({
+    summary: 'Clear FCM token',
+    description: 'Removes the device FCM token on logout or app uninstall',
+  })
+  @ApiHeader({
+    name: 'x-client-type',
+    required: false,
+    schema: {
+      type: 'string',
+      enum: ['mobile', 'web'],
+      example: 'mobile',
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiCookieAuth('access_token')
+  @HttpCode(HttpStatus.OK)
+  async clearFcmToken(@Req() req: Request) {
+    const { id: userId } = req.user;
+    await this.userService.clearFcmToken(userId);
+
+    return { success: true, message: 'FCM token cleared successfully' };
+  }
 }

@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, BadGatewayException } from '@nestjs/common';
 import {
   consultantInsertType,
   consultantTable,
@@ -230,7 +230,8 @@ export class UserRepository {
     return healthData;
   }
 
-  async updateFcmToken(userId: string, fcmToken: string) {
+  async updateFcmToken(userId: string, fcmToken: string | null) {
+    if(fcmToken === null) throw new BadGatewayException('FCM Token is null')
     const [user] = await this.DbProvider.update(userTable)
       .set({ fcmToken })
       .where(eq(userTable.id, userId))

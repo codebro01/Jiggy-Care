@@ -310,6 +310,10 @@ export class UserService {
     return this.userRepository.updateFcmToken(userId, token);
   }
 
+  async clearFcmToken(userId: string) {
+    await this.userRepository.updateFcmToken(userId, null);
+  }
+
   async profileCards(patientId: string) {
     const [totalBookings, totalReports, activeMeds] = await Promise.all([
       this.bookingRepository.totalBookings(patientId),
