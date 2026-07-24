@@ -223,7 +223,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('mark_read')
   async handleMarkRead(
     @MessageBody() data: { conversationId: string; messageIds: string[] },
-    @ConnectedSocket() client: Socket, // ✅ Uncomment this
+    @ConnectedSocket() client: Socket, //  Uncomment this
   ) {
     try {
       // Validate input
@@ -243,7 +243,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         data.messageIds,
       );
 
-      // ✅ Use broadcast to send ONLY to other clients, not the sender
+      //  Use broadcast to send ONLY to other clients, not the sender
       client.broadcast.to(data.conversationId).emit('messages_read', {
         conversationId: data.conversationId,
         messageIds: data.messageIds,
@@ -391,7 +391,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // }
 
   // Add this to your Gateway class properties
-  private activeCallNotifications = new Set<string>(); // ✅ tracks notified calls
+  private activeCallNotifications = new Set<string>(); //  tracks notified calls
 
   @SubscribeMessage('call:initiate')
   async handleCallInitiate(
@@ -409,7 +409,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!fromUserId) return;
 
     const user = await this.userRepository.findUserById(fromUserId);
-    const receiver = await this.userRepository.findUserById(data.toUserId); // ✅ Get receiver for FCM token
+    const receiver = await this.userRepository.findUserById(data.toUserId); //  Get receiver for FCM token
 
     const conversationInfo =
       await this.chatService.getConversationByConversationId(
@@ -419,7 +419,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!conversationInfo)
       throw new BadRequestException('Invalid conversation');
 
-    // ✅ Only send notification once per unique call
+    //  Only send notification once per unique call
     if (!this.activeCallNotifications.has(data.conversationId)) {
       this.activeCallNotifications.add(data.conversationId);
 
@@ -436,7 +436,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           .catch((err) => console.error('FCM call notification error:', err));
       }
 
-      // ✅ Keep OneSignal as fallback for users without FCM token
+      //  Keep OneSignal as fallback for users without FCM token
       if (!receiver.fcmToken) {
         await this.oneSignalService
           .sendNotificationToUser(
@@ -457,37 +457,50 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             console.error('OneSignal call notification error:', err),
           );
       }
-      // ✅ Clean up after 60s so future calls on same conversation work
+      //  Clean up after 60s so future calls on same conversation work
       setTimeout(() => {
         this.activeCallNotifications.delete(data.conversationId);
       }, 60000);
     }
 
-    if (targetSocketId) {
-      client.emit('call:ringing', {
-        toUserId: data.toUserId,
-        conversationId: data.conversationId,
-        callType: data.callType,
-      });
+    client.emit('call:ringing', {
+      toUserId: data.toUserId,
+      conversationId: data.conversationId,
+      callType: data.callType,
+    });
 
+    if (targetSocketId) {
       this.server.to(targetSocketId).emit('call:incoming', {
         fromUserId,
         conversationId: data.conversationId,
         callType: data.callType,
       });
+    }
+    const ringingTimeout = setTimeout(() => {
+      client.emit('call:no-answer', { toUserId: data.toUserId });
 
-      const ringingTimeout = setTimeout(() => {
-        client.emit('call:no-answer', { toUserId: data.toUserId });
+      if (targetSocketId) {
         this.server.to(targetSocketId).emit('call:missed', {
           fromUserId,
           conversationId: data.conversationId,
         });
-        this.activeRingingCalls.delete(fromUserId);
-        this.activeCallNotifications.delete(data.conversationId); // ✅ also clean up on no-answer
-      }, 45000);
+      }
 
-      this.activeRingingCalls.set(fromUserId, ringingTimeout);
-    }
+      if (receiver?.fcmToken) {
+        this.fcmService
+          .sendCallEndedNotification(receiver.fcmToken, {
+            callId: data.conversationId,
+            conversationId: data.conversationId,
+            reason: 'missed',
+          })
+          .catch((err) => console.error('FCM missed-call error:', err));
+      }
+
+      this.activeRingingCalls.delete(fromUserId);
+      this.activeCallNotifications.delete(data.conversationId);
+    }, 45000);
+
+    this.activeRingingCalls.set(fromUserId, ringingTimeout);
   }
   @SubscribeMessage('call:accept')
   handleCallAccept(
@@ -560,7 +573,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   //   @ConnectedSocket() client: Socket,
   // ) {
   //   const targetSocketId = this.userSockets.get(data.toUserId);
-  //   const rejectingUserId = this.activeUsers.get(client.id)?.userId; // ✅ Add this
+  //   const rejectingUserId = this.activeUsers.get(client.id)?.userId; //  Add this
 
   //   if (!targetSocketId) return;
 
@@ -573,21 +586,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   //   // Stop ringing and notify caller of rejection
   //   this.server.to(targetSocketId).emit('call:rejected', {
-  //     fromUserId: rejectingUserId, // ✅ Changed from client.id
+  //     fromUserId: rejectingUserId, //  Changed from client.id
   //     reason: data.reason || 'Call declined',
   //   });
   // }
 
-
-
   @SubscribeMessage('call:end')
   async handleCallEnd(
-    // add async
-    @MessageBody() data: { toUserId: string; conversationId: string }, // add conversationId
+    @MessageBody() data: { toUserId: string; conversationId: string },
     @ConnectedSocket() client: Socket,
   ) {
     const targetSocketId = this.userSockets.get(data.toUserId);
     const endingUserId = this.activeUsers.get(client.id)?.userId;
+
+    //  check BEFORE clearing — was this call still ringing (never answered)?
+    const wasStillRinging = endingUserId
+      ? this.activeRingingCalls.has(endingUserId)
+      : false;
 
     if (endingUserId) {
       const ringingTimeout = this.activeRingingCalls.get(endingUserId);
@@ -603,10 +618,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.activeRingingCalls.delete(data.toUserId);
     }
 
+    //  pick the right reason/event based on whether receiver had answered
+    const reason: 'ended' | 'cancelled' = wasStillRinging
+      ? 'cancelled'
+      : 'ended';
+
     if (targetSocketId) {
-      this.server.to(targetSocketId).emit('call:ended', {
-        fromUserId: endingUserId,
-      });
+      this.server
+        .to(targetSocketId)
+        .emit(wasStillRinging ? 'call:cancelled' : 'call:ended', {
+          fromUserId: endingUserId,
+        });
     }
 
     // FCM fallback — dismisses Notifee notification if app is backgrounded/killed
@@ -616,10 +638,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         .sendCallEndedNotification(receiver.fcmToken, {
           callId: data.conversationId,
           conversationId: data.conversationId,
-          reason: 'ended',
+          reason,
         })
         .catch((err) => console.error('FCM call ended error:', err));
     }
+
+    //  so a fresh call attempt on the same conversation isn't blocked by the dedup guard
+    this.activeCallNotifications.delete(data.conversationId);
   }
   // @SubscribeMessage('call:end')
   // handleCallEnd(
@@ -647,7 +672,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   //   }
 
   //   this.server.to(targetSocketId).emit('call:ended', {
-  //     fromUserId: endingUserId, // ✅ Changed from client.id to endingUserId
+  //     fromUserId: endingUserId, //  Changed from client.id to endingUserId
   //   });
   // }
 }
